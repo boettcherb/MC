@@ -10,15 +10,7 @@
 #include <unordered_map>
 
 class ShaderProgram {
-    
-    struct Shader {
-        unsigned int m_id;
-        std::string m_source;
-        Shader(unsigned int id, const std::string& source);
-    };
-
     unsigned int m_shaderProgramID;
-    std::vector<ShaderProgram::Shader> m_shaders;
     std::unordered_map<std::string, int> m_uniformLocationCache;
 
 public:
@@ -38,7 +30,7 @@ public:
     void addUniformMat4f(const std::string& name, const sglm::mat4& matrix);
 
 private:
-    void compileAndLink() const;
+    void compile(unsigned id, const char* source) const;
     std::string parseShader(const std::string& filePath) const;
     int getUniformLocation(const std::string& name);
 };
