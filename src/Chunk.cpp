@@ -78,10 +78,10 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
 void Chunk::render(sglm::mat4 viewMatrix, float zoom, float scrRatio) {
     // send the MVP matrices to the shaders
     sglm::vec3 translation = { m_posX * CHUNK_LENGTH, 0.0f, m_posZ * CHUNK_WIDTH };
-    m_shader->addUniformMat4f("u_model", sglm::translate(translation));
-    m_shader->addUniformMat4f("u_view", viewMatrix);
+    m_shader->addUniformMat4f("u0_model", sglm::translate(translation));
+    m_shader->addUniformMat4f("u1_view", viewMatrix);
     sglm::mat4 projection = sglm::perspective(sglm::radians(zoom), scrRatio, 0.1f, 300.0f);
-    m_shader->addUniformMat4f("u_projection", projection);
+    m_shader->addUniformMat4f("u2_projection", projection);
     m_mesh->render(m_shader);
 }
 

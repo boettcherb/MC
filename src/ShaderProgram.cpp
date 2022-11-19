@@ -1,9 +1,7 @@
 #include "ShaderProgram.h"
 #include "Texture.h"
-
 #include <glad/glad.h>
 #include <sglm/sglm.h>
-
 #include <iostream>
 #include <fstream>
 #include <string>

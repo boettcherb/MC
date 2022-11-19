@@ -3,16 +3,16 @@ layout(location = 0) in uint a_data;
 
 out vec2 v_texCoords;
 
-uniform mat4 u_model;
-uniform mat4 u_view;
-uniform mat4 u_projection;
+uniform mat4 u0_model;
+uniform mat4 u1_view;
+uniform mat4 u2_projection;
 
 void main() {
     // retrieve the x, y, and z positions from their place in the data
     float xPos = float((a_data >> 23u) & 0x1Fu);
     float yPos = float((a_data >> 15u) & 0xFFu);
     float zPos = float((a_data >> 10u) & 0x1Fu);
-    gl_Position = u_projection * u_view * u_model * vec4(xPos, yPos, zPos, 1.0f);
+    gl_Position = u2_projection * u1_view * u0_model * vec4(xPos, yPos, zPos, 1.0f);
 
     // retrieve the tex coords from their place in the data
     float xTex = float((a_data >> 5u) & 0x1Fu);
