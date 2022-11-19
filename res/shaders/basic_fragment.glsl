@@ -3,8 +3,8 @@ out vec4 color;
 
 in vec2 v_texCoords;
 
-uniform sampler2D u_texture;
+uniform sampler2D u3_texture;
 
 void main() {
-    color = texture(u_texture, v_texCoords);
+    color = texture(u3_texture, v_texCoords);
 }

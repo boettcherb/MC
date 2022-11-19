@@ -6,7 +6,6 @@
 #include <fstream>
 #include <string>
 #include <cassert>
-#include <unordered_map>
 
 Shader::Shader(const std::string& vertexFilePath, const std::string& fragmentFilePath) {
     m_shaderID = glCreateProgram();
@@ -29,6 +28,9 @@ Shader::Shader(const std::string& vertexFilePath, const std::string& fragmentFil
     // the individual shaders are not needed after they have been linked into one program
     glDeleteShader(vertexID);
     glDeleteShader(fragmentID);
+
+    // initialize values in m_uniforms array to -1
+    std::memset(m_uniforms, -1, 16);
 }
 
 Shader::~Shader() {
@@ -92,14 +94,12 @@ void Shader::addUniformMat4f(const std::string& name, const sglm::mat4& matrix) 
 }
 
 int Shader::getUniformLocation(const std::string& name) {
-    auto cachedLocation = m_uniformLocationCache.find(name);
-    if (cachedLocation != m_uniformLocationCache.end()) {
-        return cachedLocation->second;
+    assert(name.length() > 3 && name[0] == 'u' && name[1] >= '0' && name[1] <= '9' && name[2] == '_');
+    unsigned index = name[1] - '0';
+    if (m_uniforms[index] != -1) {
+        return m_uniforms[index];
     }
-    int location = glGetUniformLocation(m_shaderID, name.c_str());
-    if (location == -1) {
-        std::cerr << "The Uniform " + name + " does not exist!\n";
-    }
-    m_uniformLocationCache[name] = location;
-    return location;
+    m_uniforms[index] = glGetUniformLocation(m_shaderID, name.c_str());
+    assert(m_uniforms[index] != -1);
+    return m_uniforms[index];
 }

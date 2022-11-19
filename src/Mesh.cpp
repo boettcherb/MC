@@ -1,6 +1,5 @@
 #include "Mesh.h"
 #include "Shader.h"
-
 #include <glad/glad.h>
 
 Mesh::Mesh() : m_vertexCount{ 0 } {

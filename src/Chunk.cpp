@@ -2,10 +2,8 @@
 #include "BlockInfo.h"
 #include "Shader.h"
 #include "Mesh.h"
-
 #include <sglm/sglm.h>
 #include <FastNoise/FastNoise.h>
-
 #include <new>
 
 Chunk::Chunk(float x, float z, Shader* shader) : m_posX{ x }, m_posZ{ z }, m_shader{ shader } {

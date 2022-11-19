@@ -1,5 +1,4 @@
 #include "BlockInfo.h"
-
 #include <iostream>
 
 namespace Block {

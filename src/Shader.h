@@ -1,17 +1,14 @@
-#ifndef SHADER_PROGRAM_H_INCLUDED
-#define SHADER_PROGRAM_H_INCLUDED
+#ifndef SHADER_H_INCLUDED
+#define SHADER_H_INCLUDED
 
 #include "Texture.h"
-
 #include <sglm/sglm.h>
-
 #include <string>
 #include <vector>
-#include <unordered_map>
 
 class Shader {
     unsigned int m_shaderID;
-    std::unordered_map<std::string, int> m_uniformLocationCache;
+    int m_uniforms[4];
 
 public:
     Shader(const std::string& vertexFilePath, const std::string& fragmentFilePath);

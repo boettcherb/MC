@@ -3,10 +3,8 @@
 #include "Texture.h"
 #include "BlockInfo.h"
 #include "Chunk.h"
-
 #include <glad/glad.h>
 #include <GLFW/GLFW3.h>
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -115,11 +113,10 @@ int main() {
     // in callback functions by using glfwGetWindowUserPointer().
     Camera camera({ 0.0f, 80.0f, 0.0f });
     glfwSetWindowUserPointer(window, reinterpret_cast<void*>(&camera));
-
     Shader shader("res/shaders/basic_vertex.glsl", "res/shaders/basic_fragment.glsl");
     Texture textureSheet("res/textures/texture_sheet.png", 0);
-    shader.addTexture(&textureSheet, "u_texture");
-
+    shader.addTexture(&textureSheet, "u3_texture");
+    
     const int numChunksX = 20;
     const int numChunksZ = 20;
     Chunk* chunks[numChunksX][numChunksZ];
@@ -167,11 +164,13 @@ int main() {
             }
         }
 
+#ifndef NDEBUG
         // catch errors
         GLenum err;
         while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cout << "OpenGL Error: " << err << '\n';
+            std::cout << "OpenGL Error (in main): " << err << '\n';
         }
+#endif
 
         glfwSwapBuffers(window);
         glfwPollEvents();
