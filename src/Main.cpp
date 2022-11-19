@@ -1,4 +1,4 @@
-#include "ShaderProgram.h"
+#include "Shader.h"
 #include "Camera.h"
 #include "Texture.h"
 #include "BlockInfo.h"
@@ -116,7 +116,7 @@ int main() {
     Camera camera({ 0.0f, 80.0f, 0.0f });
     glfwSetWindowUserPointer(window, reinterpret_cast<void*>(&camera));
 
-    ShaderProgram shader("res/shaders/basic_vertex.glsl", "res/shaders/basic_fragment.glsl");
+    Shader shader("res/shaders/basic_vertex.glsl", "res/shaders/basic_fragment.glsl");
     Texture textureSheet("res/textures/texture_sheet.png", 0);
     shader.addTexture(&textureSheet, "u_texture");
 

@@ -1,6 +1,6 @@
 #include "Chunk.h"
 #include "BlockInfo.h"
-#include "ShaderProgram.h"
+#include "Shader.h"
 #include "Mesh.h"
 
 #include <sglm/sglm.h>
@@ -8,7 +8,7 @@
 
 #include <new>
 
-Chunk::Chunk(float x, float z, ShaderProgram* shader) : m_posX{ x }, m_posZ{ z }, m_shader{ shader } {
+Chunk::Chunk(float x, float z, Shader* shader) : m_posX{ x }, m_posZ{ z }, m_shader{ shader } {
     m_blocks = new Blocks();
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
     generateTerrain();

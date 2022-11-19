@@ -1,4 +1,4 @@
-#include "ShaderProgram.h"
+#include "Shader.h"
 #include "Texture.h"
 #include <glad/glad.h>
 #include <sglm/sglm.h>
@@ -8,19 +8,19 @@
 #include <cassert>
 #include <unordered_map>
 
-ShaderProgram::ShaderProgram(const std::string& vertexFilePath, const std::string& fragmentFilePath) {
-    m_shaderProgramID = glCreateProgram();
+Shader::Shader(const std::string& vertexFilePath, const std::string& fragmentFilePath) {
+    m_shaderID = glCreateProgram();
     unsigned vertexID = glCreateShader(GL_VERTEX_SHADER);
     unsigned fragmentID = glCreateShader(GL_FRAGMENT_SHADER);
     compile(vertexID, parseShader(vertexFilePath).c_str());
     compile(fragmentID, parseShader(fragmentFilePath).c_str());
-    glLinkProgram(m_shaderProgramID);
+    glLinkProgram(m_shaderID);
 
 #ifndef NDEBUG
     // make sure the shader program linked successfully
     int success = 0;
-    glValidateProgram(m_shaderProgramID);
-    glGetProgramiv(m_shaderProgramID, GL_VALIDATE_STATUS, &success);
+    glValidateProgram(m_shaderID);
+    glGetProgramiv(m_shaderID, GL_VALIDATE_STATUS, &success);
     if (!success) {
         std::cerr << "Shader Program Linking Failed\n";
     }
@@ -31,11 +31,11 @@ ShaderProgram::ShaderProgram(const std::string& vertexFilePath, const std::strin
     glDeleteShader(fragmentID);
 }
 
-ShaderProgram::~ShaderProgram() {
-    glDeleteProgram(m_shaderProgramID);
+Shader::~Shader() {
+    glDeleteProgram(m_shaderID);
 }
 
-void ShaderProgram::compile(unsigned id, const char* source) const {
+void Shader::compile(unsigned id, const char* source) const {
     int success = 0;
     glShaderSource(id, 1, &source, nullptr);
     glCompileShader(id);
@@ -51,11 +51,11 @@ void ShaderProgram::compile(unsigned id, const char* source) const {
 #endif
 
     // combine each individual shader into one program
-    glAttachShader(m_shaderProgramID, id);
+    glAttachShader(m_shaderID, id);
     
 }
 
-std::string ShaderProgram::parseShader(const std::string& filePath) const {
+std::string Shader::parseShader(const std::string& filePath) const {
     std::ifstream stream(filePath);
     assert(stream);
     std::string shaderSource;
@@ -67,36 +67,36 @@ std::string ShaderProgram::parseShader(const std::string& filePath) const {
     return shaderSource;
 }
 
-void ShaderProgram::bind() const {
-    glUseProgram(m_shaderProgramID);
+void Shader::bind() const {
+    glUseProgram(m_shaderID);
 }
 
-void ShaderProgram::unbind() const {
+void Shader::unbind() const {
     glUseProgram(0);
 }
 
-void ShaderProgram::addTexture(const Texture* texture, const std::string& name) {
+void Shader::addTexture(const Texture* texture, const std::string& name) {
     bind();
     texture->bind();
     addUniform1i(name, texture->getSlot());
 }
 
-void ShaderProgram::addUniform1i(const std::string& name, int v0) {
+void Shader::addUniform1i(const std::string& name, int v0) {
     bind();
     glUniform1i(getUniformLocation(name), v0);
 }
 
-void ShaderProgram::addUniformMat4f(const std::string& name, const sglm::mat4& matrix) {
+void Shader::addUniformMat4f(const std::string& name, const sglm::mat4& matrix) {
     bind();
     glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&matrix));
 }
 
-int ShaderProgram::getUniformLocation(const std::string& name) {
+int Shader::getUniformLocation(const std::string& name) {
     auto cachedLocation = m_uniformLocationCache.find(name);
     if (cachedLocation != m_uniformLocationCache.end()) {
         return cachedLocation->second;
     }
-    int location = glGetUniformLocation(m_shaderProgramID, name.c_str());
+    int location = glGetUniformLocation(m_shaderID, name.c_str());
     if (location == -1) {
         std::cerr << "The Uniform " + name + " does not exist!\n";
     }

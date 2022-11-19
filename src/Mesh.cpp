@@ -1,5 +1,5 @@
 #include "Mesh.h"
-#include "ShaderProgram.h"
+#include "Shader.h"
 
 #include <glad/glad.h>
 
@@ -29,7 +29,7 @@ Mesh::~Mesh() {
     glDeleteBuffers(1, &m_vertexBufferID);
 }
 
-void Mesh::render(const ShaderProgram* shader) const {
+void Mesh::render(const Shader* shader) const {
     shader->bind();
     glBindVertexArray(m_vertexArrayID);
     glDrawArrays(GL_TRIANGLES, 0, m_vertexCount);

@@ -9,13 +9,13 @@
 #include <vector>
 #include <unordered_map>
 
-class ShaderProgram {
-    unsigned int m_shaderProgramID;
+class Shader {
+    unsigned int m_shaderID;
     std::unordered_map<std::string, int> m_uniformLocationCache;
 
 public:
-    ShaderProgram(const std::string& vertexFilePath, const std::string& fragmentFilePath);
-    ~ShaderProgram();
+    Shader(const std::string& vertexFilePath, const std::string& fragmentFilePath);
+    ~Shader();
 
     void bind() const;
     void unbind() const;

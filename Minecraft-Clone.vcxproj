@@ -164,7 +164,7 @@
     <ClCompile Include="src\Chunk.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
-    <ClCompile Include="src\ShaderProgram.cpp" />
+    <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -186,7 +186,7 @@
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\Chunk.h" />
     <ClInclude Include="src\Mesh.h" />
-    <ClInclude Include="src\ShaderProgram.h" />
+    <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\Texture.h" />
   </ItemGroup>
   <ItemGroup>

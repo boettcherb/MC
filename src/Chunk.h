@@ -2,7 +2,7 @@
 #define CHUNK_H_INCLUDED
 
 #include "BlockInfo.h"
-#include "ShaderProgram.h"
+#include "Shader.h"
 #include "Mesh.h"
 #include <sglm/sglm.h>
 
@@ -21,7 +21,7 @@ class Chunk {
     const float m_posX, m_posZ;
     Blocks* m_blocks;
     Mesh* m_mesh;
-    ShaderProgram* m_shader;
+    Shader* m_shader;
     Chunk* m_neighbors[4];
 
 public:
@@ -29,7 +29,7 @@ public:
         PLUS_X, MINUS_X, PLUS_Z, MINUS_Z
     };
 
-    Chunk(float x, float z, ShaderProgram* shader);
+    Chunk(float x, float z, Shader* shader);
     ~Chunk();
 
     void put(int x, int y, int z, Block::BlockType block);

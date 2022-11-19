@@ -1,7 +1,7 @@
 #ifndef MESH_H_INCLUDED
 #define MESH_H_INCLUDED
 
-#include "ShaderProgram.h"
+#include "Shader.h"
 
 class Mesh {
     unsigned int m_vertexArrayID;
@@ -13,7 +13,7 @@ public:
     ~Mesh();
 
     void setVertexData(unsigned int size, const void* data);
-    void render(const ShaderProgram* shader) const;
+    void render(const Shader* shader) const;
 };
 
 #endif
