@@ -2,8 +2,7 @@
 #include "Texture.h"
 
 #include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <sglm/sglm.h>
 
 #include <iostream>
 #include <fstream>
@@ -117,9 +116,9 @@ void ShaderProgram::addUniform4f(const std::string& name, float v0, float v1, fl
     glUniform4f(getUniformLocation(name), v0, v1, v2, v3);
 }
 
-void ShaderProgram::addUniformMat4f(const std::string& name, const glm::mat4& matrix) {
+void ShaderProgram::addUniformMat4f(const std::string& name, const sglm::mat4& matrix) {
     bind();
-    glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+    glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&matrix));
 }
 
 int ShaderProgram::getUniformLocation(const std::string& name) {

@@ -3,8 +3,7 @@
 #include "ShaderProgram.h"
 #include "Mesh.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <sglm/sglm.h>
 #include <FastNoise/FastNoise.h>
 
 #include <new>
@@ -76,12 +75,12 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
     return Block::BlockType::AIR;
 }
 
-void Chunk::render(glm::mat4 viewMatrix, float zoom, float scrRatio) {
+void Chunk::render(sglm::mat4 viewMatrix, float zoom, float scrRatio) {
     // send the MVP matrices to the shaders
-    glm::vec3 translation(m_posX * CHUNK_LENGTH, 0.0f, m_posZ * CHUNK_WIDTH);
-    m_shader->addUniformMat4f("u_model", glm::translate(glm::mat4(1.0f), translation));
+    sglm::vec3 translation = { m_posX * CHUNK_LENGTH, 0.0f, m_posZ * CHUNK_WIDTH };
+    m_shader->addUniformMat4f("u_model", sglm::translate(translation));
     m_shader->addUniformMat4f("u_view", viewMatrix);
-    glm::mat4 projection = glm::perspective(glm::radians(zoom), scrRatio, 0.1f, 300.0f);
+    sglm::mat4 projection = sglm::perspective(sglm::radians(zoom), scrRatio, 0.1f, 300.0f);
     m_shader->addUniformMat4f("u_projection", projection);
     m_mesh->render(m_shader);
 }

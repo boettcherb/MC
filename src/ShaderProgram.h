@@ -3,7 +3,7 @@
 
 #include "Texture.h"
 
-#include <glm/glm.hpp>
+#include <sglm/sglm.h>
 
 #include <string>
 #include <vector>
@@ -35,7 +35,7 @@ public:
     void addUniform2f(const std::string& name, float v0, float v1);
     void addUniform3f(const std::string& name, float v0, float v1, float v2);
     void addUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
-    void addUniformMat4f(const std::string& name, const glm::mat4& matrix);
+    void addUniformMat4f(const std::string& name, const sglm::mat4& matrix);
 
 private:
     void compileAndLink() const;

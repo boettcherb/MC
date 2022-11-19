@@ -6,8 +6,6 @@
 
 #include <glad/glad.h>
 #include <GLFW/GLFW3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
 #include <string>
@@ -115,7 +113,7 @@ int main() {
 
     // Set the camera object as the window's user pointer. This makes it accessible 
     // in callback functions by using glfwGetWindowUserPointer().
-    Camera camera(glm::vec3(0.0f, 80.0f, 0.0f));
+    Camera camera({ 0.0f, 80.0f, 0.0f });
     glfwSetWindowUserPointer(window, reinterpret_cast<void*>(&camera));
 
     ShaderProgram shader("res/shaders/basic_vertex.glsl", "res/shaders/basic_fragment.glsl");

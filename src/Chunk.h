@@ -4,6 +4,7 @@
 #include "BlockInfo.h"
 #include "ShaderProgram.h"
 #include "Mesh.h"
+#include <sglm/sglm.h>
 
 constexpr int CHUNK_LENGTH = 16;  // x
 constexpr int CHUNK_HEIGHT = 128; // y
@@ -34,7 +35,7 @@ public:
     void put(int x, int y, int z, Block::BlockType block);
     Block::BlockType get(int x, int y, int z) const;
     void updateMesh();
-    void render(glm::mat4 viewMatrix, float zoom, float scrRatio);
+    void render(sglm::mat4 viewMatrix, float zoom, float scrRatio);
     void addNeighbor(Chunk* chunk, Direction direction);
 
 private:
