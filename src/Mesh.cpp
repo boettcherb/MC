@@ -7,7 +7,15 @@ Mesh::Mesh() : m_vertexCount{ 0 } {
     glGenBuffers(1, &m_vertexBufferID);
 }
 
+Mesh::~Mesh() {
+    glDeleteVertexArrays(1, &m_vertexArrayID);
+    glDeleteBuffers(1, &m_vertexBufferID);
+}
+
 void Mesh::setVertexData(unsigned int size, const void* data) {
+    if (size == 0) {
+        return;
+    }
     // bind both buffers (vertex array first)
     glBindVertexArray(m_vertexArrayID);
     glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferID);
@@ -23,9 +31,8 @@ void Mesh::setVertexData(unsigned int size, const void* data) {
     m_vertexCount = size / sizeof(unsigned int);
 }
 
-Mesh::~Mesh() {
-    glDeleteVertexArrays(1, &m_vertexArrayID);
-    glDeleteBuffers(1, &m_vertexBufferID);
+unsigned int Mesh::getVertexCount() const {
+    return m_vertexCount;
 }
 
 void Mesh::render(const Shader* shader) const {

@@ -13,6 +13,7 @@ public:
     ~Mesh();
 
     void setVertexData(unsigned int size, const void* data);
+    unsigned int getVertexCount() const;
     void render(const Shader* shader) const;
 };
 
