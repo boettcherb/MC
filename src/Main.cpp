@@ -12,26 +12,21 @@
 
 static unsigned int g_scrWidth = 800;
 static unsigned int g_scrHeight = 600;
-const char* WINDOW_TITLE = "OpenGL Window";
+static const char* WINDOW_TITLE = "OpenGL Window";
+static Camera camera({ 0.0f, 80.0f, 0.0f });
 
 // This callback function executes whenever the user moves the mouse
-void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-    Camera* camera = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(window));
-    if (camera) {
-        camera->processMouseMovement(static_cast<float>(xpos), static_cast<float>(ypos));
-    }
+void mouse_callback(GLFWwindow* /* window */, double xpos, double ypos) {
+    camera.processMouseMovement(static_cast<float>(xpos), static_cast<float>(ypos));
 }
 
 // This callback function executes whenever the user moves the mouse scroll wheel
-void scroll_callback(GLFWwindow* window, double /* offsetX */, double offsetY) {
-    Camera* camera = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(window));
-    if (camera) {
-        camera->processMouseScroll(static_cast<float>(offsetY));
-    }
+void scroll_callback(GLFWwindow* /* window */, double /* offsetX */, double offsetY) {
+    camera.processMouseScroll(static_cast<float>(offsetY));
 }
 
 // Called every frame inside the render loop
-static void processInput(GLFWwindow* window, Camera* camera, float deltaTime) {
+static void processInput(GLFWwindow* window, float deltaTime) {
     // if the escape key is pressed, tell the window to close
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
@@ -39,16 +34,16 @@ static void processInput(GLFWwindow* window, Camera* camera, float deltaTime) {
 
     // WASD for the camera
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera->processKeyboard(Camera::FORWARD, deltaTime);
+        camera.processKeyboard(Camera::FORWARD, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera->processKeyboard(Camera::BACKWARD, deltaTime);
+        camera.processKeyboard(Camera::BACKWARD, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera->processKeyboard(Camera::LEFT, deltaTime);
+        camera.processKeyboard(Camera::LEFT, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera->processKeyboard(Camera::RIGHT, deltaTime);
+        camera.processKeyboard(Camera::RIGHT, deltaTime);
     }
 }
 
@@ -109,10 +104,6 @@ int main() {
     // enable VSync (tie the FPS to your monitor's refresh rate)
     glfwSwapInterval(1);
 
-    // Set the camera object as the window's user pointer. This makes it accessible 
-    // in callback functions by using glfwGetWindowUserPointer().
-    Camera camera({ 0.0f, 80.0f, 0.0f });
-    glfwSetWindowUserPointer(window, reinterpret_cast<void*>(&camera));
     Shader shader("res/shaders/basic_vertex.glsl", "res/shaders/basic_fragment.glsl");
     Texture textureSheet("res/textures/texture_sheet.png", 0);
     shader.addTexture(&textureSheet, "u3_texture");
@@ -153,7 +144,7 @@ int main() {
         double currentTime = glfwGetTime();
         deltaTime = currentTime - previousTime;
         previousTime = currentTime;
-        processInput(window, &camera, static_cast<float>(deltaTime));
+        processInput(window, static_cast<float>(deltaTime));
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
