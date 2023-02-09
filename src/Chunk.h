@@ -12,14 +12,8 @@ constexpr int CHUNK_WIDTH = 16;  // z
 constexpr int BLOCKS_PER_CHUNK = CHUNK_LENGTH * CHUNK_HEIGHT * CHUNK_WIDTH;
 
 class Chunk {
-
-    struct Blocks {
-        Blocks() = default;
-        Block::BlockType m_blockArray[CHUNK_LENGTH][CHUNK_HEIGHT][CHUNK_WIDTH];
-    };
-
     const float m_posX, m_posZ;
-    Blocks* m_blocks;
+    Block::BlockType m_blockArray[CHUNK_LENGTH][CHUNK_HEIGHT][CHUNK_WIDTH];
     Mesh* m_mesh;
     Shader* m_shader;
     Chunk* m_neighbors[4];

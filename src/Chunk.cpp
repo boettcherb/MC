@@ -7,7 +7,6 @@
 #include <new>
 
 Chunk::Chunk(float x, float z, Shader* shader) : m_posX{ x }, m_posZ{ z }, m_shader{ shader } {
-    m_blocks = new Blocks();
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
     generateTerrain();
 }
@@ -46,16 +45,15 @@ void Chunk::generateTerrain() {
 
 Chunk::~Chunk() {
     delete m_mesh;
-    delete m_blocks;
 }
 
 void Chunk::put(int x, int y, int z, Block::BlockType block) {
-    m_blocks->m_blockArray[x][y][z] = block;
+    m_blockArray[x][y][z] = block;
 }
 
 Block::BlockType Chunk::get(int x, int y, int z) const {
     if (x >= 0 && y >= 0 && z >= 0 && x < CHUNK_LENGTH && y < CHUNK_HEIGHT && z < CHUNK_WIDTH) {
-        return m_blocks->m_blockArray[x][y][z];
+        return m_blockArray[x][y][z];
     }
     if (x > CHUNK_LENGTH - 1 && m_neighbors[PLUS_X] != nullptr) {
         return m_neighbors[PLUS_X]->get(0, y, z);
