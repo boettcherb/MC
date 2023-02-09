@@ -45,7 +45,7 @@
     <ClCompile Include="dependencies\includes\stb_image\stb_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dependencies\includes\sglm\sglm.cpp">
+    <ClCompile Include="dependencies\includes\math\sglm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -99,7 +99,7 @@
     <ClInclude Include="dependencies\includes\stb_image\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="dependencies\includes\sglm\sglm.h">
+    <ClInclude Include="dependencies\includes\math\sglm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

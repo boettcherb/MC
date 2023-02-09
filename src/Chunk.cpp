@@ -2,7 +2,7 @@
 #include "BlockInfo.h"
 #include "Shader.h"
 #include "Mesh.h"
-#include <sglm/sglm.h>
+#include <math/sglm.h>
 #include <FastNoise/FastNoise.h>
 #include <new>
 #include <cassert>
@@ -111,7 +111,7 @@ void Chunk::addNeighbor(Chunk* chunk, Direction direction) {
     }
 }
 
-void Chunk::removeNeighbor(Chunk* chunk, Direction direction) {
+void Chunk::removeNeighbor(Direction direction) {
     assert(m_neighbors[direction] != nullptr);
     m_neighbors[direction] = nullptr;
 

@@ -157,7 +157,7 @@
   <ItemGroup>
     <ClCompile Include="dependencies\includes\FastNoise\FastNoise.cpp" />
     <ClCompile Include="dependencies\includes\glad\glad.c" />
-    <ClCompile Include="dependencies\includes\sglm\sglm.cpp" />
+    <ClCompile Include="dependencies\includes\math\sglm.cpp" />
     <ClCompile Include="dependencies\includes\stb_image\stb_image.cpp" />
     <ClCompile Include="src\BlockInfo.cpp" />
     <ClCompile Include="src\Camera.cpp" />
@@ -180,7 +180,7 @@
     <ClInclude Include="dependencies\includes\GLFW\glfw3.h" />
     <ClInclude Include="dependencies\includes\GLFW\glfw3native.h" />
     <ClInclude Include="dependencies\includes\glad\khrplatform.h" />
-    <ClInclude Include="dependencies\includes\sglm\sglm.h" />
+    <ClInclude Include="dependencies\includes\math\sglm.h" />
     <ClInclude Include="dependencies\includes\stb_image\stb_image.h" />
     <ClInclude Include="src\BlockInfo.h" />
     <ClInclude Include="src\Camera.h" />

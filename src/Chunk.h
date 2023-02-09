@@ -4,7 +4,7 @@
 #include "BlockInfo.h"
 #include "Shader.h"
 #include "Mesh.h"
-#include <sglm/sglm.h>
+#include <math/sglm.h>
 
 // Each chunk is a 16x128x16 section of the world. All the blocks of a chunk
 // are generated, loaded, and stored together. Each chunk is divided into 8
@@ -38,7 +38,7 @@ public:
     void updateMesh();
     void render(sglm::mat4 viewMatrix, float zoom, float scrRatio);
     void addNeighbor(Chunk* chunk, Direction direction);
-    void removeNeighbor(Chunk* chunk, Direction direction);
+    void removeNeighbor(Direction direction);
 
 private:
     void generateTerrain();

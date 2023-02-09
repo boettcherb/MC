@@ -1,5 +1,5 @@
 #include "Camera.h"
-#include <sglm/sglm.h>
+#include <math/sglm.h>
 #include <cmath>
 
 const sglm::vec3 WORLD_UP = { 0.0f, 1.0f, 0.0f };
