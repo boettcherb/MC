@@ -31,14 +31,14 @@ namespace Block {
     bool isTransparent(BlockType type);
     
     constexpr unsigned int GRASS_BLOCK_DATA[] = {
-        //posX     posY    posZ  texX  texY
+        //posX    posY   posZ  texX  texY
         0b00001'00000000'00001'00000'01111, // right (+x)
         0b00001'00000000'00000'00001'01111,
         0b00001'00000001'00000'00001'10000,
         0b00001'00000001'00000'00001'10000,
         0b00001'00000001'00001'00000'10000,
         0b00001'00000000'00001'00000'01111,
-             
+        
         0b00000'00000000'00000'00000'01111, // left (-x)
         0b00000'00000000'00001'00001'01111,
         0b00000'00000001'00001'00001'10000,
@@ -76,7 +76,7 @@ namespace Block {
     };
 
     constexpr unsigned int DIRT_BLOCK_DATA[] = {
-        //posX     posY    posZ  texX  texY
+        //posX    posY   posZ  texX  texY
         0b00001'00000000'00001'00001'01111, // right (+x)
         0b00001'00000000'00000'00010'01111,
         0b00001'00000001'00000'00010'10000,
@@ -121,7 +121,7 @@ namespace Block {
     };
 
     constexpr unsigned int STONE_BLOCK_DATA[] = {
-        //posX     posY    posZ  texX  texY
+        //posX    posY   posZ  texX  texY
         0b00001'00000000'00001'00011'01111, // right (+x)
         0b00001'00000000'00000'00100'01111,
         0b00001'00000001'00000'00100'10000,
