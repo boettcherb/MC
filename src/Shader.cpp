@@ -38,12 +38,12 @@ Shader::~Shader() {
 }
 
 void Shader::compile(unsigned id, const char* source) const {
-    int success = 0;
     glShaderSource(id, 1, &source, nullptr);
     glCompileShader(id);
 
 #ifndef NDEBUG
     // make sure the shader compiled successfully
+    int success = 0;
     glGetShaderiv(id, GL_COMPILE_STATUS, &success);
     if (!success) {
         char infoLog[512] = { 0 };
