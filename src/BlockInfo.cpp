@@ -1,5 +1,5 @@
 #include "BlockInfo.h"
-#include <iostream>
+#include <cassert>
 
 namespace Block {
 
@@ -10,7 +10,7 @@ namespace Block {
             case BlockType::DIRT:  return DIRT_BLOCK_DATA + offset;
             case BlockType::STONE: return STONE_BLOCK_DATA + offset;
         }
-        std::cerr << "Invalid type / No data for this block: " << static_cast<int>(face) << '\n';
+        assert(0 && "Invalid type / No data for this block");
         return nullptr;
     }
 

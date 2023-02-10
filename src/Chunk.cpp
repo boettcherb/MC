@@ -57,10 +57,16 @@ Chunk::~Chunk() {
 }
 
 void Chunk::put(int x, int y, int z, Block::BlockType block) {
+    assert(x >= 0 && x < CHUNK_LENGTH);
+    assert(y >= 0 && y < CHUNK_HEIGHT);
+    assert(z >= 0 && z < CHUNK_WIDTH);
     m_blockArray[x][y][z] = block;
 }
 
 Block::BlockType Chunk::get(int x, int y, int z) const {
+    assert(x >= -1 && x <= CHUNK_LENGTH);
+    assert(y >= -1 && y <= CHUNK_HEIGHT);
+    assert(z >= -1 && z <= CHUNK_WIDTH);
     if (x >= 0 && y >= 0 && z >= 0 && x < CHUNK_LENGTH && y < CHUNK_HEIGHT && z < CHUNK_WIDTH) {
         return m_blockArray[x][y][z];
     }
@@ -76,8 +82,7 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
     if (z < 0 && m_neighbors[MINUS_Z] != nullptr) {
         return m_neighbors[MINUS_Z]->get(x, y, CHUNK_WIDTH - 1);
     }
-    // default: no block
-    return Block::BlockType::AIR;
+    return Block::BlockType::NO_BLOCK;
 }
 
 void Chunk::render(sglm::mat4 viewMatrix, float zoom, float scrRatio) {
@@ -133,6 +138,7 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
             for (int z = 0; z < CHUNK_WIDTH; ++z) {
                 // skip if this block is air
                 Block::BlockType currentBlock = get(x, y, z);
+                assert(currentBlock != Block::BlockType::NO_BLOCK);
                 if (currentBlock == Block::BlockType::AIR) {
                     continue;
                 }
