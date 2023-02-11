@@ -18,7 +18,7 @@ class Face {
     sglm::vec3 normal;
 
 public:
-    Face(sglm::vec3 a, sglm::vec3 b, sglm::vec3 c, sglm::vec3 d);
+    Face(sglm::vec3& a, sglm::vec3& b, sglm::vec3& c, sglm::vec3& d);
     bool intersects(const Ray* r) const;
 };
 

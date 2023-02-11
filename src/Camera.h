@@ -6,6 +6,7 @@
 class Camera {
     sglm::vec3 m_position;
     sglm::vec3 m_forward, m_right, m_up;                // the camera's local axes
+    sglm::mat4 m_viewMatrix;
     float m_yaw, m_pitch;                               // euler angles (in degrees)
     float m_movementSpeed, m_mouseSensitivity, m_zoom;  // camera options
 
@@ -26,6 +27,7 @@ public:
 
 private:
     void updateCamera();
+    void setViewMatrix();
 };
 
 #endif

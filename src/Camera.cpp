@@ -22,8 +22,12 @@ Camera::Camera(const sglm::vec3& initialPosition) : m_position{ initialPosition 
     updateCamera();
 }
 
+void Camera::setViewMatrix() {
+    m_viewMatrix = sglm::look_at(m_position, m_position + m_forward, m_up);
+}
+
 sglm::mat4 Camera::getViewMatrix() const {
-    return sglm::look_at(m_position, m_position + m_forward, m_up);
+    return m_viewMatrix;
 }
 
 sglm::vec3 Camera::getCameraPosition() const {
@@ -37,16 +41,12 @@ float Camera::getZoom() const {
 void Camera::processKeyboard(Camera::CameraMovement direction, float deltaTime) {
     float velocity = m_movementSpeed * deltaTime;
     switch (direction) {
-        // case FORWARD:  m_position += m_forward * velocity; break;
-        // case BACKWARD: m_position -= m_forward * velocity; break;
-        // case LEFT:     m_position -= m_right * velocity; break;
-        // case RIGHT:    m_position += m_right * velocity; break;
-
         case FORWARD:  m_position = m_position + m_forward * velocity; break;
         case BACKWARD: m_position = m_position - m_forward * velocity; break;
         case LEFT:     m_position = m_position - m_right * velocity; break;
         case RIGHT:    m_position = m_position + m_right * velocity; break;
     }
+    setViewMatrix();
 }
 
 void Camera::processMouseMovement(float mouseX, float mouseY) {
@@ -87,4 +87,6 @@ void Camera::updateCamera() {
     // calculate the right and up vectors using the forward vector and WORLD_UP
     m_right = sglm::normalize(sglm::cross(m_forward, WORLD_UP));
     m_up = sglm::normalize(sglm::cross(m_right, m_forward));
+
+    setViewMatrix();
 }

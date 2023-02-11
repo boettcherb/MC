@@ -2,13 +2,12 @@
 #include "BlockInfo.h"
 #include "Shader.h"
 #include "Mesh.h"
-#include "Camera.h"
 #include <math/sglm.h>
 #include <FastNoise/FastNoise.h>
 #include <new>
 #include <cassert>
 
-Chunk::Chunk(float x, float z, Shader* shader) : m_posX{ x }, m_posZ{ z }, m_shader{ shader } {
+Chunk::Chunk(int x, int z) : m_posX{ x }, m_posZ{ z } {
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
     m_numNeighbors = 0;
     for (int i = 0; i < NUM_MESHES; ++i) {
@@ -34,9 +33,9 @@ void Chunk::generateTerrain() {
     FastNoise noise;
     for (int X = 0; X < CHUNK_LENGTH; ++X) {
         for (int Z = 0; Z < CHUNK_WIDTH; ++Z) {
-            float noiseX = X + CHUNK_LENGTH * m_posX;
-            float noiseZ = Z + CHUNK_WIDTH * m_posZ;
-            int groundHeight = static_cast<int>(50.0 + (noise.GetSimplexFractal(noiseX, noiseZ) + 1.0) / 2.0 * 30.0);
+            float noiseX = (float) X + CHUNK_LENGTH * m_posX;
+            float noiseZ = (float) Z + CHUNK_WIDTH * m_posZ;
+            int groundHeight = (int) (50.0 + (noise.GetSimplexFractal(noiseX, noiseZ) + 1.0) / 2.0 * 30.0);
             for (int Y = 0; Y <= groundHeight - 4; ++Y) {
                 put(X, Y, Z, Block::BlockType::STONE);
             }
@@ -86,21 +85,21 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
     return Block::BlockType::NO_BLOCK;
 }
 
-void Chunk::render(const Camera* camera, float scrRatio) {
+void Chunk::render(Shader* shader, sglm::mat4& viewMatrix, float zoom, float scrRatio) {
     if (m_numNeighbors != 4) {
         return;
     }
     // send the MVP matrices to the shaders
-    sglm::vec3 translation = { m_posX * CHUNK_LENGTH, 0.0f, m_posZ * CHUNK_WIDTH };
-    m_shader->addUniformMat4f("u0_model", sglm::translate(translation));
-    m_shader->addUniformMat4f("u1_view", camera->getViewMatrix());
-    sglm::mat4 projection = sglm::perspective(sglm::radians(camera->getZoom()), scrRatio, 0.1f, 300.0f);
-    m_shader->addUniformMat4f("u2_projection", projection);
+    sglm::vec3 translation = { (float) m_posX * CHUNK_LENGTH, 0.0f, (float) m_posZ * CHUNK_WIDTH };
+    shader->addUniformMat4f("u0_model", sglm::translate(translation));
+    shader->addUniformMat4f("u1_view", viewMatrix);
+    sglm::mat4 projection = sglm::perspective(sglm::radians(zoom), scrRatio, 0.1f, 300.0f);
+    shader->addUniformMat4f("u2_projection", projection);
 
     // render each mesh
     for (int i = 0; i < NUM_MESHES; ++i) {
         if (m_mesh[i]->getVertexCount() > 0) {
-            m_mesh[i]->render(m_shader);
+            m_mesh[i]->render(shader);
         }
     }
 }
@@ -173,7 +172,7 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
     }
 
     // return the number of bytes that were initialized
-    return static_cast<unsigned int>(data - start) * sizeof(unsigned int);
+    return (unsigned int) (data - start) * sizeof(unsigned int);
 }
 
 //

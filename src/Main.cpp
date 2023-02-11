@@ -16,12 +16,12 @@ static Camera camera({ 0.0f, 80.0f, 0.0f });
 
 // This callback function executes whenever the user moves the mouse
 void mouse_callback(GLFWwindow* /* window */, double xpos, double ypos) {
-    camera.processMouseMovement(static_cast<float>(xpos), static_cast<float>(ypos));
+    camera.processMouseMovement((float) xpos, (float) ypos);
 }
 
 // This callback function executes whenever the user moves the mouse scroll wheel
 void scroll_callback(GLFWwindow* /* window */, double /* offsetX */, double offsetY) {
-    camera.processMouseScroll(static_cast<float>(offsetY));
+    camera.processMouseScroll((float) offsetY);
 }
 
 // Called every frame inside the render loop
@@ -109,7 +109,7 @@ int main() {
     Chunk* chunks[numChunksX][numChunksZ];
     for (int x = 0; x < numChunksX; ++x) {
         for (int z = 0; z < numChunksZ; ++z) {
-           chunks[x][z] = new Chunk(static_cast<float>(x), static_cast<float>(z), &shader);
+           chunks[x][z] = new Chunk(x, z);
         }
     }
     for (int x = 0; x < numChunksX; ++x) {
@@ -140,14 +140,15 @@ int main() {
         double currentTime = glfwGetTime();
         deltaTime = currentTime - previousTime;
         previousTime = currentTime;
-        processInput(window, static_cast<float>(deltaTime));
+        processInput(window, (float) deltaTime);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        float scrRatio = static_cast<float>(g_scrWidth) / g_scrHeight;
+        float scrRatio = (float) g_scrWidth / g_scrHeight;
         for (int x = 0; x < numChunksX; ++x) {
             for (int z = 0; z < numChunksZ; ++z) {
-                chunks[x][z]->render(&camera, scrRatio);
+                sglm::mat4 viewMatrix = camera.getViewMatrix();
+                chunks[x][z]->render(&shader, viewMatrix, camera.getZoom(), scrRatio);
             }
         }
 
