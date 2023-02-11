@@ -15,7 +15,7 @@ public:
     Mesh();
     ~Mesh();
 
-    void setVertexData(unsigned int size, const void* data);
+    void setVertexData(unsigned int size, const void* data, bool getFaceData);
     unsigned int getVertexCount() const;
     void render(const Shader* shader) const;
 

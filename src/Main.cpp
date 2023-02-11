@@ -147,7 +147,7 @@ int main() {
         float scrRatio = static_cast<float>(g_scrWidth) / g_scrHeight;
         for (int x = 0; x < numChunksX; ++x) {
             for (int z = 0; z < numChunksZ; ++z) {
-                chunks[x][z]->render(camera.getViewMatrix(), camera.getZoom(), scrRatio);
+                chunks[x][z]->render(&camera, scrRatio);
             }
         }
 

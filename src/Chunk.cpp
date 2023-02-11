@@ -2,6 +2,7 @@
 #include "BlockInfo.h"
 #include "Shader.h"
 #include "Mesh.h"
+#include "Camera.h"
 #include <math/sglm.h>
 #include <FastNoise/FastNoise.h>
 #include <new>
@@ -24,7 +25,7 @@ void Chunk::updateMesh() {
         m_mesh[i] = new Mesh();
         unsigned int* data = new unsigned int[BLOCKS_PER_MESH * Block::VERTICES_PER_BLOCK];
         unsigned int size = getVertexData(data, i);
-        m_mesh[i]->setVertexData(size, data);
+        m_mesh[i]->setVertexData(size, data, true);
         delete[] data;
     }
 }
@@ -85,15 +86,15 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
     return Block::BlockType::NO_BLOCK;
 }
 
-void Chunk::render(sglm::mat4 viewMatrix, float zoom, float scrRatio) {
+void Chunk::render(const Camera* camera, float scrRatio) {
     if (m_numNeighbors != 4) {
         return;
     }
     // send the MVP matrices to the shaders
     sglm::vec3 translation = { m_posX * CHUNK_LENGTH, 0.0f, m_posZ * CHUNK_WIDTH };
     m_shader->addUniformMat4f("u0_model", sglm::translate(translation));
-    m_shader->addUniformMat4f("u1_view", viewMatrix);
-    sglm::mat4 projection = sglm::perspective(sglm::radians(zoom), scrRatio, 0.1f, 300.0f);
+    m_shader->addUniformMat4f("u1_view", camera->getViewMatrix());
+    sglm::mat4 projection = sglm::perspective(sglm::radians(camera->getZoom()), scrRatio, 0.1f, 300.0f);
     m_shader->addUniformMat4f("u2_projection", projection);
 
     // render each mesh
@@ -136,13 +137,13 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
     for (int x = 0; x < CHUNK_LENGTH; ++x) {
         for (int y = meshIndex * 16; y < meshIndex * 16 + 16; ++y) {
             for (int z = 0; z < CHUNK_WIDTH; ++z) {
-                // skip if this block is air
                 Block::BlockType currentBlock = get(x, y, z);
                 assert(currentBlock != Block::BlockType::NO_BLOCK);
                 if (currentBlock == Block::BlockType::AIR) {
                     continue;
                 }
                 // check each of the six sides to see if this block is adjacent to a transparent block
+                // if so, add its vertex data to the data array
                 if (Block::isTransparent(get(x + 1, y, z))) {
                     setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::PLUS_X));
                     data += Block::UINTS_PER_FACE;

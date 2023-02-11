@@ -4,6 +4,7 @@
 #include "BlockInfo.h"
 #include "Shader.h"
 #include "Mesh.h"
+#include "Camera.h"
 #include <math/sglm.h>
 
 // Each chunk is a 16x128x16 section of the world. All the blocks of a chunk
@@ -36,7 +37,7 @@ public:
     void put(int x, int y, int z, Block::BlockType block);
     Block::BlockType get(int x, int y, int z) const;
     void updateMesh();
-    void render(sglm::mat4 viewMatrix, float zoom, float scrRatio);
+    void render(const Camera* camera, float scrRatio);
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
 

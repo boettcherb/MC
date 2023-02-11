@@ -14,7 +14,7 @@ Mesh::~Mesh() {
     glDeleteBuffers(1, &m_vertexBufferID);
 }
 
-void Mesh::setVertexData(unsigned int size, const void* data) {
+void Mesh::setVertexData(unsigned int size, const void* data, bool getFaceData) {
     if (size == 0) {
         return;
     }
@@ -34,7 +34,9 @@ void Mesh::setVertexData(unsigned int size, const void* data) {
     m_vertexCount = size / sizeof(unsigned int);
 
     // set the face data (used for collisions)
-    getFaces(reinterpret_cast<const unsigned int*>(data));
+    if (getFaceData) {
+        getFaces(reinterpret_cast<const unsigned int*>(data));
+    }
 }
 
 void Mesh::getFaces(const unsigned int* data) {
