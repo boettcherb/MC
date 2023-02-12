@@ -30,7 +30,7 @@ sglm::mat4 Camera::getViewMatrix() const {
     return m_viewMatrix;
 }
 
-sglm::vec3 Camera::getCameraPosition() const {
+sglm::vec3 Camera::getPosition() const {
     return m_position;
 }
 
