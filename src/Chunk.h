@@ -20,7 +20,7 @@ constexpr int BLOCKS_PER_MESH = BLOCKS_PER_CHUNK / NUM_MESHES;
 class Chunk {
     const int m_posX, m_posZ;
     Block::BlockType m_blockArray[CHUNK_LENGTH][CHUNK_HEIGHT][CHUNK_WIDTH];
-    Mesh* m_mesh[NUM_MESHES];
+    Mesh m_mesh[NUM_MESHES];
     Chunk* m_neighbors[4];
     int m_numNeighbors;
 
@@ -35,7 +35,7 @@ public:
     void put(int x, int y, int z, Block::BlockType block);
     Block::BlockType get(int x, int y, int z) const;
     void updateMesh();
-    void render(Shader* shader, sglm::mat4& viewMatrix, float zoom, float scrRatio);
+    void render(Shader* shader, const sglm::mat4& viewMatrix, float zoom, float scrRatio);
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
 

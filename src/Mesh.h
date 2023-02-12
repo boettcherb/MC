@@ -6,6 +6,7 @@
 #include <vector>
 
 class Mesh {
+    bool generated;
     unsigned int m_vertexArrayID;
     unsigned int m_vertexBufferID;
     unsigned int m_vertexCount;
@@ -15,7 +16,8 @@ public:
     Mesh();
     ~Mesh();
 
-    void setVertexData(unsigned int size, const void* data, bool getFaceData);
+    void generate(unsigned int size, const void* data, bool getFaceData);
+    void erase();
     unsigned int getVertexCount() const;
     void render(const Shader* shader) const;
 

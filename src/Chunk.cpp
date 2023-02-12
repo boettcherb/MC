@@ -10,21 +10,15 @@
 Chunk::Chunk(int x, int z) : m_posX{ x }, m_posZ{ z } {
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
     m_numNeighbors = 0;
-    for (int i = 0; i < NUM_MESHES; ++i) {
-        m_mesh[i] = nullptr;
-    }
     generateTerrain();
 }
 
 void Chunk::updateMesh() {
     for (int i = 0; i < NUM_MESHES; ++i) {
-        if (m_mesh[i] != nullptr) {
-            delete m_mesh[i];
-        }
-        m_mesh[i] = new Mesh();
+        m_mesh[i].erase();
         unsigned int* data = new unsigned int[BLOCKS_PER_MESH * Block::VERTICES_PER_BLOCK];
         unsigned int size = getVertexData(data, i);
-        m_mesh[i]->setVertexData(size, data, true);
+        m_mesh[i].generate(size, data, true);
         delete[] data;
     }
 }
@@ -52,8 +46,12 @@ void Chunk::generateTerrain() {
 
 Chunk::~Chunk() {
     for (int i = 0; i < NUM_MESHES; ++i) {
-        delete m_mesh[i];
+        m_mesh[i].erase();
     }
+    if (m_neighbors[PLUS_X] != nullptr) m_neighbors[PLUS_X]->removeNeighbor(MINUS_X);
+    if (m_neighbors[MINUS_X] != nullptr) m_neighbors[MINUS_X]->removeNeighbor(PLUS_X);
+    if (m_neighbors[PLUS_Z] != nullptr) m_neighbors[PLUS_Z]->removeNeighbor(MINUS_Z);
+    if (m_neighbors[MINUS_Z] != nullptr) m_neighbors[MINUS_Z]->removeNeighbor(PLUS_Z);
 }
 
 void Chunk::put(int x, int y, int z, Block::BlockType block) {
@@ -85,7 +83,7 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
     return Block::BlockType::NO_BLOCK;
 }
 
-void Chunk::render(Shader* shader, sglm::mat4& viewMatrix, float zoom, float scrRatio) {
+void Chunk::render(Shader* shader, const sglm::mat4& viewMatrix, float zoom, float scrRatio) {
     if (m_numNeighbors != 4) {
         return;
     }
@@ -98,9 +96,7 @@ void Chunk::render(Shader* shader, sglm::mat4& viewMatrix, float zoom, float scr
 
     // render each mesh
     for (int i = 0; i < NUM_MESHES; ++i) {
-        if (m_mesh[i]->getVertexCount() > 0) {
-            m_mesh[i]->render(shader);
-        }
+        m_mesh[i].render(shader);
     }
 }
 
@@ -124,7 +120,7 @@ void Chunk::removeNeighbor(Direction direction) {
     // so we can no longer render this chunk
     if (m_numNeighbors == 4) {
         for (int i = 0; i < NUM_MESHES; ++i) {
-            delete m_mesh[i];
+            m_mesh[i].erase();
         }
     }
     --m_numNeighbors;

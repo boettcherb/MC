@@ -4,20 +4,27 @@
 #include <glad/glad.h>
 #include <vector>
 
-Mesh::Mesh() : m_vertexCount{ 0 } {
-    glGenVertexArrays(1, &m_vertexArrayID);
-    glGenBuffers(1, &m_vertexBufferID);
+Mesh::Mesh() {
+    m_vertexCount = 0;
+    m_vertexArrayID = 0;
+    m_vertexBufferID = 0;
+    generated = false;
 }
 
 Mesh::~Mesh() {
-    glDeleteVertexArrays(1, &m_vertexArrayID);
-    glDeleteBuffers(1, &m_vertexBufferID);
+    erase();
 }
 
-void Mesh::setVertexData(unsigned int size, const void* data, bool getFaceData) {
+void Mesh::generate(unsigned int size, const void* data, bool getFaceData) {
+    if (generated) {
+        erase();
+    }
     if (size == 0) {
         return;
     }
+    generated = true;
+    glGenVertexArrays(1, &m_vertexArrayID);
+    glGenBuffers(1, &m_vertexBufferID);
 
     // bind both buffers (vertex array first)
     glBindVertexArray(m_vertexArrayID);
@@ -37,6 +44,17 @@ void Mesh::setVertexData(unsigned int size, const void* data, bool getFaceData) 
     if (getFaceData) {
         getFaces(reinterpret_cast<const unsigned int*>(data));
     }
+}
+
+void Mesh::erase() {
+    if (generated == false) {
+        return;
+    }
+    generated = false;
+    m_vertexCount = 0;
+    glDeleteVertexArrays(1, &m_vertexArrayID);
+    glDeleteBuffers(1, &m_vertexBufferID);
+    m_faces.clear();
 }
 
 void Mesh::getFaces(const unsigned int* data) {
@@ -70,6 +88,9 @@ unsigned int Mesh::getVertexCount() const {
 }
 
 void Mesh::render(const Shader* shader) const {
+    if (!generated) {
+        return;
+    }
     shader->bind();
     glBindVertexArray(m_vertexArrayID);
     glDrawArrays(GL_TRIANGLES, 0, m_vertexCount);
