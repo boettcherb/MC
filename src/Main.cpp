@@ -2,7 +2,7 @@
 #include "Camera.h"
 #include "Texture.h"
 #include "BlockInfo.h"
-#include "Chunk.h"
+#include "ChunkLoader.h"
 #include <glad/glad.h>
 #include <GLFW/GLFW3.h>
 #include <iostream>
@@ -12,7 +12,7 @@
 static unsigned int g_scrWidth = 800;
 static unsigned int g_scrHeight = 600;
 static const char* WINDOW_TITLE = "OpenGL Window";
-static Camera camera({ 0.0f, 80.0f, 0.0f });
+static Camera camera({ 1.0f, 80.0f, 1.0f });
 
 // This callback function executes whenever the user moves the mouse
 void mouse_callback(GLFWwindow* /* window */, double xpos, double ypos) {
@@ -104,27 +104,9 @@ int main() {
     Texture textureSheet("res/textures/texture_sheet.png", 0);
     shader.addTexture(&textureSheet, "u3_texture");
     
-    const int numChunksX = 20;
-    const int numChunksZ = 20;
-    Chunk* chunks[numChunksX][numChunksZ];
-    for (int x = 0; x < numChunksX; ++x) {
-        for (int z = 0; z < numChunksZ; ++z) {
-           chunks[x][z] = new Chunk(x, z);
-        }
-    }
-    for (int x = 0; x < numChunksX; ++x) {
-        for (int z = 0; z < numChunksZ; ++z) {
-            if (x > 0) chunks[x][z]->addNeighbor(chunks[x - 1][z], Chunk::MINUS_X);
-            if (z > 0) chunks[x][z]->addNeighbor(chunks[x][z - 1], Chunk::MINUS_Z);
-            if (x < numChunksX - 1) chunks[x][z]->addNeighbor(chunks[x + 1][z], Chunk::PLUS_X);
-            if (z < numChunksZ - 1) chunks[x][z]->addNeighbor(chunks[x][z + 1], Chunk::PLUS_Z);
-        }
-    }
-    for (int x = 0; x < numChunksX; ++x) {
-        for (int z = 0; z < numChunksZ; ++z) {
-            chunks[x][z]->updateMesh();
-        }
-    }
+    int camX = (int) camera.getPosition().x / CHUNK_LENGTH - (camera.getPosition().x < 0);
+    int camZ = (int) camera.getPosition().z / CHUNK_WIDTH - (camera.getPosition().z < 0);
+    ChunkLoader chunkLoader(&shader, camX, camZ);
 
     glClearColor(0.2f, 0.3f, 0.8f, 1.0f);
     glEnable(GL_DEPTH_TEST);
@@ -144,13 +126,8 @@ int main() {
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        float scrRatio = (float) g_scrWidth / g_scrHeight;
-        for (int x = 0; x < numChunksX; ++x) {
-            for (int z = 0; z < numChunksZ; ++z) {
-                sglm::mat4 viewMatrix = camera.getViewMatrix();
-                chunks[x][z]->render(&shader, viewMatrix, camera.getZoom(), scrRatio);
-            }
-        }
+        chunkLoader.update(&camera);
+        chunkLoader.renderAll(camera, (float) g_scrWidth / g_scrHeight);
 
 #ifndef NDEBUG
         // catch errors
@@ -164,11 +141,6 @@ int main() {
         glfwPollEvents();
     }
 
-    for (int x = 0; x < numChunksX; ++x) {
-        for (int z = 0; z < numChunksZ; ++z) {
-            delete chunks[x][z];
-        }
-    }
     glfwTerminate();
     return 0;
 }
