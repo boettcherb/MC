@@ -34,6 +34,10 @@ sglm::vec3 Camera::getPosition() const {
     return m_position;
 }
 
+sglm::vec3 Camera::getDirection() const {
+    return m_forward;
+}
+
 float Camera::getZoom() const {
     return m_zoom;
 }

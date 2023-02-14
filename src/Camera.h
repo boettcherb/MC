@@ -20,6 +20,7 @@ public:
 
     sglm::mat4 getViewMatrix() const;
     sglm::vec3 getPosition() const;
+    sglm::vec3 getDirection() const;
     float getZoom() const;
     void processKeyboard(Camera::CameraMovement direction, float deltaTime);
     void processMouseMovement(float mouseX, float mouseY);
