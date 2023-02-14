@@ -7,7 +7,6 @@
 #include <GLFW/GLFW3.h>
 #include <iostream>
 #include <string>
-#include <new>
 
 static unsigned int g_scrWidth = 800;
 static unsigned int g_scrHeight = 600;

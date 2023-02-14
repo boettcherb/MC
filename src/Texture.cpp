@@ -1,6 +1,6 @@
 #include "Texture.h"
 #include <glad/glad.h>
-#include "stb_image/stb_image.h"
+#include <stb_image/stb_image.h>
 #include <iostream>
 
 Texture::Texture(const std::string& filePath, unsigned int slot) : m_textureSlot{ slot } {

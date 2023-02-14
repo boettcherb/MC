@@ -5,6 +5,7 @@
 #include "Shader.h"
 #include "Mesh.h"
 #include <math/sglm.h>
+#include <math/Face.h>
 
 // Each chunk is a 16x128x16 section of the world. All the blocks of a chunk
 // are generated, loaded, and stored together. Each chunk is divided into 8
