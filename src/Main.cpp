@@ -12,24 +12,43 @@ static unsigned int g_scrWidth = 800;
 static unsigned int g_scrHeight = 600;
 static const char* WINDOW_TITLE = "OpenGL Window";
 static Camera camera({ 1.0f, 80.0f, 1.0f });
+static bool g_mouse_captured = true;
 
 // This callback function executes whenever the user moves the mouse
 void mouse_callback(GLFWwindow* /* window */, double xpos, double ypos) {
-    camera.processMouseMovement((float) xpos, (float) ypos);
+    if (g_mouse_captured) {
+        camera.processMouseMovement((float) xpos, (float) ypos);
+    }
 }
 
 // This callback function executes whenever the user moves the mouse scroll wheel
 void scroll_callback(GLFWwindow* /* window */, double /* offsetX */, double offsetY) {
-    camera.processMouseScroll((float) offsetY);
+    if (g_mouse_captured) {
+        camera.processMouseScroll((float) offsetY);
+    }
+}
+
+// The callback function executes whenever a key is pressed or released
+void key_callback(GLFWwindow* window, int key, int /* scancode */, int action, int mods) {
+    // If the escape key is pressed, close the window. If the escape key is
+    // pressed while shift is pressed, toggle holding / releasing the mouse.
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        if (mods & GLFW_MOD_SHIFT) {
+            if (g_mouse_captured) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                g_mouse_captured = false;
+            } else {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                g_mouse_captured = true;
+            }
+        } else {
+            glfwSetWindowShouldClose(window, true);
+        }
+    }
 }
 
 // Called every frame inside the render loop
 static void processInput(GLFWwindow* window, float deltaTime) {
-    // if the escape key is pressed, tell the window to close
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, true);
-    }
-
     // WASD for the camera
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         camera.processKeyboard(Camera::FORWARD, deltaTime);
@@ -78,6 +97,7 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetKeyCallback(window, key_callback);
 
     // initialize GLAD
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
@@ -121,7 +141,10 @@ int main() {
         double currentTime = glfwGetTime();
         deltaTime = currentTime - previousTime;
         previousTime = currentTime;
-        processInput(window, (float) deltaTime);
+        if (g_mouse_captured) {
+            processInput(window, (float) deltaTime);
+
+        }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
