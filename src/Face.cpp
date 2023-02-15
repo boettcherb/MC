@@ -1,10 +1,7 @@
 #include "Face.h"
-#include "sglm.h"
+#include "Constants.h"
+#include <sglm/sglm.h>
 #include <cmath>
-
-// also in chunk.cpp
-// the player can reach up to 5 blocks away
-static constexpr int MAX_PLAYER_REACH = 5;
 
 Ray::Ray(sglm::vec3 pos, sglm::vec3 dir) : position{ pos }, direction{ dir } {}
 
@@ -39,10 +36,10 @@ unsigned int* Face::getData() {
 
 bool Face::intersects(const Ray& r) {
     // Determine if the point is out of reach
-    if (sglm::magnitude(r.getPosition() - A) > MAX_PLAYER_REACH
-        && sglm::magnitude(r.getPosition() - B) > MAX_PLAYER_REACH
-        && sglm::magnitude(r.getPosition() - C) > MAX_PLAYER_REACH
-        && sglm::magnitude(r.getPosition() - D) > MAX_PLAYER_REACH) {
+    if (sglm::magnitude(r.getPosition() - A) > PLAYER_REACH
+        && sglm::magnitude(r.getPosition() - B) > PLAYER_REACH
+        && sglm::magnitude(r.getPosition() - C) > PLAYER_REACH
+        && sglm::magnitude(r.getPosition() - D) > PLAYER_REACH) {
         return false;
     }
 

@@ -1,7 +1,7 @@
 #ifndef FACE_H_INCLUDED
 #define FACE_H_INCLUDED
 
-#include "sglm.h"
+#include <sglm/sglm.h>
 
 class Ray {
     sglm::vec3 position;
