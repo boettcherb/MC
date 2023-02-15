@@ -2,7 +2,7 @@
 #define SHADER_H_INCLUDED
 
 #include "Texture.h"
-#include <math/sglm.h>
+#include <sglm/sglm.h>
 #include <string>
 #include <vector>
 

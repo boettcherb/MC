@@ -1,13 +1,7 @@
 #include "Camera.h"
-#include <math/sglm.h>
+#include "Constants.h"
+#include <sglm/sglm.h>
 #include <cmath>
-
-const sglm::vec3 WORLD_UP = { 0.0f, 1.0f, 0.0f };
-const float DEFAULT_YAW = -90.0f;
-const float DEFAULT_PITCH = 0.0f;
-const float DEFAULT_SPEED = 60.0f;
-const float DEFAULT_SENSITIVITY = 0.1f;
-const float DEFAULT_ZOOM = 45.0f;
 
 static inline float clamp(float value, float low, float high) {
     return value < low ? low : (value > high ? high : value);
@@ -77,7 +71,7 @@ void Camera::processMouseScroll(float offsetY) {
     m_zoom -= offsetY;
 
     // limit field of view to 1-45 degrees
-    m_zoom = clamp(m_zoom, 1.0f, 45.0f);
+    m_zoom = clamp(m_zoom, MIN_FOV, MAX_FOV);
 }
 
 void Camera::updateCamera() {

@@ -2,15 +2,11 @@
 #include "BlockInfo.h"
 #include "Shader.h"
 #include "Mesh.h"
-#include <math/sglm.h>
-#include <math/Face.h>
+#include "Face.h"
+#include <sglm/sglm.h>
 #include <FastNoise/FastNoise.h>
 #include <new>
 #include <cassert>
-
-// also in face.cpp
-// the player can reach up to 5 blocks away
-static constexpr int MAX_PLAYER_REACH = 5;
 
 Chunk::Chunk(int x, int z) : m_posX{ x }, m_posZ{ z } {
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
@@ -21,7 +17,7 @@ Chunk::Chunk(int x, int z) : m_posX{ x }, m_posZ{ z } {
 void Chunk::updateMesh() {
     for (int i = 0; i < NUM_MESHES; ++i) {
         m_mesh[i].erase();
-        unsigned int* data = new unsigned int[BLOCKS_PER_MESH * Block::VERTICES_PER_BLOCK];
+        unsigned int* data = new unsigned int[VERTICES_PER_MESH];
         unsigned int size = getVertexData(data, i);
         m_mesh[i].generate(size, data, true);
         delete[] data;
@@ -144,27 +140,27 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
                 // if so, add its vertex data to the data array
                 if (Block::isTransparent(get(x + 1, y, z))) {
                     setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::PLUS_X));
-                    data += Block::UINTS_PER_FACE;
+                    data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x - 1, y, z))) {
                     setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::MINUS_X));
-                    data += Block::UINTS_PER_FACE;
+                    data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y + 1, z))) {
                     setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::PLUS_Y));
-                    data += Block::UINTS_PER_FACE;
+                    data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y - 1, z))) {
                     setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::MINUS_Y));
-                    data += Block::UINTS_PER_FACE;
+                    data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y, z + 1))) {
                     setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::PLUS_Z));
-                    data += Block::UINTS_PER_FACE;
+                    data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y, z - 1))) {
                     setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::MINUS_Z));
-                    data += Block::UINTS_PER_FACE;
+                    data += UINTS_PER_FACE;
                 }
             }
         }
@@ -191,7 +187,7 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
 //
 
 inline void Chunk::setBlockFaceData(unsigned int* data, int x, int y, int z, const unsigned int* blockData) const {
-    for (unsigned int vertex = 0; vertex < Block::VERTICES_PER_FACE; ++vertex) {
+    for (unsigned int vertex = 0; vertex < VERTICES_PER_FACE; ++vertex) {
         // x pos takes bits 23-27, y takes bits 15-22, z takes bits 10-14 (from the right)
         // add the relative x, y, and z positions of the block in the chunk
         data[vertex] = blockData[vertex] + (x << 23) + (y << 15) + (z << 10);
@@ -204,16 +200,16 @@ Face* Chunk::findViewRayIntersection(const Ray& ray) {
     float z = ray.getPosition().z;
     int cx = m_posX * CHUNK_LENGTH;
     int cz = m_posZ * CHUNK_WIDTH;
-    if (x + MAX_PLAYER_REACH < cx || x - MAX_PLAYER_REACH > cx + CHUNK_LENGTH) {
+    if (x + PLAYER_REACH < cx || x - PLAYER_REACH > cx + CHUNK_LENGTH) {
         return nullptr;
     }
-    if (z + MAX_PLAYER_REACH < cz || z - MAX_PLAYER_REACH > cz + CHUNK_WIDTH) {
+    if (z + PLAYER_REACH < cz || z - PLAYER_REACH > cz + CHUNK_WIDTH) {
         return nullptr;
     }
     Face* bestFace = nullptr;
     for (int i = 0; i < NUM_MESHES; ++i) {
         int my = i * MESH_HEIGHT;
-        if (y + MAX_PLAYER_REACH < my || y - MAX_PLAYER_REACH > my + MESH_HEIGHT) {
+        if (y + PLAYER_REACH < my || y - PLAYER_REACH > my + MESH_HEIGHT) {
             continue;
         }
         Face* face = m_mesh[i].intersects(ray);

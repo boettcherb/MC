@@ -1,35 +1,16 @@
 #include "ChunkLoader.h"
+#include "Constants.h"
 #include "Chunk.h"
 #include "Shader.h"
 #include "Camera.h"
-#include <math/sglm.h>
+#include <sglm/sglm.h>
 #include <new>
 #include <map>
 #include <cassert>
 
-
-
-
-
-
-
-
-#include <iostream>
-
-
-
-
-
-
-
-
-
-
-
-
 ChunkLoader::ChunkLoader(Shader* shader, int camX, int camZ) {
-    for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; ++x) {
-        for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; ++z) {
+    for (int x = -LOAD_RADIUS; x <= LOAD_RADIUS; ++x) {
+        for (int z = -LOAD_RADIUS; z <= LOAD_RADIUS; ++z) {
             addChunk(x, z);
         }
     }
@@ -50,18 +31,18 @@ void ChunkLoader::update(const Camera* camera) {
     int camX = (int) cameraPos.x / CHUNK_LENGTH - (cameraPos.x < 0);
     int camZ = (int) cameraPos.z / CHUNK_WIDTH - (cameraPos.z < 0);
     if (camX != m_cameraX) {
-        int oldX = m_cameraX + CHUNK_LOAD_RADIUS * (camX < m_cameraX ? 1 : -1);
-        int newX = camX + CHUNK_LOAD_RADIUS * (camX < m_cameraX ? -1 : 1);
-        for (int z = m_cameraZ - CHUNK_LOAD_RADIUS; z <= m_cameraZ + CHUNK_LOAD_RADIUS; ++z) {
+        int oldX = m_cameraX + LOAD_RADIUS * (camX < m_cameraX ? 1 : -1);
+        int newX = camX + LOAD_RADIUS * (camX < m_cameraX ? -1 : 1);
+        for (int z = m_cameraZ - LOAD_RADIUS; z <= m_cameraZ + LOAD_RADIUS; ++z) {
             removeChunk(oldX, z);
             addChunk(newX, z);
         }
     }
     m_cameraX = camX;
     if (camZ != m_cameraZ) {
-        int oldZ = m_cameraZ + CHUNK_LOAD_RADIUS * (camZ < m_cameraZ ? 1 : -1);
-        int newZ = camZ + CHUNK_LOAD_RADIUS * (camZ < m_cameraZ ? -1 : 1);;
-        for (int x = m_cameraX - CHUNK_LOAD_RADIUS; x <= m_cameraX + CHUNK_LOAD_RADIUS; ++x) {
+        int oldZ = m_cameraZ + LOAD_RADIUS * (camZ < m_cameraZ ? 1 : -1);
+        int newZ = camZ + LOAD_RADIUS * (camZ < m_cameraZ ? -1 : 1);;
+        for (int x = m_cameraX - LOAD_RADIUS; x <= m_cameraX + LOAD_RADIUS; ++x) {
             removeChunk(x, oldZ);
             addChunk(x, newZ);
         }
@@ -89,7 +70,7 @@ void ChunkLoader::update(const Camera* camera) {
         m_blockOutline.erase();
         m_outlineFace = nullptr;
     } else if (bestFace != m_outlineFace) {
-        m_blockOutline.generate(Block::VERTICES_PER_FACE, bestFace->getData(), false);
+        m_blockOutline.generate(VERTICES_PER_FACE, bestFace->getData(), false);
         m_outlineX = bestX;
         m_outlineZ = bestZ;
         m_outlineFace = bestFace;

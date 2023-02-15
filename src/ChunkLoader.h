@@ -5,10 +5,8 @@
 #include "Shader.h"
 #include "Mesh.h"
 #include "Camera.h"
-#include <math/sglm.h>
+#include <sglm/sglm.h>
 #include <map>
-
-constexpr int CHUNK_LOAD_RADIUS = 2;
 
 class ChunkLoader {
     std::map<std::pair<int, int>, Chunk*> m_chunks;

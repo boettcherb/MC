@@ -1,14 +1,9 @@
 #ifndef BLOCK_TYPE_H_INCLUDED
 #define BLOCK_TYPE_H_INCLUDED
 
-namespace Block {
+#include "Constants.h"
 
-    constexpr unsigned int FACES_PER_BLOCK = 6;
-    constexpr unsigned int VERTICES_PER_FACE = 6;
-    constexpr unsigned int VERTICES_PER_BLOCK = VERTICES_PER_FACE * FACES_PER_BLOCK;
-    constexpr unsigned int UINTS_PER_VERTEX = 1;
-    constexpr unsigned int UINTS_PER_FACE = VERTICES_PER_FACE * UINTS_PER_VERTEX;
-    constexpr unsigned int BYTES_PER_FACE = UINTS_PER_FACE * sizeof(unsigned int);
+namespace Block {
 
     enum class BlockType : unsigned char {
         AIR,

@@ -1,7 +1,7 @@
 #ifndef CAMERA_H_INCLUDED
 #define CAMERA_H_INCLUDED
 
-#include <math/sglm.h>
+#include <sglm/sglm.h>
 
 class Camera {
     sglm::vec3 m_position;

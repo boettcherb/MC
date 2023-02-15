@@ -1,6 +1,7 @@
 #include "Mesh.h"
+#include "Constants.h"
 #include "Shader.h"
-#include <math/Face.h>
+#include "Face.h"
 #include <glad/glad.h>
 #include <vector>
 
@@ -62,8 +63,8 @@ void Mesh::erase() {
 }
 
 void Mesh::getFaces(const unsigned int* data) {
-    m_faces.reserve(m_vertexCount / 6);
-    for (unsigned int i = 0; i < m_vertexCount; i += 6) {
+    m_faces.reserve(m_vertexCount / VERTICES_PER_FACE);
+    for (unsigned int i = 0; i < m_vertexCount; i += VERTICES_PER_FACE) {
         // each face has 6 vertices. However, the xyz coordinates of the 3rd
         // and 4th vertex are the same, as well as the 1st and 6th (seen in
         // Blockinfo.h). So take the 1st, 2nd, 3rd, and 5th vertex.

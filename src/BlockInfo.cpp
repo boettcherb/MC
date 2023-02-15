@@ -1,4 +1,5 @@
 #include "BlockInfo.h"
+#include "Constants.h"
 #include <cassert>
 
 namespace Block {

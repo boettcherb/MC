@@ -2,7 +2,7 @@
 #define MESH_H_INCLUDED
 
 #include "Shader.h"
-#include <math/Face.h>
+#include "Face.h"
 #include <vector>
 
 class Mesh {
