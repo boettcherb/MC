@@ -4,7 +4,6 @@
 #include "Texture.h"
 #include <sglm/sglm.h>
 #include <string>
-#include <vector>
 
 class Shader {
     unsigned int m_shaderID;
