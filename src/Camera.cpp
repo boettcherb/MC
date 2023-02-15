@@ -3,6 +3,16 @@
 #include <sglm/sglm.h>
 #include <cmath>
 
+// constants only used by the Camera class
+constexpr sglm::vec3 WORLD_UP{ 0.0f, 1.0f, 0.0f };
+constexpr float DEFAULT_YAW = -90.0f;
+constexpr float DEFAULT_PITCH = 0.0f;
+constexpr float DEFAULT_SPEED = 60.0f;
+constexpr float DEFAULT_SENSITIVITY = 0.1f;
+constexpr float DEFAULT_ZOOM = 45.0f;
+constexpr float MIN_FOV = 1.0f;
+constexpr float MAX_FOV = 45.0f;
+
 static inline float clamp(float value, float low, float high) {
     return value < low ? low : (value > high ? high : value);
 }
