@@ -2,11 +2,11 @@
 #define MESH_H_INCLUDED
 
 #include "Shader.h"
-#include "math/Face.h"
+#include <math/Face.h>
 #include <vector>
 
 class Mesh {
-    bool generated;
+    bool m_generated;
     unsigned int m_vertexArrayID;
     unsigned int m_vertexBufferID;
     unsigned int m_vertexCount;
@@ -17,9 +17,11 @@ public:
     ~Mesh();
 
     void generate(unsigned int size, const void* data, bool getFaceData);
+    bool generated() const;
     void erase();
     unsigned int getVertexCount() const;
     void render(const Shader* shader) const;
+    Face* intersects(const Ray& ray);
 
 private:
     void getFaces(const unsigned int* data);

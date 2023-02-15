@@ -1,6 +1,6 @@
 #include "Mesh.h"
 #include "Shader.h"
-#include "math/Face.h"
+#include <math/Face.h>
 #include <glad/glad.h>
 #include <vector>
 
@@ -8,7 +8,7 @@ Mesh::Mesh() {
     m_vertexCount = 0;
     m_vertexArrayID = 0;
     m_vertexBufferID = 0;
-    generated = false;
+    m_generated = false;
 }
 
 Mesh::~Mesh() {
@@ -16,13 +16,12 @@ Mesh::~Mesh() {
 }
 
 void Mesh::generate(unsigned int size, const void* data, bool getFaceData) {
-    if (generated) {
+    if (m_generated) {
         erase();
     }
     if (size == 0) {
         return;
     }
-    generated = true;
     glGenVertexArrays(1, &m_vertexArrayID);
     glGenBuffers(1, &m_vertexBufferID);
 
@@ -44,17 +43,22 @@ void Mesh::generate(unsigned int size, const void* data, bool getFaceData) {
     if (getFaceData) {
         getFaces(reinterpret_cast<const unsigned int*>(data));
     }
+
+    m_generated = true;
+}
+
+bool Mesh::generated() const {
+    return m_generated;
 }
 
 void Mesh::erase() {
-    if (generated == false) {
-        return;
+    if (m_generated) {
+        m_generated = false;
+        m_vertexCount = 0;
+        glDeleteVertexArrays(1, &m_vertexArrayID);
+        glDeleteBuffers(1, &m_vertexBufferID);
+        m_faces.clear();
     }
-    generated = false;
-    m_vertexCount = 0;
-    glDeleteVertexArrays(1, &m_vertexArrayID);
-    glDeleteBuffers(1, &m_vertexBufferID);
-    m_faces.clear();
 }
 
 void Mesh::getFaces(const unsigned int* data) {
@@ -79,7 +83,7 @@ void Mesh::getFaces(const unsigned int* data) {
         sglm::vec3 B = { (float) Bx, (float) By, (float) Bz };
         sglm::vec3 C = { (float) Cx, (float) Cy, (float) Cz };
         sglm::vec3 D = { (float) Dx, (float) Dy, (float) Dz };
-        m_faces.emplace_back(Face(A, B, C, D));
+        m_faces.emplace_back(Face(A, B, C, D, data));
     }
 }
 
@@ -88,10 +92,21 @@ unsigned int Mesh::getVertexCount() const {
 }
 
 void Mesh::render(const Shader* shader) const {
-    if (!generated) {
-        return;
+    if (m_generated) {
+        shader->bind();
+        glBindVertexArray(m_vertexArrayID);
+        glDrawArrays(GL_TRIANGLES, 0, m_vertexCount);
     }
-    shader->bind();
-    glBindVertexArray(m_vertexArrayID);
-    glDrawArrays(GL_TRIANGLES, 0, m_vertexCount);
+}
+
+Face* Mesh::intersects(const Ray& ray) {
+    Face* closestFace = nullptr;
+    for (Face& face : m_faces) {
+        if (face.intersects(ray)) {
+            if (closestFace == nullptr || face.getT() < closestFace->getT()) {
+                closestFace = &face;
+            }
+        }
+    }
+    return closestFace;
 }

@@ -2,10 +2,30 @@
 #include "Chunk.h"
 #include "Shader.h"
 #include "Camera.h"
-#include "math/sglm.h"
+#include <math/sglm.h>
 #include <new>
 #include <map>
 #include <cassert>
+
+
+
+
+
+
+
+
+#include <iostream>
+
+
+
+
+
+
+
+
+
+
+
 
 ChunkLoader::ChunkLoader(Shader* shader, int camX, int camZ) {
     for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; ++x) {
@@ -25,6 +45,7 @@ ChunkLoader::~ChunkLoader() {
 }
 
 void ChunkLoader::update(const Camera* camera) {
+    // Update which chunks are loaded if the camera crosses a chunk border
     sglm::vec3 cameraPos = camera->getPosition();
     int camX = (int) cameraPos.x / CHUNK_LENGTH - (cameraPos.x < 0);
     int camZ = (int) cameraPos.z / CHUNK_WIDTH - (cameraPos.z < 0);
@@ -46,11 +67,53 @@ void ChunkLoader::update(const Camera* camera) {
         }
     }
     m_cameraZ = camZ;
+
+    // Update the view ray collision and block outline mesh
+    Ray viewRay = Ray(camera->getPosition(), camera->getDirection());
+    Face* bestFace = nullptr;
+    int bestX = 0, bestZ = 0;
+    for (int x = m_cameraX - 1; x <= m_cameraX + 1; ++x) {
+        for (int z = m_cameraZ - 1; z <= m_cameraZ + 1; ++z) {
+            Chunk* chunk = m_chunks.find({ x, z })->second;
+            Face* face = chunk->findViewRayIntersection(viewRay);
+            if (face != nullptr) {
+                if (bestFace == nullptr || face->getT() < bestFace->getT()) {
+                    bestFace = face;
+                    bestX = x;
+                    bestZ = z;
+                }
+            }
+        }
+    }
+    if (bestFace == nullptr) {
+        m_blockOutline.erase();
+        m_outlineFace = nullptr;
+    } else if (bestFace != m_outlineFace) {
+        m_blockOutline.generate(Block::VERTICES_PER_FACE, bestFace->getData(), false);
+        m_outlineX = bestX;
+        m_outlineZ = bestZ;
+        m_outlineFace = bestFace;
+    }
 }
 
 void ChunkLoader::renderAll(const Camera& camera, float screenRatio) {
+    // send the view and projection matrices to the shader
+    m_shader->addUniformMat4f("u1_view", camera.getViewMatrix());
+    sglm::mat4 projection = sglm::perspective(sglm::radians(camera.getZoom()), screenRatio, 0.1f, 300.0f);
+    m_shader->addUniformMat4f("u2_projection", projection);
+
+    // render chunks
     for (const auto& itr : m_chunks) {
-        itr.second->render(m_shader, camera.getViewMatrix(), camera.getZoom(), screenRatio);
+        itr.second->render(m_shader);
+    }
+    
+    // render block outline
+    if (m_blockOutline.generated()) {
+        float x = (float) m_outlineX * CHUNK_LENGTH;
+        float z = (float) m_outlineZ * CHUNK_WIDTH;
+        sglm::vec3 translation = { x, 0.0f, z };
+        m_shader->addUniformMat4f("u0_model", sglm::translate(translation));
+        m_blockOutline.render(m_shader);
     }
 }
 

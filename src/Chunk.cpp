@@ -3,9 +3,14 @@
 #include "Shader.h"
 #include "Mesh.h"
 #include <math/sglm.h>
+#include <math/Face.h>
 #include <FastNoise/FastNoise.h>
 #include <new>
 #include <cassert>
+
+// also in face.cpp
+// the player can reach up to 5 blocks away
+static constexpr int MAX_PLAYER_REACH = 5;
 
 Chunk::Chunk(int x, int z) : m_posX{ x }, m_posZ{ z } {
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
@@ -83,16 +88,14 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
     return Block::BlockType::NO_BLOCK;
 }
 
-void Chunk::render(Shader* shader, const sglm::mat4& viewMatrix, float zoom, float scrRatio) {
+// the view and projection matrices must be set before this function is called.
+void Chunk::render(Shader* shader) {
     if (m_numNeighbors != 4) {
         return;
     }
-    // send the MVP matrices to the shaders
+    // send the model matrix to the shaders
     sglm::vec3 translation = { (float) m_posX * CHUNK_LENGTH, 0.0f, (float) m_posZ * CHUNK_WIDTH };
     shader->addUniformMat4f("u0_model", sglm::translate(translation));
-    shader->addUniformMat4f("u1_view", viewMatrix);
-    sglm::mat4 projection = sglm::perspective(sglm::radians(zoom), scrRatio, 0.1f, 300.0f);
-    shader->addUniformMat4f("u2_projection", projection);
 
     // render each mesh
     for (int i = 0; i < NUM_MESHES; ++i) {
@@ -193,4 +196,32 @@ inline void Chunk::setBlockFaceData(unsigned int* data, int x, int y, int z, con
         // add the relative x, y, and z positions of the block in the chunk
         data[vertex] = blockData[vertex] + (x << 23) + (y << 15) + (z << 10);
     }
+}
+
+Face* Chunk::findViewRayIntersection(const Ray& ray) {
+    float x = ray.getPosition().x;
+    float y = ray.getPosition().y;
+    float z = ray.getPosition().z;
+    int cx = m_posX * CHUNK_LENGTH;
+    int cz = m_posZ * CHUNK_WIDTH;
+    if (x + MAX_PLAYER_REACH < cx || x - MAX_PLAYER_REACH > cx + CHUNK_LENGTH) {
+        return nullptr;
+    }
+    if (z + MAX_PLAYER_REACH < cz || z - MAX_PLAYER_REACH > cz + CHUNK_WIDTH) {
+        return nullptr;
+    }
+    Face* bestFace = nullptr;
+    for (int i = 0; i < NUM_MESHES; ++i) {
+        int my = i * MESH_HEIGHT;
+        if (y + MAX_PLAYER_REACH < my || y - MAX_PLAYER_REACH > my + MESH_HEIGHT) {
+            continue;
+        }
+        Face* face = m_mesh[i].intersects(ray);
+        if (face != nullptr) {
+            if (bestFace == nullptr || face->getT() < bestFace->getT()) {
+                bestFace = face;
+            }
+        }
+    }
+    return bestFace;
 }
