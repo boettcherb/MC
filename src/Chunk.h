@@ -19,10 +19,6 @@ class Chunk {
     int m_numNeighbors;
 
 public:
-    enum Direction : unsigned char {
-        PLUS_X, MINUS_X, PLUS_Z, MINUS_Z
-    };
-
     Chunk(int x, int z);
     ~Chunk();
 

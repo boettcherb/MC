@@ -4,7 +4,7 @@
 
 namespace Block {
 
-    const unsigned int* getData(BlockType type, BlockFace face) {
+    const unsigned int* getData(BlockType type, Direction face) {
         int offset = UINTS_PER_FACE * (int) face;
         switch (type) {
             case BlockType::GRASS: return GRASS_BLOCK_DATA + offset;

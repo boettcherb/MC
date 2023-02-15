@@ -139,27 +139,27 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
                 // check each of the six sides to see if this block is adjacent to a transparent block
                 // if so, add its vertex data to the data array
                 if (Block::isTransparent(get(x + 1, y, z))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::PLUS_X));
+                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Direction::PLUS_X));
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x - 1, y, z))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::MINUS_X));
+                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, MINUS_X));
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y + 1, z))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::PLUS_Y));
+                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, PLUS_Y));
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y - 1, z))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::MINUS_Y));
+                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, MINUS_Y));
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y, z + 1))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::PLUS_Z));
+                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, PLUS_Z));
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y, z - 1))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Block::BlockFace::MINUS_Z));
+                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, MINUS_Z));
                     data += UINTS_PER_FACE;
                 }
             }

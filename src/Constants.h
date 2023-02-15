@@ -3,6 +3,14 @@
 
 #include <sglm/sglm.h>
 
+enum Direction : unsigned char {
+    PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y,
+};
+
+enum class Movement {
+    FORWARD, BACKWARD, LEFT, RIGHT,
+};
+
 constexpr int LOAD_RADIUS = 2;
 constexpr int PLAYER_REACH = 5;
 

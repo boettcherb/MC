@@ -36,13 +36,13 @@ float Camera::getZoom() const {
     return m_zoom;
 }
 
-void Camera::processKeyboard(Camera::CameraMovement direction, float deltaTime) {
+void Camera::processKeyboard(Movement direction, float deltaTime) {
     float velocity = m_movementSpeed * deltaTime;
     switch (direction) {
-        case FORWARD:  m_position = m_position + m_forward * velocity; break;
-        case BACKWARD: m_position = m_position - m_forward * velocity; break;
-        case LEFT:     m_position = m_position - m_right * velocity; break;
-        case RIGHT:    m_position = m_position + m_right * velocity; break;
+        case Movement::FORWARD:  m_position = m_position + m_forward * velocity; break;
+        case Movement::BACKWARD: m_position = m_position - m_forward * velocity; break;
+        case Movement::LEFT:     m_position = m_position - m_right * velocity; break;
+        case Movement::RIGHT:    m_position = m_position + m_right * velocity; break;
     }
     setViewMatrix();
 }

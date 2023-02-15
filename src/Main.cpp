@@ -1,7 +1,7 @@
+#include "Constants.h"
 #include "Shader.h"
 #include "Camera.h"
 #include "Texture.h"
-#include "BlockInfo.h"
 #include "ChunkLoader.h"
 #include <glad/glad.h>
 #include <GLFW/GLFW3.h>
@@ -51,16 +51,16 @@ void key_callback(GLFWwindow* window, int key, int /* scancode */, int action, i
 static void processInput(GLFWwindow* window, float deltaTime) {
     // WASD for the camera
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera.processKeyboard(Camera::FORWARD, deltaTime);
+        camera.processKeyboard(Movement::FORWARD, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera.processKeyboard(Camera::BACKWARD, deltaTime);
+        camera.processKeyboard(Movement::BACKWARD, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera.processKeyboard(Camera::LEFT, deltaTime);
+        camera.processKeyboard(Movement::LEFT, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera.processKeyboard(Camera::RIGHT, deltaTime);
+        camera.processKeyboard(Movement::RIGHT, deltaTime);
     }
 }
 

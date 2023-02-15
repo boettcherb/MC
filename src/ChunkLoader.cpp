@@ -106,20 +106,20 @@ void ChunkLoader::addChunk(int x, int z) {
     auto pz = m_chunks.find({ x, z + 1 });
     auto mz = m_chunks.find({ x, z - 1 });
     if (px != m_chunks.end()) {
-        newChunk->addNeighbor(px->second, Chunk::Direction::PLUS_X);
-        px->second->addNeighbor(newChunk, Chunk::Direction::MINUS_X);
+        newChunk->addNeighbor(px->second, PLUS_X);
+        px->second->addNeighbor(newChunk, MINUS_X);
     }
     if (mx != m_chunks.end()) {
-        newChunk->addNeighbor(mx->second, Chunk::Direction::MINUS_X);
-        mx->second->addNeighbor(newChunk, Chunk::Direction::PLUS_X);
+        newChunk->addNeighbor(mx->second, MINUS_X);
+        mx->second->addNeighbor(newChunk, PLUS_X);
     }
     if (pz != m_chunks.end()) {
-        newChunk->addNeighbor(pz->second, Chunk::Direction::PLUS_Z);
-        pz->second->addNeighbor(newChunk, Chunk::Direction::MINUS_Z);
+        newChunk->addNeighbor(pz->second, PLUS_Z);
+        pz->second->addNeighbor(newChunk, MINUS_Z);
     }
     if (mz != m_chunks.end()) {
-        newChunk->addNeighbor(mz->second, Chunk::Direction::MINUS_Z);
-        mz->second->addNeighbor(newChunk, Chunk::Direction::PLUS_Z);
+        newChunk->addNeighbor(mz->second, MINUS_Z);
+        mz->second->addNeighbor(newChunk, PLUS_Z);
     }
     m_chunks.emplace(std::make_pair(x, z), newChunk);
 }
