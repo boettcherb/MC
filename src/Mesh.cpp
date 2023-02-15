@@ -100,7 +100,7 @@ void Mesh::render(const Shader* shader) const {
     }
 }
 
-Face* Mesh::intersects(const Ray& ray) {
+Face* Mesh::intersects(const sglm::ray& ray) {
     Face* closestFace = nullptr;
     for (Face& face : m_faces) {
         if (face.intersects(ray)) {

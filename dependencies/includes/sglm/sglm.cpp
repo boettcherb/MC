@@ -1,3 +1,6 @@
+// Simple OpenGL Math Library
+// I created this library to avoid the massive bloat and complexity of glm
+
 #include "sglm.h"
 #include <cmath>
 #include <cassert>

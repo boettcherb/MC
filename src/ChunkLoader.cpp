@@ -50,7 +50,7 @@ void ChunkLoader::update(const Camera* camera) {
     m_cameraZ = camZ;
 
     // Update the view ray collision and block outline mesh
-    Ray viewRay = Ray(camera->getPosition(), camera->getDirection());
+    sglm::ray viewRay = { camera->getPosition(), camera->getDirection() };
     Face* bestFace = nullptr;
     int bestX = 0, bestZ = 0;
     for (int x = m_cameraX - 1; x <= m_cameraX + 1; ++x) {

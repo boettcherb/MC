@@ -1,7 +1,8 @@
+// Simple openGL Math Library
+// I create this to avoid the massive bloat and complexity of glm
+
 #ifndef SGLM_H_INCLUDED
 #define SGLM_H_INCLUDED
-
-// simple openGL math library
 
 namespace sglm {
 
@@ -26,6 +27,11 @@ namespace sglm {
     mat4 translate(const vec3& v);
     mat4 perspective(float v_fov, float ar, float near, float far);
     mat4 look_at(const vec3& from, const vec3& to, const vec3& up);
+
+    struct ray {
+        vec3 pos;
+        vec3 dir;
+    };
 
 }
 

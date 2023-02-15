@@ -21,7 +21,7 @@ public:
     void erase();
     unsigned int getVertexCount() const;
     void render(const Shader* shader) const;
-    Face* intersects(const Ray& ray);
+    Face* intersects(const sglm::ray& ray);
 
 private:
     void getFaces(const unsigned int* data);

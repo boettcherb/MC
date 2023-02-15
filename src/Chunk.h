@@ -14,7 +14,7 @@
 class Chunk {
     const int m_posX, m_posZ;
     Block::BlockType m_blockArray[CHUNK_LENGTH][CHUNK_HEIGHT][CHUNK_WIDTH];
-    Mesh m_mesh[NUM_MESHES];
+    Mesh m_mesh[NUM_SUBCHUNKS];
     Chunk* m_neighbors[4];
     int m_numNeighbors;
 
@@ -28,7 +28,7 @@ public:
     void render(Shader* shader);
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
-    Face* findViewRayIntersection(const Ray& ray);
+    Face* findViewRayIntersection(const sglm::ray& ray);
 
 private:
     void generateTerrain();

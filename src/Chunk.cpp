@@ -15,9 +15,9 @@ Chunk::Chunk(int x, int z) : m_posX{ x }, m_posZ{ z } {
 }
 
 void Chunk::updateMesh() {
-    for (int i = 0; i < NUM_MESHES; ++i) {
+    for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
         m_mesh[i].erase();
-        unsigned int* data = new unsigned int[VERTICES_PER_MESH];
+        unsigned int* data = new unsigned int[VERTICES_PER_SUBCHUNK];
         unsigned int size = getVertexData(data, i);
         m_mesh[i].generate(size, data, true);
         delete[] data;
@@ -46,7 +46,7 @@ void Chunk::generateTerrain() {
 }
 
 Chunk::~Chunk() {
-    for (int i = 0; i < NUM_MESHES; ++i) {
+    for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
         m_mesh[i].erase();
     }
     if (m_neighbors[PLUS_X] != nullptr) m_neighbors[PLUS_X]->removeNeighbor(MINUS_X);
@@ -94,7 +94,7 @@ void Chunk::render(Shader* shader) {
     shader->addUniformMat4f("u0_model", sglm::translate(translation));
 
     // render each mesh
-    for (int i = 0; i < NUM_MESHES; ++i) {
+    for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
         m_mesh[i].render(shader);
     }
 }
@@ -118,7 +118,7 @@ void Chunk::removeNeighbor(Direction direction) {
     // one of this chunk's neighbors was un-loaded
     // so we can no longer render this chunk
     if (m_numNeighbors == 4) {
-        for (int i = 0; i < NUM_MESHES; ++i) {
+        for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
             m_mesh[i].erase();
         }
     }
@@ -194,10 +194,10 @@ inline void Chunk::setBlockFaceData(unsigned int* data, int x, int y, int z, con
     }
 }
 
-Face* Chunk::findViewRayIntersection(const Ray& ray) {
-    float x = ray.getPosition().x;
-    float y = ray.getPosition().y;
-    float z = ray.getPosition().z;
+Face* Chunk::findViewRayIntersection(const sglm::ray& ray) {
+    float x = ray.pos.x;
+    float y = ray.pos.y;
+    float z = ray.pos.z;
     int cx = m_posX * CHUNK_LENGTH;
     int cz = m_posZ * CHUNK_WIDTH;
     if (x + PLAYER_REACH < cx || x - PLAYER_REACH > cx + CHUNK_LENGTH) {
@@ -207,9 +207,9 @@ Face* Chunk::findViewRayIntersection(const Ray& ray) {
         return nullptr;
     }
     Face* bestFace = nullptr;
-    for (int i = 0; i < NUM_MESHES; ++i) {
-        int my = i * MESH_HEIGHT;
-        if (y + PLAYER_REACH < my || y - PLAYER_REACH > my + MESH_HEIGHT) {
+    for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
+        int my = i * SUBCHUNK_HEIGHT;
+        if (y + PLAYER_REACH < my || y - PLAYER_REACH > my + SUBCHUNK_HEIGHT) {
             continue;
         }
         Face* face = m_mesh[i].intersects(ray);

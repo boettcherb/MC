@@ -3,16 +3,6 @@
 #include <sglm/sglm.h>
 #include <cmath>
 
-Ray::Ray(sglm::vec3 pos, sglm::vec3 dir) : position{ pos }, direction{ dir } {}
-
-sglm::vec3 Ray::getPosition() const {
-    return position;
-}
-
-sglm::vec3 Ray::getDirection() const {
-    return direction;
-}
-
 // the points must be given in counter-clockwise order
 Face::Face(sglm::vec3& a, sglm::vec3& b, sglm::vec3& c, sglm::vec3& d, const unsigned int* data)
     : A{ a }, B{ b }, C{ c }, D{ d }, t{ -1 } {
@@ -34,22 +24,22 @@ unsigned int* Face::getData() {
     return faceData;
 }
 
-bool Face::intersects(const Ray& r) {
+bool Face::intersects(const sglm::ray& r) {
     // Determine if the point is out of reach
-    if (sglm::magnitude(r.getPosition() - A) > PLAYER_REACH
-        && sglm::magnitude(r.getPosition() - B) > PLAYER_REACH
-        && sglm::magnitude(r.getPosition() - C) > PLAYER_REACH
-        && sglm::magnitude(r.getPosition() - D) > PLAYER_REACH) {
+    if (sglm::magnitude(r.pos - A) > PLAYER_REACH
+        && sglm::magnitude(r.pos - B) > PLAYER_REACH
+        && sglm::magnitude(r.pos - C) > PLAYER_REACH
+        && sglm::magnitude(r.pos - D) > PLAYER_REACH) {
         return false;
     }
 
     // Determine if the ray intersects the plane of the face
     float d = -sglm::dot(normal, A);
-    t = -(sglm::dot(normal, r.getPosition()) + d) / (sglm::dot(normal, r.getDirection()));
+    t = -(sglm::dot(normal, r.pos) + d) / (sglm::dot(normal, r.pos));
     if (t < 0) {
         return false;
     }
-    sglm::vec3 Q = r.getPosition() + r.getDirection() * t;
+    sglm::vec3 Q = r.pos + r.dir * t;
     if (std::abs(sglm::dot(normal, Q) + d) > 1e-6) {
         return false;
     }
