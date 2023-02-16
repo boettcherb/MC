@@ -29,7 +29,7 @@
 // ignore uninitialized variables warning
 #pragma warning(disable: 4701)
 
-#include "FastNoise.h"
+#include <FastNoise/FastNoise.h>
 #include <math.h>
 #include <assert.h>
 #include <random>

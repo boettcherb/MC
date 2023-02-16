@@ -87,8 +87,8 @@ int main() {
         std::cerr << "Failed to initialize GLFW\n";
         return -1;
     }
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SAMPLES, 4); // anti-aliasing
 
@@ -124,8 +124,8 @@ int main() {
     // enable VSync (tie the FPS to your monitor's refresh rate)
     glfwSwapInterval(1);
 
-    Shader shader("res/shaders/basic_vertex.glsl", "res/shaders/basic_fragment.glsl");
-    Texture textureSheet("res/textures/texture_sheet.png", 0);
+    Shader shader("resources/shaders/basic_vertex.glsl", "resources/shaders/basic_fragment.glsl");
+    Texture textureSheet("resources/textures/texture_sheet.png", 0);
     shader.addTexture(&textureSheet, "u3_texture");
     
     int camX = (int) camera.getPosition().x / CHUNK_LENGTH - (camera.getPosition().x < 0);

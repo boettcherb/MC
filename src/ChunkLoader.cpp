@@ -3,13 +3,13 @@
 #include "Chunk.h"
 #include "Shader.h"
 #include "Camera.h"
-#include <sglm/sglm.h>
 #include <new>
 #include <map>
 #include <cassert>
 
 
-
+#define SGLM_IMPLEMENTATION
+#include <sglm/sglm.h>
 
 
 
