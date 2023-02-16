@@ -1,7 +1,9 @@
 #version 330 core
+
 layout(location = 0) in uint a_data;
 
 out vec2 v_texCoords;
+out float v_light;
 
 uniform mat4 u0_model;
 uniform mat4 u1_view;
@@ -18,4 +20,7 @@ void main() {
     float xTex = float((a_data >> 5u) & 0x1Fu);
     float yTex = float(a_data & 0x1Fu);
     v_texCoords = vec2(xTex / 16.0f, yTex / 16.0f);
+
+    // retrieve the light value
+    v_light = 0.625f + 0.125f * ((a_data >> 28u) & 0x3u);
 }
