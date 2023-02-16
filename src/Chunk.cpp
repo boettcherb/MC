@@ -8,6 +8,32 @@
 #include <new>
 #include <cassert>
 
+
+
+
+
+
+
+
+
+
+
+
+// #include <iostream>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Chunk::Chunk(int x, int z) : m_posX{ x }, m_posZ{ z } {
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
     m_numNeighbors = 0;
@@ -28,16 +54,27 @@ void Chunk::generateTerrain() {
     FastNoise noise;
     for (int X = 0; X < CHUNK_LENGTH; ++X) {
         for (int Z = 0; Z < CHUNK_WIDTH; ++Z) {
-            float noiseX = (float) X + CHUNK_LENGTH * m_posX;
-            float noiseZ = (float) Z + CHUNK_WIDTH * m_posZ;
-            int groundHeight = (int) (50.0 + (noise.GetSimplexFractal(noiseX, noiseZ) + 1.0) / 2.0 * 30.0);
-            for (int Y = 0; Y <= groundHeight - 4; ++Y) {
-                put(X, Y, Z, Block::BlockType::STONE);
+            // float noiseX = (float) X + CHUNK_LENGTH * m_posX;
+            // float noiseZ = (float) Z + CHUNK_WIDTH * m_posZ;
+            // int groundHeight = (int) (50.0 + (noise.GetSimplexFractal(noiseX, noiseZ) + 1.0) / 2.0 * 30.0);
+            // for (int Y = 0; Y <= groundHeight - 4; ++Y) {
+            //     put(X, Y, Z, Block::BlockType::STONE);
+            // }
+            // put(X, groundHeight - 3, Z, Block::BlockType::DIRT);
+            // put(X, groundHeight - 2, Z, Block::BlockType::DIRT);
+            // put(X, groundHeight - 1, Z, Block::BlockType::DIRT);
+            // put(X, groundHeight, Z, Block::BlockType::GRASS);
+            // for (int Y = groundHeight + 1; Y < CHUNK_HEIGHT; ++Y) {
+            //     put(X, Y, Z, Block::BlockType::AIR);
+            // }
+            int groundHeight = 71;
+            for (int Y = 0; Y <= groundHeight; ++Y) {
+                if (X == 0 || Z == 0 || X == 15 || Z == 15) {
+                    put(X, Y, Z, Block::BlockType::STONE);
+                } else {
+                    put(X, Y, Z, Block::BlockType::GRASS);
+                }
             }
-            put(X, groundHeight - 3, Z, Block::BlockType::DIRT);
-            put(X, groundHeight - 2, Z, Block::BlockType::DIRT);
-            put(X, groundHeight - 1, Z, Block::BlockType::DIRT);
-            put(X, groundHeight, Z, Block::BlockType::GRASS);
             for (int Y = groundHeight + 1; Y < CHUNK_HEIGHT; ++Y) {
                 put(X, Y, Z, Block::BlockType::AIR);
             }
@@ -195,29 +232,34 @@ inline void Chunk::setBlockFaceData(unsigned int* data, int x, int y, int z, con
 }
 
 Face* Chunk::findViewRayIntersection(const sglm::ray& ray) {
+    // std::cout << "Checking collision for chunk (" << m_posX << ", " << m_posZ << ")\n";
     float x = ray.pos.x;
     float y = ray.pos.y;
     float z = ray.pos.z;
     int cx = m_posX * CHUNK_LENGTH;
     int cz = m_posZ * CHUNK_WIDTH;
     if (x + PLAYER_REACH < cx || x - PLAYER_REACH > cx + CHUNK_LENGTH) {
+        // std::cout << "  none found: camera not close enough to this chunk on x axis" << std::endl;
         return nullptr;
     }
     if (z + PLAYER_REACH < cz || z - PLAYER_REACH > cz + CHUNK_WIDTH) {
+        // std::cout << "  none found: camera not close enough to this chunk on z axis" << std::endl;
         return nullptr;
     }
     Face* bestFace = nullptr;
     for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-        int my = i * SUBCHUNK_HEIGHT;
-        if (y + PLAYER_REACH < my || y - PLAYER_REACH > my + SUBCHUNK_HEIGHT) {
+        int sc_y = i * SUBCHUNK_HEIGHT;
+        if (y + PLAYER_REACH < sc_y || y - PLAYER_REACH > sc_y + SUBCHUNK_HEIGHT) {
             continue;
         }
+        // std::cout << "  checking sub-chunk " << i << "\n";
         Face* face = m_mesh[i].intersects(ray);
         if (face != nullptr) {
             if (bestFace == nullptr || face->getT() < bestFace->getT()) {
                 bestFace = face;
             }
         }
+        // std::cout << "    none found\n";
     }
     return bestFace;
 }

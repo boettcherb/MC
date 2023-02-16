@@ -5,6 +5,18 @@
 #include <glad/glad.h>
 #include <vector>
 
+
+
+
+
+
+
+// #include <iostream>
+
+
+
+
+
 Mesh::Mesh() {
     m_vertexCount = 0;
     m_vertexArrayID = 0;
@@ -68,23 +80,23 @@ void Mesh::getFaces(const unsigned int* data) {
         // each face has 6 vertices. However, the xyz coordinates of the 3rd
         // and 4th vertex are the same, as well as the 1st and 6th (seen in
         // Blockinfo.h). So take the 1st, 2nd, 3rd, and 5th vertex.
-        unsigned int Ax = (data[i] >> 23) & 0x1F;
-        unsigned int Ay = (data[i] >> 15) & 0xFF;
-        unsigned int Az = (data[i] >> 10) & 0x1F;
-        unsigned int Bx = (data[i + 1] >> 23) & 0x1F;
-        unsigned int By = (data[i + 1] >> 15) & 0xFF;
-        unsigned int Bz = (data[i + 1] >> 10) & 0x1F;
-        unsigned int Cx = (data[i + 2] >> 23) & 0x1F;
-        unsigned int Cy = (data[i + 2] >> 15) & 0xFF;
-        unsigned int Cz = (data[i + 2] >> 10) & 0x1F;
-        unsigned int Dx = (data[i + 4] >> 23) & 0x1F;
-        unsigned int Dy = (data[i + 4] >> 15) & 0xFF;
-        unsigned int Dz = (data[i + 4] >> 10) & 0x1F;
-        sglm::vec3 A = { (float) Ax, (float) Ay, (float) Az };
-        sglm::vec3 B = { (float) Bx, (float) By, (float) Bz };
-        sglm::vec3 C = { (float) Cx, (float) Cy, (float) Cz };
-        sglm::vec3 D = { (float) Dx, (float) Dy, (float) Dz };
-        m_faces.emplace_back(Face(A, B, C, D, data));
+        float Ax = (float) ((data[i] >> 23) & 0x1F);
+        float Ay = (float) ((data[i] >> 15) & 0xFF);
+        float Az = (float) ((data[i] >> 10) & 0x1F);
+        float Bx = (float) ((data[i + 1] >> 23) & 0x1F);
+        float By = (float) ((data[i + 1] >> 15) & 0xFF);
+        float Bz = (float) ((data[i + 1] >> 10) & 0x1F);
+        float Cx = (float) ((data[i + 2] >> 23) & 0x1F);
+        float Cy = (float) ((data[i + 2] >> 15) & 0xFF);
+        float Cz = (float) ((data[i + 2] >> 10) & 0x1F);
+        float Dx = (float) ((data[i + 4] >> 23) & 0x1F);
+        float Dy = (float) ((data[i + 4] >> 15) & 0xFF);
+        float Dz = (float) ((data[i + 4] >> 10) & 0x1F);
+        sglm::vec3 A = { Ax, Ay, Az };
+        sglm::vec3 B = { Bx, By, Bz };
+        sglm::vec3 C = { Cx, Cy, Cz };
+        sglm::vec3 D = { Dx, Dy, Dz };
+        m_faces.emplace_back(Face(A, B, C, D, data + i));
     }
 }
 
@@ -102,6 +114,7 @@ void Mesh::render(const Shader* shader) const {
 
 Face* Mesh::intersects(const sglm::ray& ray) {
     Face* closestFace = nullptr;
+    // std::cout << "    checking " << m_faces.size() << " faces\n";
     for (Face& face : m_faces) {
         if (face.intersects(ray)) {
             if (closestFace == nullptr || face.getT() < closestFace->getT()) {
@@ -109,5 +122,14 @@ Face* Mesh::intersects(const sglm::ray& ray) {
             }
         }
     }
+    // if (closestFace != nullptr) {
+    //     std::cout << std::hex;
+    //     for (Face& face : m_faces) {
+    //         std::cout << face.getData()[0] << ' ' << face.getData()[1] << ' ';
+    //         std::cout << face.getData()[2] << ' ' << face.getData()[3] << ' ';
+    //         std::cout << face.getData()[4] << ' ' << face.getData()[5] << '\n';
+    //     }
+    //     std::cout << std::dec;
+    // }
     return closestFace;
 }

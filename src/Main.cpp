@@ -11,8 +11,9 @@
 static unsigned int g_scrWidth = 800;
 static unsigned int g_scrHeight = 600;
 static const char* WINDOW_TITLE = "OpenGL Window";
-static Camera camera({ 1.0f, 80.0f, 1.0f });
+static Camera camera({ 16.5f, 80.0f, 16.5f });
 static bool g_mouse_captured = true;
+// static bool g_update = false;
 
 // This callback function executes whenever the user moves the mouse
 void mouse_callback(GLFWwindow* /* window */, double xpos, double ypos) {
@@ -30,6 +31,9 @@ void scroll_callback(GLFWwindow* /* window */, double /* offsetX */, double offs
 
 // The callback function executes whenever a key is pressed or released
 void key_callback(GLFWwindow* window, int key, int /* scancode */, int action, int mods) {
+    // if (key == GLFW_KEY_U && action == GLFW_PRESS) {
+    //     g_update = true;
+    // }
     // If the escape key is pressed, close the window. If the escape key is
     // pressed while shift is pressed, toggle holding / releasing the mouse.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -65,17 +69,17 @@ static void processInput(GLFWwindow* window, float deltaTime) {
 }
 
 // print the FPS to the screen every second
-static void displayFPS() {
-    static int FPS = 0;
-    static double previousTime = glfwGetTime();
-    double currentTime = glfwGetTime();
-    ++FPS;
-    if (currentTime - previousTime >= 1.0) {
-        std::cout << "FPS: " << FPS << '\n';
-        FPS = 0;
-        previousTime = currentTime;
-    }
-}
+//  static void displayFPS() {
+//      static int FPS = 0;
+//      static double previousTime = glfwGetTime();
+//      double currentTime = glfwGetTime();
+//      ++FPS;
+//      if (currentTime - previousTime >= 1.0) {
+//          std::cout << "FPS: " << FPS << '\n';
+//          FPS = 0;
+//          previousTime = currentTime;
+//      }
+//  }
 
 int main() {
     // initialize GLFW
@@ -139,7 +143,7 @@ int main() {
 
     // render loop
     while (!glfwWindowShouldClose(window)) {
-        displayFPS();
+        // displayFPS();
         double currentTime = glfwGetTime();
         deltaTime = currentTime - previousTime;
         previousTime = currentTime;
@@ -149,7 +153,10 @@ int main() {
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        chunkLoader.update(&camera);
+        // if (g_update) {
+            chunkLoader.update(&camera);
+        //     g_update = false;
+        // }
         chunkLoader.renderAll(camera, (float) g_scrWidth / g_scrHeight);
 
 #ifndef NDEBUG

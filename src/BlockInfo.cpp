@@ -5,6 +5,7 @@
 namespace Block {
 
     const unsigned int* getData(BlockType type, Direction face) {
+        assert(face >= 0 && face < 6);
         int offset = UINTS_PER_FACE * (int) face;
         switch (type) {
             case BlockType::GRASS: return GRASS_BLOCK_DATA + offset;
