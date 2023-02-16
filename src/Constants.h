@@ -14,7 +14,7 @@ enum class Movement {
 // Determines how many chunks will load in each direction outward from the
 // player. Chunks load in a a square around the chunk the player is in. In
 // total there will be (LOAD_RADIUS * 2 + 1)^2 chunks loaded at a time.
-inline constexpr int LOAD_RADIUS = 2;
+inline constexpr int LOAD_RADIUS = 20;
 
 // Blocks less than PLAYER_REACH blocks away from the
 // player can be mined and/or interacted with.

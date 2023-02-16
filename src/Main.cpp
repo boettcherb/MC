@@ -8,11 +8,17 @@
 #include <iostream>
 #include <string>
 
-static unsigned int g_scrWidth = 800;
-static unsigned int g_scrHeight = 600;
+static unsigned int g_scrWidth = 1200;
+static unsigned int g_scrHeight = 900;
 static const char* WINDOW_TITLE = "OpenGL Window";
 static Camera camera({ 16.5f, 80.0f, 16.5f });
 static bool g_mouse_captured = true;
+
+// This callback function executes whenever the user changes the window size
+void window_size_callback(GLFWwindow* /* window */, int width, int height) {
+    g_scrWidth = width;
+    g_scrHeight = height;
+}
 
 // This callback function executes whenever the user moves the mouse
 void mouse_callback(GLFWwindow* /* window */, double xpos, double ypos) {
@@ -65,17 +71,17 @@ static void processInput(GLFWwindow* window, float deltaTime) {
 }
 
 // print the FPS to the screen every second
-//  static void displayFPS() {
-//      static int FPS = 0;
-//      static double previousTime = glfwGetTime();
-//      double currentTime = glfwGetTime();
-//      ++FPS;
-//      if (currentTime - previousTime >= 1.0) {
-//          std::cout << "FPS: " << FPS << '\n';
-//          FPS = 0;
-//          previousTime = currentTime;
-//      }
-//  }
+static void displayFPS() {
+    static int FPS = 0;
+    static double previousTime = glfwGetTime();
+    double currentTime = glfwGetTime();
+    ++FPS;
+    if (currentTime - previousTime >= 1.0) {
+        std::cout << "FPS: " << FPS << '\n';
+        FPS = 0;
+        previousTime = currentTime;
+    }
+}
 
 int main() {
     // initialize GLFW
@@ -86,7 +92,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 4); // anti-aliasing
+    // glfwWindowHint(GLFW_SAMPLES, 1); // anti-aliasing is causing lines between blocks
 
     // create the main window
     GLFWwindow* window = glfwCreateWindow(g_scrWidth, g_scrHeight, WINDOW_TITLE, nullptr, nullptr);
@@ -96,6 +102,7 @@ int main() {
         return -1;
     }
     glfwMakeContextCurrent(window);
+    glfwSetWindowSizeCallback(window, window_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
@@ -139,7 +146,7 @@ int main() {
 
     // render loop
     while (!glfwWindowShouldClose(window)) {
-        // displayFPS();
+        displayFPS();
         double currentTime = glfwGetTime();
         deltaTime = currentTime - previousTime;
         previousTime = currentTime;
