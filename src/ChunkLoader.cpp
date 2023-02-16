@@ -7,27 +7,8 @@
 #include <map>
 #include <cassert>
 
-
 #define SGLM_IMPLEMENTATION
 #include <sglm/sglm.h>
-
-
-
-
-
-
-
-// #include <iostream>
-// #include <bitset>
-
-
-
-
-
-
-
-
-
 
 ChunkLoader::ChunkLoader(Shader* shader, int camX, int camZ) {
     for (int x = camX - LOAD_RADIUS; x <= camX + LOAD_RADIUS; ++x) {
@@ -73,16 +54,7 @@ void ChunkLoader::update(const Camera* camera) {
     m_cameraZ = camZ;
 
     // Update the view ray collision and block outline mesh
-
-
-
     sglm::ray viewRay = { camera->getPosition(), camera->getDirection() };
-
-    // std::cout << "camera position: (" << camera->getPosition().x << ", " << camera->getPosition().z << ")\n";
-    // std::cout << "camera chunk: (" << m_cameraX << ", " << m_cameraZ << ")\n";
-    // std::cout << "viewRay pos: (" << viewRay.pos.x << ", " << viewRay.pos.y << ", " << viewRay.pos.z << ")\n";
-    // std::cout << "viewRay dir: (" << viewRay.dir.x << ", " << viewRay.dir.y << ", " << viewRay.dir.z << ")\n";
-
     Face* bestFace = nullptr;
     int bestX = 0, bestZ = 0;
     for (int x = m_cameraX - 1; x <= m_cameraX + 1; ++x) {
@@ -99,7 +71,6 @@ void ChunkLoader::update(const Camera* camera) {
         }
     }
     if (bestFace == nullptr) {
-        // std::cout << "NO COLLISION\n";
         m_blockOutline.erase();
         m_outlineFace = nullptr;
     } else if (bestFace != m_outlineFace) {
@@ -107,26 +78,7 @@ void ChunkLoader::update(const Camera* camera) {
         m_outlineX = bestX;
         m_outlineZ = bestZ;
         m_outlineFace = bestFace;
-        // std::cout << "COLLISION: bestX: " << m_outlineX << ", bestZ: " << m_outlineZ << std::endl;
-        // std::cout << "    Face:";
-        // sglm::vec3 A = bestFace->A, B = bestFace->B, C = bestFace->C, D = bestFace->D, normal = bestFace->normal;
-        // std::cout << " (" << A.x << ", " << A.y << ", " << A.z << ")";
-        // std::cout << " (" << B.x << ", " << B.y << ", " << B.z << ")"; 
-        // std::cout << " (" << C.x << ", " << C.y << ", " << C.z << ")";
-        // std::cout << " (" << D.x << ", " << D.y << ", " << D.z << ")" << std::endl;
-        // std::cout << "    Normal: " << normal.x << ", " << normal.y << ", " << normal.z << ")\n";
-        // std::bitset<32> abit(bestFace->getData()[0]);
-        // std::bitset<32> bbit(bestFace->getData()[1]);
-        // std::bitset<32> cbit(bestFace->getData()[2]);
-        // std::bitset<32> dbit(bestFace->getData()[4]);
-        // std::cout << std::hex << "A: " << abit << '\n';
-        // std::cout << std::hex << "B: " << bbit << '\n';
-        // std::cout << std::hex << "C: " << cbit << '\n';
-        // std::cout << std::hex << "D: " << dbit << '\n';
-        // std::cout << std::dec << '\n';
     }
-
-    // std::cout << "\n========================================\n\n";
 }
 
 void ChunkLoader::renderAll(const Camera& camera, float screenRatio) {

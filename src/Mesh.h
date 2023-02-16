@@ -16,7 +16,8 @@ public:
     Mesh();
     ~Mesh();
 
-    void generate(unsigned int size, const void* data, bool getFaceData);
+    void generate(unsigned int size, const void* data, bool setFaceData,
+                  int chunkX = 0, int chunkZ = 0);
     bool generated() const;
     void erase();
     unsigned int getVertexCount() const;
@@ -24,7 +25,7 @@ public:
     Face* intersects(const sglm::ray& ray);
 
 private:
-    void getFaces(const unsigned int* data);
+    void getFaces(const unsigned int* data, int chunkX, int chunkZ);
 };
 
 #endif
