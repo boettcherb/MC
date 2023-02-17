@@ -24,7 +24,6 @@ void initialize_HUD(int width, int height) {
     // initialize the width and height to be a square so the
     // crosshair is rendered as a square (not skewed)
     screen_width = screen_height = 800;
-    resize_HUD(width, height);
 
     glGenVertexArrays(1, &crosshair_VAO);
     glGenBuffers(1, &crosshair_VBO);
@@ -35,8 +34,7 @@ void initialize_HUD(int width, int height) {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, (void*) 8);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(crosshair_data), crosshair_data, GL_STATIC_DRAW);
+    resize_HUD(width, height);
 }
 
 void resize_HUD(int width, int height) {
