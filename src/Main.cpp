@@ -8,17 +8,23 @@
 #include <iostream>
 #include <string>
 
-static unsigned int g_scrWidth = 1500;
-static unsigned int g_scrHeight = 1000;
+// from UI.cpp
+void initialize_HUD(int width, int height);
+void resize_HUD(int width, int height);
+void render_HUD(Shader* shader);
+
+static unsigned int g_screenWidth = 1500;
+static unsigned int g_screenHeight = 1000;
 static const char* WINDOW_TITLE = "OpenGL Window";
 static Camera camera({ 16.5f, 80.0f, 16.5f });
 static bool g_mouse_captured = true;
 
 // This callback function executes whenever the user changes the window size
 void window_size_callback(GLFWwindow* /* window */, int width, int height) {
-    g_scrWidth = width;
-    g_scrHeight = height;
+    g_screenWidth = width;
+    g_screenHeight = height;
     glViewport(0, 0, width, height);
+    resize_HUD(width, height);
 }
 
 // This callback function executes whenever the user moves the mouse
@@ -96,7 +102,8 @@ int main() {
     // glfwWindowHint(GLFW_SAMPLES, 1); // anti-aliasing is causing lines between blocks
 
     // create the main window
-    GLFWwindow* window = glfwCreateWindow(g_scrWidth, g_scrHeight, WINDOW_TITLE, nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(g_screenWidth, g_screenHeight,
+                                          WINDOW_TITLE, nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
@@ -115,32 +122,10 @@ int main() {
         return -1;
     }
 
+    initialize_HUD(g_screenWidth, g_screenHeight);
 
     /////////////////////////////////////////////////////////////////////////////////
 
-    float vertices[24] = {
-        -0.025f, -0.025f, 0.0f / 16.0f, 0.0f / 16.0f,
-         0.025f, -0.025f, 1.0f / 16.0f, 0.0f / 16.0f,
-         0.025f,  0.025f, 1.0f / 16.0f, 1.0f / 16.0f,
-         0.025f,  0.025f, 1.0f / 16.0f, 1.0f / 16.0f,
-        -0.025f,  0.025f, 0.0f / 16.0f, 1.0f / 16.0f,
-        -0.025f, -0.025f, 0.0f / 16.0f, 0.0f / 16.0f,
-    };
-
-    unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*) 0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*) (2*sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    /////////////////////////////////////////////////////////////////////////////////
 
 
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << '\n';
@@ -154,7 +139,7 @@ int main() {
 
     Shader blockShader(BLOCK_VERTEX, BLOCK_FRAGMENT);
     Shader uiShader(UI_VERTEX, UI_FRAGMENT);
-    Texture textureSheet("resources/textures/texture_sheet.png", 0);
+    Texture textureSheet(TEXTURE_SHEET, 0);
     blockShader.addTexture(&textureSheet, "u3_texture");
     uiShader.addTexture(&textureSheet, "u3_texture");
     
@@ -186,12 +171,9 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         chunkLoader.update(&camera);
-        chunkLoader.renderAll(camera, (float) g_scrWidth / g_scrHeight);
+        chunkLoader.renderAll(camera, (float) g_screenWidth / g_screenHeight);
+        render_HUD(&uiShader);
 
-
-        glBindVertexArray(VAO);
-        uiShader.bind();
-        glDrawArrays(GL_TRIANGLES, 0, 6);
 
 #ifndef NDEBUG
         // catch errors
