@@ -84,7 +84,7 @@ void ChunkLoader::update(const Camera* camera) {
 void ChunkLoader::renderAll(const Camera& camera, float screenRatio) {
     // send the view and projection matrices to the shader
     m_shader->addUniformMat4f("u1_view", camera.getViewMatrix());
-    sglm::mat4 projection = sglm::perspective(sglm::radians(camera.getZoom()), screenRatio, 0.1f, 300.0f);
+    sglm::mat4 projection = sglm::perspective(sglm::radians(camera.getFOV()), screenRatio, 0.1f, 300.0f);
     m_shader->addUniformMat4f("u2_projection", projection);
 
     // render block outline

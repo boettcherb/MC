@@ -13,9 +13,8 @@ void initialize_HUD(int width, int height);
 void resize_HUD(int width, int height);
 void render_HUD(Shader* shader);
 
-static unsigned int g_screenWidth = 1500;
-static unsigned int g_screenHeight = 1000;
-static const char* WINDOW_TITLE = "OpenGL Window";
+static unsigned int g_screenWidth = 1200;
+static unsigned int g_screenHeight = 800;
 static Camera camera({ 16.5f, 80.0f, 16.5f });
 static bool g_mouse_captured = true;
 

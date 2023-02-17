@@ -11,6 +11,8 @@ enum class Movement {
     FORWARD, BACKWARD, LEFT, RIGHT,
 };
 
+inline const char* WINDOW_TITLE = "Minecraft in OpenGL";
+
 // Paths to resources from the solution directory
 inline const char* BLOCK_VERTEX = "resources/shaders/block_vertex.glsl";
 inline const char* BLOCK_FRAGMENT = "resources/shaders/block_fragment.glsl";
@@ -25,7 +27,7 @@ inline constexpr int LOAD_RADIUS = 10;
 
 // Blocks less than PLAYER_REACH blocks away from the
 // player can be mined and/or interacted with.
-inline constexpr int PLAYER_REACH = 5;
+inline constexpr int PLAYER_REACH = 15;
 
 // In order to render a block to the screen it must be broken up into vertices.
 // Each of the 6 faces of a block are broken up into 2 triangles which have 3

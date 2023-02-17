@@ -4,14 +4,14 @@
 #include <cmath>
 
 // constants only used by the Camera class
-constexpr sglm::vec3 WORLD_UP{ 0.0f, 1.0f, 0.0f };
-constexpr float DEFAULT_YAW = -90.0f;
-constexpr float DEFAULT_PITCH = 0.0f;
-constexpr float DEFAULT_SPEED = 30.0f;
-constexpr float DEFAULT_SENSITIVITY = 0.1f;
-constexpr float DEFAULT_ZOOM = 45.0f;
-constexpr float MIN_FOV = 1.0f;
-constexpr float MAX_FOV = 45.0f;
+inline constexpr sglm::vec3 WORLD_UP{ 0.0f, 1.0f, 0.0f };
+inline constexpr float DEFAULT_YAW = -90.0f;
+inline constexpr float DEFAULT_PITCH = 0.0f;
+inline constexpr float DEFAULT_SPEED = 30.0f;
+inline constexpr float DEFAULT_SENSITIVITY = 0.1f;
+inline constexpr float DEFAULT_FOV = 60.0f;
+inline constexpr float MIN_FOV = 5.0f;
+inline constexpr float MAX_FOV = 90.0f;
 
 static inline float clamp(float value, float low, float high) {
     return value < low ? low : (value > high ? high : value);
@@ -22,7 +22,7 @@ Camera::Camera(const sglm::vec3& initialPosition) : m_position{ initialPosition 
     m_pitch = DEFAULT_PITCH;
     m_movementSpeed = DEFAULT_SPEED;
     m_mouseSensitivity = DEFAULT_SENSITIVITY;
-    m_zoom = DEFAULT_ZOOM;
+    m_fov = DEFAULT_FOV;
     updateCamera();
 }
 
@@ -42,8 +42,8 @@ sglm::vec3 Camera::getDirection() const {
     return m_forward;
 }
 
-float Camera::getZoom() const {
-    return m_zoom;
+float Camera::getFOV() const {
+    return m_fov;
 }
 
 void Camera::processKeyboard(Movement direction, float deltaTime) {
@@ -78,10 +78,7 @@ void Camera::processMouseMovement(float mouseX, float mouseY) {
 }
 
 void Camera::processMouseScroll(float offsetY) {
-    m_zoom -= offsetY;
-
-    // limit field of view to 1-45 degrees
-    m_zoom = clamp(m_zoom, MIN_FOV, MAX_FOV);
+    m_fov = clamp(m_fov - offsetY, MIN_FOV, MAX_FOV);
 }
 
 void Camera::updateCamera() {
