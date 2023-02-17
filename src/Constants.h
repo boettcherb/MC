@@ -11,10 +11,17 @@ enum class Movement {
     FORWARD, BACKWARD, LEFT, RIGHT,
 };
 
+// Paths to resources from the solution directory
+inline const char* BLOCK_VERTEX = "resources/shaders/block_vertex.glsl";
+inline const char* BLOCK_FRAGMENT = "resources/shaders/block_fragment.glsl";
+inline const char* UI_VERTEX = "resources/shaders/ui_vertex.glsl";
+inline const char* UI_FRAGMENT = "resources/shaders/ui_fragment.glsl";
+inline const char* TEXTURE_SHEET = "resources/textures/texture_sheet.png";
+
 // Determines how many chunks will load in each direction outward from the
 // player. Chunks load in a a square around the chunk the player is in. In
 // total there will be (LOAD_RADIUS * 2 + 1)^2 chunks loaded at a time.
-inline constexpr int LOAD_RADIUS = 20;
+inline constexpr int LOAD_RADIUS = 10;
 
 // Blocks less than PLAYER_REACH blocks away from the
 // player can be mined and/or interacted with.

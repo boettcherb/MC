@@ -8,8 +8,8 @@
 #include <iostream>
 #include <string>
 
-static unsigned int g_scrWidth = 1200;
-static unsigned int g_scrHeight = 900;
+static unsigned int g_scrWidth = 1500;
+static unsigned int g_scrHeight = 1000;
 static const char* WINDOW_TITLE = "OpenGL Window";
 static Camera camera({ 16.5f, 80.0f, 16.5f });
 static bool g_mouse_captured = true;
@@ -18,6 +18,7 @@ static bool g_mouse_captured = true;
 void window_size_callback(GLFWwindow* /* window */, int width, int height) {
     g_scrWidth = width;
     g_scrHeight = height;
+    glViewport(0, 0, width, height);
 }
 
 // This callback function executes whenever the user moves the mouse
@@ -117,6 +118,30 @@ int main() {
 
     /////////////////////////////////////////////////////////////////////////////////
 
+    float vertices[24] = {
+        -0.025f, -0.025f, 0.0f / 16.0f, 0.0f / 16.0f,
+         0.025f, -0.025f, 1.0f / 16.0f, 0.0f / 16.0f,
+         0.025f,  0.025f, 1.0f / 16.0f, 1.0f / 16.0f,
+         0.025f,  0.025f, 1.0f / 16.0f, 1.0f / 16.0f,
+        -0.025f,  0.025f, 0.0f / 16.0f, 1.0f / 16.0f,
+        -0.025f, -0.025f, 0.0f / 16.0f, 0.0f / 16.0f,
+    };
+
+    unsigned int VAO, VBO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*) 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*) (2*sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    /////////////////////////////////////////////////////////////////////////////////
+
 
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << '\n';
     std::cout << "Starting Application...\n";
@@ -127,18 +152,22 @@ int main() {
     // enable VSync (tie the FPS to your monitor's refresh rate)
     glfwSwapInterval(1);
 
-    Shader shader("resources/shaders/basic_vertex.glsl", "resources/shaders/basic_fragment.glsl");
+    Shader blockShader(BLOCK_VERTEX, BLOCK_FRAGMENT);
+    Shader uiShader(UI_VERTEX, UI_FRAGMENT);
     Texture textureSheet("resources/textures/texture_sheet.png", 0);
-    shader.addTexture(&textureSheet, "u3_texture");
+    blockShader.addTexture(&textureSheet, "u3_texture");
+    uiShader.addTexture(&textureSheet, "u3_texture");
     
     int camX = (int) camera.getPosition().x / CHUNK_LENGTH - (camera.getPosition().x < 0);
     int camZ = (int) camera.getPosition().z / CHUNK_WIDTH - (camera.getPosition().z < 0);
-    ChunkLoader chunkLoader(&shader, camX, camZ);
+    ChunkLoader chunkLoader(&blockShader, camX, camZ);
 
     glClearColor(0.2f, 0.3f, 0.8f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_MULTISAMPLE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // variables for deltaTime
     double previousTime = glfwGetTime();
@@ -158,6 +187,11 @@ int main() {
 
         chunkLoader.update(&camera);
         chunkLoader.renderAll(camera, (float) g_scrWidth / g_scrHeight);
+
+
+        glBindVertexArray(VAO);
+        uiShader.bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
 #ifndef NDEBUG
         // catch errors
