@@ -83,11 +83,10 @@ void Camera::processMouseScroll(float offsetY) {
 
 void Camera::updateCamera() {
     // calculate the forward vector using yaw, pitch, and WORLD_UP
-    sglm::vec3 newForward;
-    newForward.x = std::cos(sglm::radians(m_yaw)) * std::cos(sglm::radians(m_pitch));
-    newForward.y = std::sin(sglm::radians(m_pitch));
-    newForward.z = std::sin(sglm::radians(m_yaw)) * std::cos(sglm::radians(m_pitch));
-    m_forward = sglm::normalize(newForward);
+    m_forward.x = std::cos(sglm::radians(m_yaw)) * std::cos(sglm::radians(m_pitch));
+    m_forward.y = std::sin(sglm::radians(m_pitch));
+    m_forward.z = std::sin(sglm::radians(m_yaw)) * std::cos(sglm::radians(m_pitch));
+    m_forward = sglm::normalize(m_forward);
 
     // calculate the right and up vectors using the forward vector and WORLD_UP
     m_right = sglm::normalize(sglm::cross(m_forward, WORLD_UP));

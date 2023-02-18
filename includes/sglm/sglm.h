@@ -1,6 +1,6 @@
 // Simple openGL Math Library
-// I create this to avoid the massive bloat and complexity of glm
 // 
+// This library is one header only (stb style).
 // In one .cpp file, define SGLM_IMPLEMENTATION before the include statement:
 //      #define SGLM_IMPLEMENTATION
 //      #include <sglm.h>
@@ -38,6 +38,19 @@ namespace sglm {
         vec3 dir;
     };
 
+    struct plane {
+        plane() = default;
+        plane(const vec3& norm, const vec3& p);
+        vec3 normal;
+        float d;
+    };
+
+    struct frustum {
+        plane planes[6];
+        frustum(const vec3& position, const vec3& forward, float fov,
+                float screen_ratio, float near, float far);
+        bool contains(const vec3& pos, float radius) const;
+    };
 }
 
 #endif // SGLM_H_INCLUDED
@@ -110,11 +123,42 @@ namespace sglm {
         vec3 x = normalize(cross(up, z));
         vec3 y = cross(z, x);
         return {
-            x.x,            y.x,           z.x,          0,
-            x.y,            y.y,           z.y,          0,
-            x.z,            y.z,           z.z,          0,
+            x.x,           y.x,           z.x,           0,
+            x.y,           y.y,           z.y,           0,
+            x.z,           y.z,           z.z,           0,
             -dot(from, x), -dot(from, y), -dot(from, z), 1,
         };
+    }
+
+    plane::plane(const vec3& norm, const vec3& p) {
+        normal = normalize(norm);
+        d = -dot(normal, p);
+    }
+
+    // forward must be normalized
+    frustum::frustum(const vec3& position, const vec3& forward, float v_fov,
+                     float screen_ratio, float near, float far) {
+        assert(std::abs(magnitude(forward) - 1) < 1e-6);
+        vec3 right = normalize(cross(forward, { 0.0f, 1.0f, 0.0f }));
+        vec3 up = normalize(cross(right, forward));
+        vec3 cam_to_far = forward * far;
+        float half_v = far * std::tanf(v_fov * 0.5f);
+        float half_h = half_v * screen_ratio;
+        planes[0] = plane(cross(cam_to_far - right * half_h, up), position); // LEFT
+        planes[1] = plane(cross(up, cam_to_far + right * half_h), position); // RIGHT
+        planes[2] = plane(cross(cam_to_far + up * half_v, right), position); // TOP
+        planes[3] = plane(cross(right, cam_to_far - up * half_v), position); // BOTTOM
+        planes[4] = plane(forward, position + forward * near);               // NEAR
+        planes[5] = plane(forward * -1, position + cam_to_far);              // FAR
+    }
+
+    bool frustum::contains(const vec3& pos, float radius) const {
+        for (const plane& p : planes) {
+            if (dot(p.normal, pos) + p.d + radius <= 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

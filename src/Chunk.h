@@ -25,7 +25,7 @@ public:
     void put(int x, int y, int z, Block::BlockType block);
     Block::BlockType get(int x, int y, int z) const;
     void updateMesh();
-    void render(Shader* shader);
+    void render(Shader* shader, const sglm::frustum& frustum);
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
     Face* findViewRayIntersection(const sglm::ray& ray);

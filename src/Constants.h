@@ -1,8 +1,6 @@
 #ifndef CONSTANTS_H_INCLUDED
 #define CONSTANTS_H_INCLUDED
 
-#include <sglm/sglm.h>
-
 enum Direction : unsigned char {
     PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y,
 };
@@ -23,7 +21,13 @@ inline const char* TEXTURE_SHEET = "resources/textures/texture_sheet.png";
 // Determines how many chunks will load in each direction outward from the
 // player. Chunks load in a a square around the chunk the player is in. In
 // total there will be (LOAD_RADIUS * 2 + 1)^2 chunks loaded at a time.
-inline constexpr int LOAD_RADIUS = 10;
+inline constexpr int LOAD_RADIUS = 15;
+
+// This is about the distance from the center of a 16x16x16 sub-chunk to one
+// of its corners. This value is used during frustum culling to determine
+// whether a sub-chunk is within the view frustum. It is much easier to treat
+// each sub-chaunk as a sphere than calculate its actual bounding box.
+inline constexpr float SUB_CHUNK_RADIUS = 13.86f;
 
 // Blocks less than PLAYER_REACH blocks away from the
 // player can be mined and/or interacted with.

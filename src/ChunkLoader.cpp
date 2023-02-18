@@ -82,25 +82,28 @@ void ChunkLoader::update(const Camera* camera) {
 }
 
 void ChunkLoader::renderAll(const Camera& camera, float screenRatio) {
+    float fov = sglm::radians(camera.getFOV());
+
     // send the view and projection matrices to the shader
+    sglm::mat4 projection = sglm::perspective(fov, screenRatio, 0.1f, 300.0f);
     m_shader->addUniformMat4f("u1_view", camera.getViewMatrix());
-    sglm::mat4 projection = sglm::perspective(sglm::radians(camera.getFOV()), screenRatio, 0.1f, 300.0f);
     m_shader->addUniformMat4f("u2_projection", projection);
+
+    sglm::frustum f(camera.getPosition(), camera.getDirection(),
+                    fov, screenRatio, 0.1f, 300.0f);
 
     // render block outline
     if (m_blockOutline.generated()) {
-        float x = (float) m_outlineX * CHUNK_LENGTH;
-        float z = (float) m_outlineZ * CHUNK_WIDTH;
-        sglm::vec3 translation = { x, 0.0f, z };
-        m_shader->addUniformMat4f("u0_model", sglm::translate(translation));
+        float x = (float) (m_outlineX * CHUNK_LENGTH);
+        float z = (float) (m_outlineZ * CHUNK_WIDTH);
+        m_shader->addUniformMat4f("u0_model", sglm::translate({ x, 0.0f, z }));
         m_blockOutline.render(m_shader);
     }
     
     // render chunks
     for (const auto& itr : m_chunks) {
-        itr.second->render(m_shader);
+        itr.second->render(m_shader, f);
     }
-    
 }
 
 void ChunkLoader::addChunk(int x, int z) {
