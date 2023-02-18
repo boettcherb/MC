@@ -1,6 +1,8 @@
 #ifndef CONSTANTS_H_INCLUDED
 #define CONSTANTS_H_INCLUDED
 
+#include <sglm/sglm.h>
+
 enum Direction : unsigned char {
     PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y,
 };
@@ -9,6 +11,8 @@ enum class Movement {
     FORWARD, BACKWARD, LEFT, RIGHT,
 };
 
+inline constexpr int INITIAL_SCREEN_WIDTH = 1200;
+inline constexpr int INITIAL_SCREEN_HEIGHT = 800;
 inline const char* WINDOW_TITLE = "Minecraft in OpenGL";
 
 // Paths to resources from the solution directory
@@ -17,6 +21,8 @@ inline const char* BLOCK_FRAGMENT = "resources/shaders/block_fragment.glsl";
 inline const char* UI_VERTEX = "resources/shaders/ui_vertex.glsl";
 inline const char* UI_FRAGMENT = "resources/shaders/ui_fragment.glsl";
 inline const char* TEXTURE_SHEET = "resources/textures/texture_sheet.png";
+
+inline constexpr sglm::vec3 PLAYER_INITIAL_POSITION = { 0.0f, 80.0f, 0.0f };
 
 // Determines how many chunks will load in each direction outward from the
 // player. Chunks load in a a square around the chunk the player is in. In
@@ -60,5 +66,19 @@ inline constexpr int SUBCHUNK_HEIGHT = 16;
 inline constexpr int NUM_SUBCHUNKS = CHUNK_HEIGHT / SUBCHUNK_HEIGHT;
 inline constexpr int BLOCKS_PER_SUBCHUNK = BLOCKS_PER_CHUNK / NUM_SUBCHUNKS;
 inline constexpr int VERTICES_PER_SUBCHUNK = BLOCKS_PER_SUBCHUNK * VERTICES_PER_BLOCK;
+
+inline constexpr sglm::vec3 WORLD_UP{ 0.0f, 1.0f, 0.0f };
+// inline const glm::vec3 WORLD_UP{ 0.0f, 1.0f, 0.0f };
+inline constexpr float DEFAULT_YAW = -90.0f;
+inline constexpr float DEFAULT_PITCH = 0.0f;
+inline constexpr float DEFAULT_SPEED = 30.0f;
+inline constexpr float DEFAULT_SENSITIVITY = 0.1f;
+
+inline constexpr float DEFAULT_FOV = 60.0f;
+inline constexpr float MIN_FOV = 5.0f;
+inline constexpr float MAX_FOV = 90.0f;
+
+inline constexpr float NEAR_PLANE = 0.1f;
+inline constexpr float FAR_PLANE = 300.0f;
 
 #endif

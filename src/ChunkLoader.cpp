@@ -27,9 +27,9 @@ ChunkLoader::~ChunkLoader() {
     }
 }
 
-void ChunkLoader::update(const Camera* camera) {
+void ChunkLoader::update(const Camera& camera) {
     // Update which chunks are loaded if the camera crosses a chunk border
-    sglm::vec3 cameraPos = camera->getPosition();
+    sglm::vec3 cameraPos = camera.getPosition();
     int camX = (int) cameraPos.x / CHUNK_LENGTH - (cameraPos.x < 0);
     int camZ = (int) cameraPos.z / CHUNK_WIDTH - (cameraPos.z < 0);
     if (camX != m_cameraX) {
@@ -54,7 +54,7 @@ void ChunkLoader::update(const Camera* camera) {
     m_cameraZ = camZ;
 
     // Update the view ray collision and block outline mesh
-    sglm::ray viewRay = { camera->getPosition(), camera->getDirection() };
+    sglm::ray viewRay = { camera.getPosition(), camera.getDirection() };
     Face* bestFace = nullptr;
     int bestX = 0, bestZ = 0;
     for (int x = m_cameraX - 1; x <= m_cameraX + 1; ++x) {
@@ -81,16 +81,10 @@ void ChunkLoader::update(const Camera* camera) {
     }
 }
 
-void ChunkLoader::renderAll(const Camera& camera, float screenRatio) {
-    float fov = sglm::radians(camera.getFOV());
-
+void ChunkLoader::renderAll(const Camera& camera) {
     // send the view and projection matrices to the shader
-    sglm::mat4 projection = sglm::perspective(fov, screenRatio, 0.1f, 300.0f);
     m_shader->addUniformMat4f("u1_view", camera.getViewMatrix());
-    m_shader->addUniformMat4f("u2_projection", projection);
-
-    sglm::frustum f(camera.getPosition(), camera.getDirection(),
-                    fov, screenRatio, 0.1f, 300.0f);
+    m_shader->addUniformMat4f("u2_projection", camera.getProjectionMatrix());
 
     // render block outline
     if (m_blockOutline.generated()) {
@@ -102,7 +96,7 @@ void ChunkLoader::renderAll(const Camera& camera, float screenRatio) {
     
     // render chunks
     for (const auto& itr : m_chunks) {
-        itr.second->render(m_shader, f);
+        itr.second->render(m_shader, camera.getFrustum());
     }
 }
 

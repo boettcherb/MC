@@ -13,15 +13,12 @@ void initialize_HUD(int width, int height);
 void resize_HUD(int width, int height);
 void render_HUD(Shader* shader);
 
-static unsigned int g_screenWidth = 1200;
-static unsigned int g_screenHeight = 800;
-static Camera camera({ 16.5f, 80.0f, 16.5f });
+static Camera camera(PLAYER_INITIAL_POSITION, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
 static bool g_mouse_captured = true;
 
 // This callback function executes whenever the user changes the window size
 void window_size_callback(GLFWwindow* /* window */, int width, int height) {
-    g_screenWidth = width;
-    g_screenHeight = height;
+    camera.processNewAspectRatio((float) width / height);
     glViewport(0, 0, width, height);
     resize_HUD(width, height);
 }
@@ -101,7 +98,7 @@ int main() {
     // glfwWindowHint(GLFW_SAMPLES, 1); // anti-aliasing is causing lines between blocks
 
     // create the main window
-    GLFWwindow* window = glfwCreateWindow(g_screenWidth, g_screenHeight,
+    GLFWwindow* window = glfwCreateWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT,
                                           WINDOW_TITLE, nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
@@ -121,7 +118,7 @@ int main() {
         return -1;
     }
 
-    initialize_HUD(g_screenWidth, g_screenHeight);
+    initialize_HUD(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT);
 
     /////////////////////////////////////////////////////////////////////////////////
 
@@ -169,8 +166,8 @@ int main() {
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        chunkLoader.update(&camera);
-        chunkLoader.renderAll(camera, (float) g_screenWidth / g_screenHeight);
+        chunkLoader.update(camera);
+        chunkLoader.renderAll(camera);
         render_HUD(&uiShader);
 
 

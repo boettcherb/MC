@@ -20,8 +20,8 @@ class ChunkLoader {
 public:
     ChunkLoader(Shader* shader, int camX, int camZ);
     ~ChunkLoader();
-    void update(const Camera* camera);
-    void renderAll(const Camera& camera, float screenRatio);
+    void update(const Camera& camera);
+    void renderAll(const Camera& camera);
 
 private:
     void addChunk(int x, int z);

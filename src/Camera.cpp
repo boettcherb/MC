@@ -3,35 +3,20 @@
 #include <sglm/sglm.h>
 #include <cmath>
 
-// constants only used by the Camera class
-inline constexpr sglm::vec3 WORLD_UP{ 0.0f, 1.0f, 0.0f };
-inline constexpr float DEFAULT_YAW = -90.0f;
-inline constexpr float DEFAULT_PITCH = 0.0f;
-inline constexpr float DEFAULT_SPEED = 30.0f;
-inline constexpr float DEFAULT_SENSITIVITY = 0.1f;
-inline constexpr float DEFAULT_FOV = 60.0f;
-inline constexpr float MIN_FOV = 5.0f;
-inline constexpr float MAX_FOV = 90.0f;
-
 static inline float clamp(float value, float low, float high) {
     return value < low ? low : (value > high ? high : value);
 }
 
-Camera::Camera(const sglm::vec3& initialPosition) : m_position{ initialPosition } {
+Camera::Camera(const sglm::vec3& initialPosition, float aspectRatio) {
+    m_position = initialPosition;
+    m_aspectRatio = aspectRatio;
     m_yaw = DEFAULT_YAW;
     m_pitch = DEFAULT_PITCH;
     m_movementSpeed = DEFAULT_SPEED;
     m_mouseSensitivity = DEFAULT_SENSITIVITY;
     m_fov = DEFAULT_FOV;
     updateCamera();
-}
-
-void Camera::setViewMatrix() {
-    m_viewMatrix = sglm::look_at(m_position, m_position + m_forward, m_up);
-}
-
-sglm::mat4 Camera::getViewMatrix() const {
-    return m_viewMatrix;
+    setProjectionMatrix();
 }
 
 sglm::vec3 Camera::getPosition() const {
@@ -42,8 +27,40 @@ sglm::vec3 Camera::getDirection() const {
     return m_forward;
 }
 
-float Camera::getFOV() const {
-    return m_fov;
+sglm::mat4 Camera::getViewMatrix() const {
+    return m_viewMatrix;
+}
+
+sglm::mat4 Camera::getProjectionMatrix() const {
+    return m_projectionMatrix;
+}
+
+sglm::frustum Camera::getFrustum() const {
+    return m_frustum;
+}
+
+void Camera::setViewMatrix() {
+    m_viewMatrix = sglm::look_at(m_position, m_position + m_forward, m_up);
+    m_frustum.create(m_viewMatrix, m_projectionMatrix);
+}
+
+void Camera::setProjectionMatrix() {
+    m_projectionMatrix = sglm::perspective(sglm::radians(m_fov), m_aspectRatio, NEAR_PLANE, FAR_PLANE);
+    m_frustum.create(m_viewMatrix, m_projectionMatrix);
+}
+
+void Camera::updateCamera() {
+    // calculate the forward vector using yaw, pitch, and WORLD_UP
+    m_forward.x = std::cos(sglm::radians(m_yaw)) * std::cos(sglm::radians(m_pitch));
+    m_forward.y = std::sin(sglm::radians(m_pitch));
+    m_forward.z = std::sin(sglm::radians(m_yaw)) * std::cos(sglm::radians(m_pitch));
+    m_forward = sglm::normalize(m_forward);
+
+    // calculate the right and up vectors using the forward vector and WORLD_UP
+    m_right = sglm::normalize(sglm::cross(m_forward, WORLD_UP));
+    m_up = sglm::normalize(sglm::cross(m_right, m_forward));
+
+    setViewMatrix();
 }
 
 void Camera::processKeyboard(Movement direction, float deltaTime) {
@@ -79,18 +96,10 @@ void Camera::processMouseMovement(float mouseX, float mouseY) {
 
 void Camera::processMouseScroll(float offsetY) {
     m_fov = clamp(m_fov - offsetY, MIN_FOV, MAX_FOV);
+    setProjectionMatrix();
 }
 
-void Camera::updateCamera() {
-    // calculate the forward vector using yaw, pitch, and WORLD_UP
-    m_forward.x = std::cos(sglm::radians(m_yaw)) * std::cos(sglm::radians(m_pitch));
-    m_forward.y = std::sin(sglm::radians(m_pitch));
-    m_forward.z = std::sin(sglm::radians(m_yaw)) * std::cos(sglm::radians(m_pitch));
-    m_forward = sglm::normalize(m_forward);
-
-    // calculate the right and up vectors using the forward vector and WORLD_UP
-    m_right = sglm::normalize(sglm::cross(m_forward, WORLD_UP));
-    m_up = sglm::normalize(sglm::cross(m_right, m_forward));
-
-    setViewMatrix();
+void Camera::processNewAspectRatio(float aspectRatio) {
+    m_aspectRatio = aspectRatio;
+    setProjectionMatrix();
 }
