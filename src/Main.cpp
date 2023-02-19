@@ -139,7 +139,7 @@ int main() {
     blockShader.addTexture(&textureSheet, "u3_texture");
     uiShader.addTexture(&textureSheet, "u3_texture");
     
-    int camX = (int) camera.getPosition().x / CHUNK_LENGTH - (camera.getPosition().x < 0);
+    int camX = (int) camera.getPosition().x / CHUNK_WIDTH - (camera.getPosition().x < 0);
     int camZ = (int) camera.getPosition().z / CHUNK_WIDTH - (camera.getPosition().z < 0);
     ChunkLoader chunkLoader(&blockShader, camX, camZ);
 

@@ -62,8 +62,8 @@ void Face::Intersection::setData() {
         y = (int) A.y;
         z = (int) (A.x < B.x ? A.z - 1.0f : A.z);
     }
-    x = (x < 0 ? x % CHUNK_LENGTH + CHUNK_LENGTH : x) % CHUNK_LENGTH;
-    z = (z < 0 ? z % CHUNK_LENGTH + CHUNK_WIDTH : z) % CHUNK_WIDTH;
+    x = (x < 0 ? x % CHUNK_WIDTH + CHUNK_WIDTH : x) % CHUNK_WIDTH;
+    z = (z < 0 ? z % CHUNK_WIDTH + CHUNK_WIDTH : z) % CHUNK_WIDTH;
 
     data[0] = 0b0010'00001'00000000'00001'00000'00000; // right (+x)
     data[1] = 0b0010'00001'00000000'00000'00000'00000;

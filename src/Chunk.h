@@ -13,7 +13,7 @@
 
 class Chunk {
     const int m_posX, m_posZ;
-    Block::BlockType m_blockArray[CHUNK_LENGTH][CHUNK_HEIGHT][CHUNK_WIDTH];
+    Block::BlockType m_blockArray[CHUNK_WIDTH][CHUNK_HEIGHT][CHUNK_WIDTH];
     Mesh m_mesh[NUM_SUBCHUNKS];
     Chunk* m_neighbors[4];
     int m_numNeighbors;

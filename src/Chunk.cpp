@@ -26,9 +26,9 @@ void Chunk::updateMesh() {
 
 void Chunk::generateTerrain() {
     FastNoise noise;
-    for (int X = 0; X < CHUNK_LENGTH; ++X) {
+    for (int X = 0; X < CHUNK_WIDTH; ++X) {
         for (int Z = 0; Z < CHUNK_WIDTH; ++Z) {
-            float noiseX = (float) X + CHUNK_LENGTH * m_posX;
+            float noiseX = (float) X + CHUNK_WIDTH * m_posX;
             float noiseZ = (float) Z + CHUNK_WIDTH * m_posZ;
             int groundHeight = (int) (50.0 + (noise.GetSimplexFractal(noiseX, noiseZ) + 1.0) / 2.0 * 30.0);
             for (int Y = 0; Y <= groundHeight - 4; ++Y) {
@@ -56,24 +56,24 @@ Chunk::~Chunk() {
 }
 
 void Chunk::put(int x, int y, int z, Block::BlockType block) {
-    assert(x >= 0 && x < CHUNK_LENGTH);
+    assert(x >= 0 && x < CHUNK_WIDTH);
     assert(y >= 0 && y < CHUNK_HEIGHT);
     assert(z >= 0 && z < CHUNK_WIDTH);
     m_blockArray[x][y][z] = block;
 }
 
 Block::BlockType Chunk::get(int x, int y, int z) const {
-    assert(x >= -1 && x <= CHUNK_LENGTH);
+    assert(x >= -1 && x <= CHUNK_WIDTH);
     assert(y >= -1 && y <= CHUNK_HEIGHT);
     assert(z >= -1 && z <= CHUNK_WIDTH);
-    if (x >= 0 && y >= 0 && z >= 0 && x < CHUNK_LENGTH && y < CHUNK_HEIGHT && z < CHUNK_WIDTH) {
+    if (x >= 0 && y >= 0 && z >= 0 && x < CHUNK_WIDTH && y < CHUNK_HEIGHT && z < CHUNK_WIDTH) {
         return m_blockArray[x][y][z];
     }
-    if (x > CHUNK_LENGTH - 1 && m_neighbors[PLUS_X] != nullptr) {
+    if (x > CHUNK_WIDTH - 1 && m_neighbors[PLUS_X] != nullptr) {
         return m_neighbors[PLUS_X]->get(0, y, z);
     }
     if (x < 0 && m_neighbors[MINUS_X] != nullptr) {
-        return m_neighbors[MINUS_X]->get(CHUNK_LENGTH - 1, y, z);
+        return m_neighbors[MINUS_X]->get(CHUNK_WIDTH - 1, y, z);
     }
     if (z > CHUNK_WIDTH - 1 && m_neighbors[PLUS_Z] != nullptr) {
         return m_neighbors[PLUS_Z]->get(x, y, 0);
@@ -91,13 +91,13 @@ void Chunk::render(Shader* shader, const sglm::frustum& frustum) {
     }
 
     // send the model matrix to the shaders
-    float cx = (float) (m_posX * CHUNK_LENGTH);
+    float cx = (float) (m_posX * CHUNK_WIDTH);
     float cz = (float) (m_posZ * CHUNK_WIDTH);
     shader->addUniformMat4f("u0_model", sglm::translate({ cx, 0.0f, cz }));
 
     // render each mesh
     for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-        float cx2 = cx + CHUNK_LENGTH / 2.0f;
+        float cx2 = cx + CHUNK_WIDTH / 2.0f;
         float cz2 = cz + CHUNK_WIDTH / 2.0f;
         float cy2 = i * SUBCHUNK_HEIGHT + SUBCHUNK_HEIGHT / 2.0f;
         if (frustum.contains({ cx2, cy2, cz2 }, SUB_CHUNK_RADIUS)) {
@@ -135,7 +135,7 @@ void Chunk::removeNeighbor(Direction direction) {
 
 unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
     unsigned int* start = data; // record the current byte address
-    for (int x = 0; x < CHUNK_LENGTH; ++x) {
+    for (int x = 0; x < CHUNK_WIDTH; ++x) {
         for (int y = meshIndex * 16; y < meshIndex * 16 + 16; ++y) {
             for (int z = 0; z < CHUNK_WIDTH; ++z) {
                 Block::BlockType currentBlock = get(x, y, z);
@@ -210,9 +210,9 @@ bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {
     float x = ray.pos.x;
     float y = ray.pos.y;
     float z = ray.pos.z;
-    int cx = m_posX * CHUNK_LENGTH;
+    int cx = m_posX * CHUNK_WIDTH;
     int cz = m_posZ * CHUNK_WIDTH;
-    if (x + PLAYER_REACH < cx || x - PLAYER_REACH > cx + CHUNK_LENGTH) {
+    if (x + PLAYER_REACH < cx || x - PLAYER_REACH > cx + CHUNK_WIDTH) {
         return false;
     }
     if (z + PLAYER_REACH < cz || z - PLAYER_REACH > cz + CHUNK_WIDTH) {

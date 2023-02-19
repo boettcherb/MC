@@ -35,7 +35,7 @@ ChunkLoader::~ChunkLoader() {
 void ChunkLoader::update(const Camera& camera) {
     // Update which chunks are loaded if the camera crosses a chunk border
     sglm::vec3 cameraPos = camera.getPosition();
-    int camX = (int) cameraPos.x / CHUNK_LENGTH - (cameraPos.x < 0);
+    int camX = (int) cameraPos.x / CHUNK_WIDTH - (cameraPos.x < 0);
     int camZ = (int) cameraPos.z / CHUNK_WIDTH - (cameraPos.z < 0);
     if (camX != m_cameraX) {
         assert(std::abs(camX - m_cameraX) == 1);
@@ -97,7 +97,7 @@ void ChunkLoader::renderAll(const Camera& camera) {
 
     // render block outline
     if (m_blockOutline.generated()) {
-        float x = (float) (m_outlineX * CHUNK_LENGTH);
+        float x = (float) (m_outlineX * CHUNK_WIDTH);
         float z = (float) (m_outlineZ * CHUNK_WIDTH);
         m_shader->addUniformMat4f("u0_model", sglm::translate({ x, 0.0f, z }));
         m_blockOutline.render(m_shader);
