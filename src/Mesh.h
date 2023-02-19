@@ -22,7 +22,7 @@ public:
     void erase();
     unsigned int getVertexCount() const;
     void render(const Shader* shader) const;
-    Face* intersects(const sglm::ray& ray);
+    bool intersects(const sglm::ray& ray, Face::Intersection& isect);
 
 private:
     void getFaces(const unsigned int* data, int chunkX, int chunkZ);

@@ -3,9 +3,11 @@
 #include "Chunk.h"
 #include "Shader.h"
 #include "Camera.h"
+#include "Face.h"
 #include <new>
 #include <map>
 #include <cassert>
+#include <cstring>
 
 #ifdef NDEBUG
 #define SGLM_NO_PRINT
@@ -58,29 +60,33 @@ void ChunkLoader::update(const Camera& camera) {
 
     // Update the view ray collision and block outline mesh
     sglm::ray viewRay = { camera.getPosition(), camera.getDirection() };
-    Face* bestFace = nullptr;
+    bool foundIntersection = false;
+    Face::Intersection bestI = Face::Intersection(), i;
     int bestX = 0, bestZ = 0;
     for (int x = m_cameraX - 1; x <= m_cameraX + 1; ++x) {
         for (int z = m_cameraZ - 1; z <= m_cameraZ + 1; ++z) {
             Chunk* chunk = m_chunks.find({ x, z })->second;
-            Face* face = chunk->findViewRayIntersection(viewRay);
-            if (face != nullptr) {
-                if (bestFace == nullptr || face->getT() < bestFace->getT()) {
-                    bestFace = face;
+            if (chunk->intersects(viewRay, i)) {
+                if (!foundIntersection || i.t < bestI.t) {
+                    bestI = i;
                     bestX = x;
                     bestZ = z;
+                    foundIntersection = true;
                 }
             }
         }
     }
-    if (bestFace == nullptr) {
+    if (foundIntersection) {
+        bestI.setData();
+        if (!(bestI == m_viewRayIsect)) {
+            m_blockOutline.generate(BYTES_PER_BLOCK, bestI.data, false);
+            m_outlineX = bestX;
+            m_outlineZ = bestZ;
+            m_viewRayIsect = bestI;
+        }
+    } else {
         m_blockOutline.erase();
-        m_outlineFace = nullptr;
-    } else if (bestFace != m_outlineFace) {
-        m_blockOutline.generate(BYTES_PER_FACE, bestFace->getData(), false);
-        m_outlineX = bestX;
-        m_outlineZ = bestZ;
-        m_outlineFace = bestFace;
+        std::memset(m_viewRayIsect.data, 0, UINTS_PER_BLOCK);
     }
 }
 

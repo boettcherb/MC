@@ -77,7 +77,7 @@ void Mesh::getFaces(const unsigned int* data, int chunkX, int chunkZ) {
             point[j].y = (float) ((data[i + index[j]] >> 15) & 0xFF);
             point[j].z = (float) ((data[i + index[j]] >> 10) & 0x1F) + offZ;
         }
-        m_faces.emplace_back(Face(point[0], point[1], point[2], point[3], data + i));
+        m_faces.emplace_back(Face(point[0], point[1], point[2], point[3]));
     }
 }
 
@@ -93,14 +93,16 @@ void Mesh::render(const Shader* shader) const {
     }
 }
 
-Face* Mesh::intersects(const sglm::ray& ray) {
-    Face* closestFace = nullptr;
-    for (Face& face : m_faces) {
-        if (face.intersects(ray)) {
-            if (closestFace == nullptr || face.getT() < closestFace->getT()) {
-                closestFace = &face;
+bool Mesh::intersects(const sglm::ray& ray, Face::Intersection& isect) {
+    bool foundIntersection = false;
+    Face::Intersection i;
+    for (const Face& face : m_faces) {
+        if (face.intersects(ray, i)) {
+            if (!foundIntersection || i.t < isect.t) {
+                foundIntersection = true;
+                isect = i;
             }
         }
     }
-    return closestFace;
+    return foundIntersection;
 }

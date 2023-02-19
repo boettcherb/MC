@@ -5,6 +5,7 @@
 #include "Shader.h"
 #include "Mesh.h"
 #include "Camera.h"
+#include "Face.h"
 #include <sglm/sglm.h>
 #include <map>
 
@@ -15,7 +16,7 @@ class ChunkLoader {
 
     Mesh m_blockOutline;
     int m_outlineX, m_outlineZ; // x and z of chunk that has the block outline mesh
-    Face* m_outlineFace;
+    Face::Intersection m_viewRayIsect;
 
 public:
     ChunkLoader(Shader* shader, int camX, int camZ);

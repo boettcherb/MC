@@ -48,7 +48,9 @@ inline constexpr int VERTICES_PER_FACE = 6;
 inline constexpr int VERTICES_PER_BLOCK = VERTICES_PER_FACE * FACES_PER_BLOCK;
 inline constexpr int UINTS_PER_VERTEX = 1;
 inline constexpr int UINTS_PER_FACE = VERTICES_PER_FACE * UINTS_PER_VERTEX;
+inline constexpr int UINTS_PER_BLOCK = UINTS_PER_FACE * FACES_PER_BLOCK;
 inline constexpr int BYTES_PER_FACE = UINTS_PER_FACE * sizeof(unsigned int);
+inline constexpr int BYTES_PER_BLOCK = BYTES_PER_FACE * FACES_PER_BLOCK;
 
 // Each chunk is a 16x128x16 section of the world. Dividing the world into
 // chunks allows us to load only the portion of the world that is around the
@@ -68,7 +70,6 @@ inline constexpr int BLOCKS_PER_SUBCHUNK = BLOCKS_PER_CHUNK / NUM_SUBCHUNKS;
 inline constexpr int VERTICES_PER_SUBCHUNK = BLOCKS_PER_SUBCHUNK * VERTICES_PER_BLOCK;
 
 inline constexpr sglm::vec3 WORLD_UP{ 0.0f, 1.0f, 0.0f };
-// inline const glm::vec3 WORLD_UP{ 0.0f, 1.0f, 0.0f };
 inline constexpr float DEFAULT_YAW = -90.0f;
 inline constexpr float DEFAULT_PITCH = 0.0f;
 inline constexpr float DEFAULT_SPEED = 30.0f;

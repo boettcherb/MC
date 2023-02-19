@@ -179,12 +179,17 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
 
 //
 // A vertex is represented by 1 32-bit unsigned integer:
-// x position (5 bits): 1111100000000000000000000000
-// y position (8 bits): 0000011111111000000000000000
-// z position (5 bits): 0000000000000111110000000000
-// x texcoord (5 bits): 0000000000000000001111100000
-// y texcoord (5 bits): 0000000000000000000000011111
+// light val  (2 bits): 00110000000000000000000000000000
+// x position (5 bits): 00001111100000000000000000000000
+// y position (8 bits): 00000000011111111000000000000000
+// z position (5 bits): 00000000000000000111110000000000
+// x texcoord (5 bits): 00000000000000000000001111100000
+// y texcoord (5 bits): 00000000000000000000000000011111
 //
+// The light value is an index into an array of values from 0 to 1 that
+// represent the intensity of light hitting the block face. 1 is full
+// brightness and 0 is full darkness (array is defined in vertex shader).
+// 
 // The x and z positions are values from 0 to 16 and the y position is a value
 // from 0 to 128. These represent the position of the vertex within a chunk.
 //
@@ -201,30 +206,31 @@ inline void Chunk::setBlockFaceData(unsigned int* data, int x, int y, int z, con
     }
 }
 
-Face* Chunk::findViewRayIntersection(const sglm::ray& ray) {
+bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {
     float x = ray.pos.x;
     float y = ray.pos.y;
     float z = ray.pos.z;
     int cx = m_posX * CHUNK_LENGTH;
     int cz = m_posZ * CHUNK_WIDTH;
     if (x + PLAYER_REACH < cx || x - PLAYER_REACH > cx + CHUNK_LENGTH) {
-        return nullptr;
+        return false;
     }
     if (z + PLAYER_REACH < cz || z - PLAYER_REACH > cz + CHUNK_WIDTH) {
-        return nullptr;
+        return false;
     }
-    Face* bestFace = nullptr;
-    for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-        int sc_y = i * SUBCHUNK_HEIGHT;
+    bool foundIntersection = false;
+    Face::Intersection i;
+    for (int sc_index = 0; sc_index < NUM_SUBCHUNKS; ++sc_index) {
+        int sc_y = sc_index * SUBCHUNK_HEIGHT;
         if (y + PLAYER_REACH < sc_y || y - PLAYER_REACH > sc_y + SUBCHUNK_HEIGHT) {
             continue;
         }
-        Face* face = m_mesh[i].intersects(ray);
-        if (face != nullptr) {
-            if (bestFace == nullptr || face->getT() < bestFace->getT()) {
-                bestFace = face;
+        if (m_mesh[sc_index].intersects(ray, i)) {
+            if (!foundIntersection || i.t < isect.t) {
+                foundIntersection = true;
+                isect = i;
             }
         }
     }
-    return bestFace;
+    return foundIntersection;
 }

@@ -28,7 +28,7 @@ public:
     void render(Shader* shader, const sglm::frustum& frustum);
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
-    Face* findViewRayIntersection(const sglm::ray& ray);
+    bool intersects(const sglm::ray& ray, Face::Intersection& isect);
 
 private:
     void generateTerrain();
