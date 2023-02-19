@@ -7,7 +7,6 @@
 #include <new>
 #include <map>
 #include <cassert>
-#include <cstring>
 
 #ifdef NDEBUG
 #define SGLM_NO_PRINT
@@ -86,7 +85,7 @@ void ChunkLoader::update(const Camera& camera) {
         }
     } else {
         m_blockOutline.erase();
-        std::memset(m_viewRayIsect.data, 0, UINTS_PER_BLOCK);
+        m_viewRayIsect.x = m_viewRayIsect.y = m_viewRayIsect.z = -1;
     }
 }
 

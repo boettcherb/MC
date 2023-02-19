@@ -2,7 +2,6 @@
 #include "Constants.h"
 #include <sglm/sglm.h>
 #include <cmath>
-#include <cstring>
 #include <cassert>
 
 // the points must be given in counter-clockwise order
@@ -118,6 +117,5 @@ void Face::Intersection::setData() {
 }
 
 bool Face::Intersection::operator==(const Face::Intersection& other) const {
-    // return std::memcmp(data, other.data, UINTS_PER_BLOCK) == 0;
     return x == other.x && y == other.y && z == other.z;
 }
