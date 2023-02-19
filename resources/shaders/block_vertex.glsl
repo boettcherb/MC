@@ -9,6 +9,10 @@ uniform mat4 u0_model;
 uniform mat4 u1_view;
 uniform mat4 u2_projection;
 
+float light[4] = {
+    0.4f, 0.6f, 0.8f, 1.0f
+};
+
 void main() {
     // retrieve the x, y, and z positions from their place in the data
     float xPos = float((a_data >> 23u) & 0x1Fu);
@@ -22,5 +26,5 @@ void main() {
     v_texCoords = vec2(xTex / 16.0f, yTex / 16.0f);
 
     // retrieve the light value
-    v_light = 0.625f + 0.125f * ((a_data >> 28u) & 0x3u);
+    v_light = light[(a_data >> 28u) & 0x3u];
 }
