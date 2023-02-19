@@ -7,6 +7,9 @@
 #include <map>
 #include <cassert>
 
+#ifdef NDEBUG
+#define SGLM_NO_PRINT
+#endif
 #define SGLM_IMPLEMENTATION
 #include <sglm/sglm.h>
 

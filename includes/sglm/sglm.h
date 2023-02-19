@@ -5,6 +5,11 @@
 //      #define SGLM_IMPLEMENTATION
 //      #include <sglm.h>
 //
+// Define SGLM_NO_PRINT if you want to exclude the print functions
+// and the iostream library:
+//      #define SGLM_NO_PRINT
+//      #define SGLM_IMPLEMENTATION
+//      #include <sglm.h>
 
 #ifndef SGLM_H_INCLUDED
 #define SGLM_H_INCLUDED
@@ -52,9 +57,14 @@ namespace sglm {
         bool contains(const vec3& pos, float radius) const;
     };
 
+#ifndef SGLM_NO_PRINT
     void print_vec3(const vec3& vec);
     void print_mat4(const mat4& mat);
+    void print_ray(const ray& ray);
     void print_plane(const plane& p);
+    void print_frustum(const frustum& f);
+#endif
+
 }
 
 #endif // SGLM_H_INCLUDED
@@ -63,7 +73,9 @@ namespace sglm {
 
 #include <cmath>
 #include <cassert>
+#ifndef SGLM_NO_PRINT
 #include <iostream>
+#endif
 
 namespace sglm {
 
@@ -217,24 +229,47 @@ namespace sglm {
         return true;
     }
 
+#ifndef SGLM_NO_PRINT
+
     void print_vec3(const vec3& vec) {
         printf("[ %8.3f %8.3f %8.3f ]\n", vec.x, vec.y, vec.z);
     }
 
     void print_mat4(const mat4& mat) {
-        for (int i = 0; i < 4; ++i) {
-            printf("[ ");
-            for (int j = 0; j < 4; ++j) {
-                printf("%8.3f ", mat.m[i * 4 + j]);
-            }
-            printf("]\n");
-        }
+        printf("[ %8.3f %8.3f %8.3f %8.3f ]\n", mat.m[0], mat.m[1], mat.m[2], mat.m[3]);
+        printf("[ %8.3f %8.3f %8.3f %8.3f ]\n", mat.m[4], mat.m[5], mat.m[6], mat.m[7]);
+        printf("[ %8.3f %8.3f %8.3f %8.3f ]\n", mat.m[8], mat.m[9], mat.m[10], mat.m[11]);
+        printf("[ %8.3f %8.3f %8.3f %8.3f ]\n", mat.m[12], mat.m[13], mat.m[14], mat.m[15]);
+    }
+
+    void print_ray(const ray& ray) {
+        printf("position:  ");
+        print_vec3(ray.pos);
+        printf("direction: ");
+        print_vec3(ray.dir);
     }
 
     void print_plane(const plane& p) {
-        print_vec3(p.normal);
-        printf("d: %f\n", p.d);
+        vec3 v = p.normal;
+        printf("[ %8.3f %8.3f %8.3f ]   d: %.3f\n", v.x, v.y, v.z, p.d);
     }
+
+    void print_frustum(const frustum& f) {
+        printf("Left plane:   ");
+        print_plane(f.planes[0]);
+        printf("Right plane:  ");
+        print_plane(f.planes[1]);
+        printf("Top plane:    ");
+        print_plane(f.planes[2]);
+        printf("Bottom plane: ");
+        print_plane(f.planes[3]);
+        printf("Near plane:   ");
+        print_plane(f.planes[4]);
+        printf("Far plane:    ");
+        print_plane(f.planes[5]);
+    }
+
+#endif // SGLM_NO_PRINT
 
 }
 
