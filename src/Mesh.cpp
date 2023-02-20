@@ -2,6 +2,7 @@
 #include "Constants.h"
 #include "Shader.h"
 #include "Face.h"
+#include "BlockInfo.h"
 #include <glad/glad.h>
 #include <vector>
 
@@ -69,15 +70,13 @@ void Mesh::getFaces(const unsigned int* data, int chunkX, int chunkZ) {
         // each face has 6 vertices. However, the xyz coordinates of the 3rd
         // and 4th vertex are the same, as well as the 1st and 6th (seen in
         // Blockinfo.h). So take the 1st, 2nd, 3rd, and 5th vertex.
-        float offX = chunkX * 16.0f, offZ = chunkZ * 16.0f;
-        int index[4] = { 0, 1, 2, 4 };
-        sglm::vec3 point[4];
-        for (int j = 0; j < 4; ++j) {
-            point[j].x = (float) ((data[i + index[j]] >> 23) & 0x1F) + offX;
-            point[j].y = (float) ((data[i + index[j]] >> 15) & 0xFF);
-            point[j].z = (float) ((data[i + index[j]] >> 10) & 0x1F) + offZ;
-        }
-        m_faces.emplace_back(Face(point[0], point[1], point[2], point[3]));
+        sglm::vec3 offset = { (float) chunkX * CHUNK_WIDTH, 0.0f, (float) chunkZ * CHUNK_WIDTH };
+        sglm::vec3 A = Block::getPosition(data[i + 0]) + offset;
+        sglm::vec3 B = Block::getPosition(data[i + 1]) + offset;
+        sglm::vec3 C = Block::getPosition(data[i + 2]) + offset;
+        sglm::vec3 D = Block::getPosition(data[i + 4]) + offset;
+        m_faces.emplace_back(Face(A, B, C, D));
+
     }
 }
 

@@ -136,7 +136,7 @@ void Chunk::removeNeighbor(Direction direction) {
 unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
     unsigned int* start = data; // record the current byte address
     for (int x = 0; x < CHUNK_WIDTH; ++x) {
-        for (int y = meshIndex * 16; y < meshIndex * 16 + 16; ++y) {
+        for (int y = meshIndex * SUBCHUNK_HEIGHT; y < (meshIndex + 1) * SUBCHUNK_HEIGHT; ++y) {
             for (int z = 0; z < CHUNK_WIDTH; ++z) {
                 Block::BlockType currentBlock = get(x, y, z);
                 assert(currentBlock != Block::BlockType::NO_BLOCK);
@@ -146,27 +146,27 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
                 // check each of the six sides to see if this block is adjacent to a transparent block
                 // if so, add its vertex data to the data array
                 if (Block::isTransparent(get(x + 1, y, z))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, Direction::PLUS_X));
+                    Block::getFaceData(currentBlock, PLUS_X, x, y, z, data);
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x - 1, y, z))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, MINUS_X));
+                    Block::getFaceData(currentBlock, MINUS_X, x, y, z, data);
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y + 1, z))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, PLUS_Y));
+                    Block::getFaceData(currentBlock, PLUS_Y, x, y, z, data);
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y - 1, z))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, MINUS_Y));
+                    Block::getFaceData(currentBlock, MINUS_Y, x, y, z, data);
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y, z + 1))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, PLUS_Z));
+                    Block::getFaceData(currentBlock, PLUS_Z, x, y, z, data);
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y, z - 1))) {
-                    setBlockFaceData(data, x, y, z, Block::getData(currentBlock, MINUS_Z));
+                    Block::getFaceData(currentBlock, MINUS_Z, x, y, z, data);
                     data += UINTS_PER_FACE;
                 }
             }
@@ -175,35 +175,6 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
 
     // return the number of bytes that were initialized
     return (unsigned int) (data - start) * sizeof(unsigned int);
-}
-
-//
-// A vertex is represented by 1 32-bit unsigned integer:
-// light val  (2 bits): 00110000000000000000000000000000
-// x position (5 bits): 00001111100000000000000000000000
-// y position (8 bits): 00000000011111111000000000000000
-// z position (5 bits): 00000000000000000111110000000000
-// x texcoord (5 bits): 00000000000000000000001111100000
-// y texcoord (5 bits): 00000000000000000000000000011111
-//
-// The light value is an index into an array of values from 0 to 1 that
-// represent the intensity of light hitting the block face. 1 is full
-// brightness and 0 is full darkness (array is defined in vertex shader).
-// 
-// The x and z positions are values from 0 to 16 and the y position is a value
-// from 0 to 128. These represent the position of the vertex within a chunk.
-//
-// The texture coordinates also range from 0 to 16. The vertex shader divides
-// these values by 16 and the results (floats from 0 to 1) determine where in
-// the texture to sample from. (0, 0) is bottom left and (1, 1) is top right.
-//
-
-inline void Chunk::setBlockFaceData(unsigned int* data, int x, int y, int z, const unsigned int* blockData) const {
-    for (unsigned int vertex = 0; vertex < VERTICES_PER_FACE; ++vertex) {
-        // x pos takes bits 23-27, y takes bits 15-22, z takes bits 10-14 (from the right)
-        // add the relative x, y, and z positions of the block in the chunk
-        data[vertex] = blockData[vertex] + (x << 23) + (y << 15) + (z << 10);
-    }
 }
 
 bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {

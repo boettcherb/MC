@@ -33,7 +33,6 @@ public:
 private:
     void generateTerrain();
     unsigned int getVertexData(unsigned int* data, int meshIndex) const;
-    inline void setBlockFaceData(unsigned int* data, int x, int y, int z, const unsigned int* blockData) const;
 };
 
 #endif

@@ -5,10 +5,10 @@
 #include <sglm/sglm.h>
 
 class Face {
-public:
     sglm::vec3 A, B, C, D;
     sglm::vec3 normal;
 
+public:
     struct Intersection {
         int x, y, z;
         float t;
@@ -16,6 +16,7 @@ public:
         unsigned int data[UINTS_PER_BLOCK];
         void setData();
         bool operator==(const Intersection& other) const;
+        void operator=(const Intersection& other);
     };
 
     Face(sglm::vec3& a, sglm::vec3& b, sglm::vec3& c, sglm::vec3& d);
