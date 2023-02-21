@@ -2,6 +2,7 @@
 #include "Constants.h"
 #include "BlockInfo.h"
 #include <sglm/sglm.h>
+#include <cstring>
 #include <cmath>
 #include <cassert>
 
@@ -72,10 +73,7 @@ bool Face::Intersection::operator==(const Face::Intersection& other) const {
 }
 
 void Face::Intersection::operator=(const Face::Intersection& other) {
-    A = other.A;
-    B = other.B;
-    C = other.C;
-    D = other.D;
-    t = other.t;
-    // don't copy x, y, z, or data
+    // copy everything except data
+    assert(sizeof(Intersection) == offsetof(Intersection, data) + sizeof(Intersection::data));
+    std::memcpy(this, &other, offsetof(Intersection, data));
 }
