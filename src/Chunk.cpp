@@ -161,27 +161,27 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
                 // check each of the six sides to see if this block is adjacent to a transparent block
                 // if so, add its vertex data to the data array
                 if (Block::isTransparent(get(x + 1, y, z))) {
-                    Block::getFaceData(currentBlock, PLUS_X, x, y, z, data);
+                    Block::getFaceData(currentBlock, x, y, z, data, PLUS_X);
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x - 1, y, z))) {
-                    Block::getFaceData(currentBlock, MINUS_X, x, y, z, data);
+                    Block::getFaceData(currentBlock, x, y, z, data, MINUS_X);
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y + 1, z))) {
-                    Block::getFaceData(currentBlock, PLUS_Y, x, y, z, data);
+                    Block::getFaceData(currentBlock, x, y, z, data, PLUS_Y);
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y - 1, z))) {
-                    Block::getFaceData(currentBlock, MINUS_Y, x, y, z, data);
+                    Block::getFaceData(currentBlock, x, y, z, data, MINUS_Y);
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y, z + 1))) {
-                    Block::getFaceData(currentBlock, PLUS_Z, x, y, z, data);
+                    Block::getFaceData(currentBlock, x, y, z, data, PLUS_Z);
                     data += UINTS_PER_FACE;
                 }
                 if (Block::isTransparent(get(x, y, z - 1))) {
-                    Block::getFaceData(currentBlock, MINUS_Z, x, y, z, data);
+                    Block::getFaceData(currentBlock, x, y, z, data, MINUS_Z);
                     data += UINTS_PER_FACE;
                 }
             }

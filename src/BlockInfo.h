@@ -15,7 +15,7 @@ namespace Block {
         NO_BLOCK,
     };
 
-    void getFaceData(BlockType type, Direction face, int x, int y, int z, unsigned int* data);
+    void getFaceData(BlockType type, int x, int y, int z, unsigned int* data, Direction face);
     void getBlockData(BlockType type, int x, int y, int z, unsigned int* data);
 
     sglm::vec3 getPosition(unsigned int vertex);

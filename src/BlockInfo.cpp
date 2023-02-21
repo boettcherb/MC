@@ -208,7 +208,7 @@ namespace Block {
         0b0000'00000'00000000'00000'01111'00000,
     };
 
-    void getFaceData(BlockType type, Direction face, int x, int y, int z, unsigned int* data) {
+    void getFaceData(BlockType type, int x, int y, int z, unsigned int* data, Direction face) {
         assert(face >= 0 && face < 6);
         int offset = UINTS_PER_FACE * (int) face;
         switch (type) {
@@ -226,12 +226,12 @@ namespace Block {
     }
 
     void getBlockData(BlockType type, int x, int y, int z, unsigned int* data) {
-        getFaceData(type, PLUS_X, x, y, z, data); data += UINTS_PER_FACE;
-        getFaceData(type, MINUS_X, x, y, z, data); data += UINTS_PER_FACE;
-        getFaceData(type, PLUS_Z, x, y, z, data); data += UINTS_PER_FACE;
-        getFaceData(type, MINUS_Z, x, y, z, data); data += UINTS_PER_FACE;
-        getFaceData(type, PLUS_Y, x, y, z, data); data += UINTS_PER_FACE;
-        getFaceData(type, MINUS_Y, x, y, z, data);
+        getFaceData(type, x, y, z, data, PLUS_X); data += UINTS_PER_FACE;
+        getFaceData(type, x, y, z, data, MINUS_X); data += UINTS_PER_FACE;
+        getFaceData(type, x, y, z, data, PLUS_Z); data += UINTS_PER_FACE;
+        getFaceData(type, x, y, z, data, MINUS_Z); data += UINTS_PER_FACE;
+        getFaceData(type, x, y, z, data, PLUS_Y); data += UINTS_PER_FACE;
+        getFaceData(type, x, y, z, data, MINUS_Y);
     }
 
     sglm::vec3 getPosition(unsigned int vertex) {
