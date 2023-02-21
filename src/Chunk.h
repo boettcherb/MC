@@ -22,15 +22,15 @@ public:
     Chunk(int x, int z);
     ~Chunk();
 
-    void put(int x, int y, int z, Block::BlockType block);
     Block::BlockType get(int x, int y, int z) const;
-    void updateMesh();
+    void put(int x, int y, int z, Block::BlockType block, bool updateMesh);
     void render(Shader* shader, const sglm::frustum& frustum);
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
     bool intersects(const sglm::ray& ray, Face::Intersection& isect);
 
 private:
+    void updateMesh(int meshIndex);
     void generateTerrain();
     unsigned int getVertexData(unsigned int* data, int meshIndex) const;
 };

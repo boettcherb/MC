@@ -21,7 +21,7 @@ class ChunkLoader {
 public:
     ChunkLoader(Shader* shader, int camX, int camZ);
     ~ChunkLoader();
-    void update(const Camera& camera);
+    void update(const Camera& camera, bool mineBlock);
     void renderAll(const Camera& camera);
 
 private:

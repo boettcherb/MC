@@ -14,7 +14,8 @@ void resize_HUD(int width, int height);
 void render_HUD(Shader* shader);
 
 static Camera camera(PLAYER_INITIAL_POSITION, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
-static bool g_mouse_captured = true;
+static bool mouse_captured = true;
+static bool mine_block = false;
 
 // This callback function executes whenever the user changes the window size
 void window_size_callback(GLFWwindow* /* window */, int width, int height) {
@@ -24,15 +25,23 @@ void window_size_callback(GLFWwindow* /* window */, int width, int height) {
 }
 
 // This callback function executes whenever the user moves the mouse
-void mouse_callback(GLFWwindow* /* window */, double xpos, double ypos) {
-    if (g_mouse_captured) {
+void mouse_motion_callback(GLFWwindow* /* window */, double xpos, double ypos) {
+    if (mouse_captured) {
         camera.processMouseMovement((float) xpos, (float) ypos);
+    }
+}
+
+void mouse_button_callback(GLFWwindow* /* window */, int button, int action, int /* mods */) {
+    if (mouse_captured) {
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            mine_block = true;
+        }
     }
 }
 
 // This callback function executes whenever the user moves the mouse scroll wheel
 void scroll_callback(GLFWwindow* /* window */, double /* offsetX */, double offsetY) {
-    if (g_mouse_captured) {
+    if (mouse_captured) {
         camera.processMouseScroll((float) offsetY);
     }
 }
@@ -43,12 +52,12 @@ void key_callback(GLFWwindow* window, int key, int /* scancode */, int action, i
     // pressed while shift is pressed, toggle holding / releasing the mouse.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         if (mods & GLFW_MOD_SHIFT) {
-            if (g_mouse_captured) {
+            if (mouse_captured) {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                g_mouse_captured = false;
+                mouse_captured = false;
             } else {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                g_mouse_captured = true;
+                mouse_captured = true;
             }
         } else {
             glfwSetWindowShouldClose(window, true);
@@ -107,7 +116,8 @@ int main() {
     }
     glfwMakeContextCurrent(window);
     glfwSetWindowSizeCallback(window, window_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetCursorPosCallback(window, mouse_motion_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
 
@@ -119,6 +129,8 @@ int main() {
     }
 
     initialize_HUD(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT);
+
+
 
     /////////////////////////////////////////////////////////////////////////////////
 
@@ -160,16 +172,16 @@ int main() {
         double currentTime = glfwGetTime();
         deltaTime = currentTime - previousTime;
         previousTime = currentTime;
-        if (g_mouse_captured) {
+        if (mouse_captured) {
             processInput(window, (float) deltaTime);
         }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        chunkLoader.update(camera);
+        chunkLoader.update(camera, mine_block);
+        mine_block = false;
         chunkLoader.renderAll(camera);
         render_HUD(&uiShader);
-
 
 #ifndef NDEBUG
         // catch errors

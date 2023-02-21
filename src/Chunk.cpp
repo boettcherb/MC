@@ -8,14 +8,19 @@
 #include <new>
 #include <cassert>
 
+static inline constexpr int UPDATE_ALL = 0xAB2CD6EF;
+
 Chunk::Chunk(int x, int z) : m_posX{ x }, m_posZ{ z } {
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
     m_numNeighbors = 0;
     generateTerrain();
 }
 
-void Chunk::updateMesh() {
-    for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
+void Chunk::updateMesh(int meshIndex) {
+    assert(meshIndex == UPDATE_ALL || (meshIndex >= 0 && meshIndex < NUM_SUBCHUNKS));
+    int start = meshIndex == UPDATE_ALL ? 0 : meshIndex;
+    int end = meshIndex == UPDATE_ALL ? NUM_SUBCHUNKS : meshIndex + 1;
+    for (int i = start; i < end; ++i) {
         m_mesh[i].erase();
         unsigned int* data = new unsigned int[VERTICES_PER_SUBCHUNK];
         unsigned int size = getVertexData(data, i);
@@ -30,16 +35,16 @@ void Chunk::generateTerrain() {
         for (int Z = 0; Z < CHUNK_WIDTH; ++Z) {
             float noiseX = (float) X + CHUNK_WIDTH * m_posX;
             float noiseZ = (float) Z + CHUNK_WIDTH * m_posZ;
-            int groundHeight = (int) (50.0 + (noise.GetSimplexFractal(noiseX, noiseZ) + 1.0) / 2.0 * 30.0);
+            int groundHeight = (int) ((noise.GetSimplexFractal(noiseX, noiseZ) + 1.0) / 2.0 * 120.0);
             for (int Y = 0; Y <= groundHeight - 4; ++Y) {
-                put(X, Y, Z, Block::BlockType::STONE);
+                put(X, Y, Z, Block::BlockType::STONE, false);
             }
-            put(X, groundHeight - 3, Z, Block::BlockType::DIRT);
-            put(X, groundHeight - 2, Z, Block::BlockType::DIRT);
-            put(X, groundHeight - 1, Z, Block::BlockType::DIRT);
-            put(X, groundHeight, Z, Block::BlockType::GRASS);
+            put(X, groundHeight - 3, Z, Block::BlockType::DIRT, false);
+            put(X, groundHeight - 2, Z, Block::BlockType::DIRT, false);
+            put(X, groundHeight - 1, Z, Block::BlockType::DIRT, false);
+            put(X, groundHeight, Z, Block::BlockType::GRASS, false);
             for (int Y = groundHeight + 1; Y < CHUNK_HEIGHT; ++Y) {
-                put(X, Y, Z, Block::BlockType::AIR);
+                put(X, Y, Z, Block::BlockType::AIR, false);
             }
         }
     }
@@ -55,11 +60,21 @@ Chunk::~Chunk() {
     if (m_neighbors[MINUS_Z] != nullptr) m_neighbors[MINUS_Z]->removeNeighbor(PLUS_Z);
 }
 
-void Chunk::put(int x, int y, int z, Block::BlockType block) {
+void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
     assert(x >= 0 && x < CHUNK_WIDTH);
     assert(y >= 0 && y < CHUNK_HEIGHT);
     assert(z >= 0 && z < CHUNK_WIDTH);
     m_blockArray[x][y][z] = block;
+    if (update_mesh) {
+        int updateIndex = y / SUBCHUNK_HEIGHT;
+        updateMesh(updateIndex);
+        if (y != CHUNK_HEIGHT - 1 && y % SUBCHUNK_HEIGHT == 15) updateMesh(updateIndex + 1);
+        else if (y != 0 && y % SUBCHUNK_HEIGHT == 0) updateMesh(updateIndex - 1);
+        if (x == CHUNK_WIDTH - 1) m_neighbors[PLUS_X]->updateMesh(updateIndex);
+        else if (x == 0)          m_neighbors[MINUS_X]->updateMesh(updateIndex);
+        if (z == CHUNK_WIDTH - 1) m_neighbors[PLUS_Z]->updateMesh(updateIndex);
+        else if (z == 0)          m_neighbors[MINUS_Z]->updateMesh(updateIndex);
+    }
 }
 
 Block::BlockType Chunk::get(int x, int y, int z) const {
@@ -110,11 +125,11 @@ void Chunk::addNeighbor(Chunk* chunk, Direction direction) {
     assert(m_neighbors[direction] == nullptr);
     m_neighbors[direction] = chunk;
     ++m_numNeighbors;
-    assert(m_numNeighbors <= 4);
+    assert(m_numNeighbors >= 0 && m_numNeighbors <= 4);
 
     // all 4 neighboring chunks are loaded so we can now render this chunk
     if (m_numNeighbors == 4) {
-        updateMesh();
+        updateMesh(UPDATE_ALL);
     }
 }
 
@@ -130,7 +145,7 @@ void Chunk::removeNeighbor(Direction direction) {
         }
     }
     --m_numNeighbors;
-    assert(m_numNeighbors >= 0);
+    assert(m_numNeighbors >= 0 && m_numNeighbors <= 4);
 }
 
 unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {

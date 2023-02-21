@@ -31,7 +31,7 @@ ChunkLoader::~ChunkLoader() {
     }
 }
 
-void ChunkLoader::update(const Camera& camera) {
+void ChunkLoader::update(const Camera& camera, bool mineBlock) {
     // Update which chunks are loaded if the camera crosses a chunk border
     sglm::vec3 cameraPos = camera.getPosition();
     int camX = (int) cameraPos.x / CHUNK_WIDTH - (cameraPos.x < 0);
@@ -67,10 +67,10 @@ void ChunkLoader::update(const Camera& camera) {
             Chunk* chunk = m_chunks.find({ x, z })->second;
             if (chunk->intersects(viewRay, i)) {
                 if (!foundIntersection || i.t < bestI.t) {
+                    foundIntersection = true;
                     bestI = i;
                     bestX = x;
                     bestZ = z;
-                    foundIntersection = true;
                 }
             }
         }
@@ -86,6 +86,16 @@ void ChunkLoader::update(const Camera& camera) {
     } else {
         m_blockOutline.erase();
         m_viewRayIsect.x = m_viewRayIsect.y = m_viewRayIsect.z = -1;
+    }
+
+    // mine block we are looking at
+    if (mineBlock && m_viewRayIsect.x != -1) {
+        Chunk* chunk = m_chunks.find({ m_outlineX, m_outlineZ })->second;
+        int x = m_viewRayIsect.x;
+        int y = m_viewRayIsect.y;
+        int z = m_viewRayIsect.z;
+        std::cout << "removing block " << x << ' ' << y << ' ' << z << std::endl;
+        chunk->put(x, y, z, Block::BlockType::AIR, true);
     }
 }
 
