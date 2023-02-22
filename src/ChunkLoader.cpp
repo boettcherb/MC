@@ -94,7 +94,6 @@ void ChunkLoader::update(const Camera& camera, bool mineBlock) {
         int x = m_viewRayIsect.x;
         int y = m_viewRayIsect.y;
         int z = m_viewRayIsect.z;
-        std::cout << "removing block " << x << ' ' << y << ' ' << z << std::endl;
         chunk->put(x, y, z, Block::BlockType::AIR, true);
     }
 }
