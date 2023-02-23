@@ -47,17 +47,17 @@ bool Face::intersects(const sglm::ray& r, Intersection& isect) const {
 
 void Face::Intersection::setData() {
     // find the x, y, and z values of the block that has this face
-    if (A.x == B.x && A.x == C.x) {
-        x = (int) (A.z > B.z ? A.x - 1.0f : A.x);
+    if (A.x == B.x && A.x == C.x) {                // +x or -x
+        x = (int) (A.z < B.z ? A.x : A.x - 1.0f);
         y = (int) A.y;
-        z = (int) (A.z > B.z ? B.z : A.z);
+        z = (int) (A.z < B.z ? A.z : B.z);
     }
-    if (A.y == B.y && A.y == C.y) {
-        x = (int) (A.x < C.x ? A.x : C.x);
-        y = (int) (A.x < C.x ? A.y - 1.0f : A.y);
-        z = (int) (A.x < C.x ? C.z : A.z);
+    else if (A.y == B.y && A.y == C.y) {           // +y or -y
+        x = (int) A.x;
+        y = (int) (A.z < C.z ? A.y : A.y - 1.0f);
+        z = (int) (A.z < C.z ? A.z : C.z);
     }
-    if (A.z == B.z && A.z == C.z) {
+    else {                                         // +z or -z
         x = (int) (A.x < B.x ? A.x : B.x);
         y = (int) A.y;
         z = (int) (A.x < B.x ? A.z - 1.0f : A.z);
