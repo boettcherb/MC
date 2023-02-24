@@ -17,6 +17,7 @@ class Chunk {
     Mesh m_mesh[NUM_SUBCHUNKS];
     Chunk* m_neighbors[4];
     int m_numNeighbors;
+    bool m_updated;
 
 public:
     Chunk(int x, int z);

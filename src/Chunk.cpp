@@ -14,6 +14,7 @@ Chunk::Chunk(int x, int z) : m_posX{ x }, m_posZ{ z } {
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
     m_numNeighbors = 0;
     generateTerrain();
+    m_updated = false;
 }
 
 void Chunk::updateMesh(int meshIndex) {
@@ -75,6 +76,7 @@ void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
         if (z == CHUNK_WIDTH - 1) m_neighbors[PLUS_Z]->updateMesh(updateIndex);
         else if (z == 0)          m_neighbors[MINUS_Z]->updateMesh(updateIndex);
     }
+    m_updated = true;
 }
 
 Block::BlockType Chunk::get(int x, int y, int z) const {
