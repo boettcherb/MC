@@ -30,7 +30,7 @@ Shader::Shader(const std::string& vertexFilePath, const std::string& fragmentFil
     glDeleteShader(fragmentID);
 
     // initialize values in m_uniforms array to -1
-    std::memset(m_uniforms, -1, 16);
+    std::memset(m_uniforms, -1, sizeof(m_uniforms));
 }
 
 Shader::~Shader() {
