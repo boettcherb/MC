@@ -27,7 +27,8 @@ inline constexpr sglm::vec3 PLAYER_INITIAL_POSITION = { 0.0f, 80.0f, 0.0f };
 // Determines how many chunks will load in each direction outward from the
 // player. Chunks load in a a square around the chunk the player is in. In
 // total there will be (LOAD_RADIUS * 2 + 1)^2 chunks loaded at a time.
-inline constexpr int LOAD_RADIUS = 15;
+inline constexpr int LOAD_RADIUS = 10;
+inline constexpr int UNLOAD_RADIUS = LOAD_RADIUS + 2;
 
 // This is about the distance from the center of a 16x16x16 sub-chunk to one
 // of its corners. This value is used during frustum culling to determine

@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Face.h"
+#include "Database.h"
 #include <new>
 #include <map>
 #include <cassert>
@@ -17,54 +18,89 @@
 ChunkLoader::ChunkLoader(Shader* shader, int camX, int camZ) {
     for (int x = camX - LOAD_RADIUS; x <= camX + LOAD_RADIUS; ++x) {
         for (int z = camZ - LOAD_RADIUS; z <= camZ + LOAD_RADIUS; ++z) {
-            addChunk(x, z);
+            database::request_load(x, z);
         }
     }
     m_shader = shader;
     m_cameraX = camX;
     m_cameraZ = camZ;
+    m_outlineX = m_outlineZ = 0;
+    m_viewRayIsect = Face::Intersection();
 }
 
 ChunkLoader::~ChunkLoader() {
-    for (const auto& itr : m_chunks) {
-        delete itr.second;
+    while (!m_chunks.empty()) {
+        auto itr = m_chunks.begin();
+        int x = itr->first.first;
+        int z = itr->first.second;
+        removeChunk(x, z);
+    }
+}
+
+void ChunkLoader::loadChunks(int camX, int camZ) {
+    if (camX != m_cameraX) {
+        int x = camX + (camX < m_cameraX ? -LOAD_RADIUS : LOAD_RADIUS);
+        for (int z = m_cameraZ - LOAD_RADIUS; z <= m_cameraZ + LOAD_RADIUS; ++z) {
+            database::request_load(x, z);
+        }
+        x = m_cameraX + (camX < m_cameraX ? UNLOAD_RADIUS : -UNLOAD_RADIUS);
+        for (int z = m_cameraZ - UNLOAD_RADIUS; z <= m_cameraZ + UNLOAD_RADIUS; ++z) {
+            removeChunk(x, z);
+        }
+        m_cameraX = camX;
+    }
+    if (camZ != m_cameraZ) {
+        int z = camZ + (camZ < m_cameraZ ? -LOAD_RADIUS : LOAD_RADIUS);
+        for (int x = m_cameraX - LOAD_RADIUS; x <= m_cameraX + LOAD_RADIUS; ++x) {
+            database::request_load(x, z);
+        }
+        z = m_cameraZ + (camZ < m_cameraZ ? UNLOAD_RADIUS : -UNLOAD_RADIUS);
+        for (int x = m_cameraX - UNLOAD_RADIUS; x <= m_cameraX + UNLOAD_RADIUS; ++x) {
+            removeChunk(x, z);
+        }
+        m_cameraZ = camZ;
     }
 }
 
 void ChunkLoader::update(const Camera& camera, bool mineBlock) {
-    // Update which chunks are loaded if the camera crosses a chunk border
+    database::Query q = database::get_load_result();
+    if (q.type != database::QUERY_NONE) {
+        assert(q.type == database::QUERY_LOAD);
+        addChunk(q.x, q.z, q.data);
+        delete[] q.data;
+    }
+    
     sglm::vec3 cameraPos = camera.getPosition();
     int camX = (int) cameraPos.x / CHUNK_WIDTH - (cameraPos.x < 0);
     int camZ = (int) cameraPos.z / CHUNK_WIDTH - (cameraPos.z < 0);
-    if (camX != m_cameraX) {
-        assert(std::abs(camX - m_cameraX) == 1);
-        int oldX = m_cameraX + LOAD_RADIUS * (camX < m_cameraX ? 1 : -1);
-        int newX = camX + LOAD_RADIUS * (camX < m_cameraX ? -1 : 1);
-        for (int z = m_cameraZ - LOAD_RADIUS; z <= m_cameraZ + LOAD_RADIUS; ++z) {
-            removeChunk(oldX, z);
-            addChunk(newX, z);
-        }
-    }
-    m_cameraX = camX;
-    if (camZ != m_cameraZ) {
-        assert(std::abs(camZ - m_cameraZ) == 1);
-        int oldZ = m_cameraZ + LOAD_RADIUS * (camZ < m_cameraZ ? 1 : -1);
-        int newZ = camZ + LOAD_RADIUS * (camZ < m_cameraZ ? -1 : 1);;
-        for (int x = m_cameraX - LOAD_RADIUS; x <= m_cameraX + LOAD_RADIUS; ++x) {
-            removeChunk(x, oldZ);
-            addChunk(x, newZ);
-        }
-    }
-    m_cameraZ = camZ;
+    assert(std::abs(camX - m_cameraX) <= 1);
+    assert(std::abs(camZ - m_cameraZ) <= 1);
+    loadChunks(camX, camZ);
 
-    // Update the view ray collision and block outline mesh
+    checkViewRayCollisions(camera);
+
+    // mine block we are looking at
+    if (mineBlock && m_viewRayIsect.x != -1) {
+        Chunk* chunk = m_chunks.find({ m_outlineX, m_outlineZ })->second;
+        int x = m_viewRayIsect.x;
+        int y = m_viewRayIsect.y;
+        int z = m_viewRayIsect.z;
+        chunk->put(x, y, z, Block::BlockType::AIR, true);
+    }
+}
+
+void ChunkLoader::checkViewRayCollisions(const Camera& camera) {
     sglm::ray viewRay = { camera.getPosition(), camera.getDirection() };
     bool foundIntersection = false;
     Face::Intersection bestI = Face::Intersection(), i;
     int bestX = 0, bestZ = 0;
     for (int x = m_cameraX - 1; x <= m_cameraX + 1; ++x) {
         for (int z = m_cameraZ - 1; z <= m_cameraZ + 1; ++z) {
-            Chunk* chunk = m_chunks.find({ x, z })->second;
+            auto itr = m_chunks.find({ x, z });
+            if (itr == m_chunks.end()) {
+                continue;
+            }
+            Chunk* chunk = itr->second;
             if (chunk->intersects(viewRay, i)) {
                 if (!foundIntersection || i.t < bestI.t) {
                     foundIntersection = true;
@@ -87,15 +123,6 @@ void ChunkLoader::update(const Camera& camera, bool mineBlock) {
         m_blockOutline.erase();
         m_viewRayIsect.x = m_viewRayIsect.y = m_viewRayIsect.z = -1;
     }
-
-    // mine block we are looking at
-    if (mineBlock && m_viewRayIsect.x != -1) {
-        Chunk* chunk = m_chunks.find({ m_outlineX, m_outlineZ })->second;
-        int x = m_viewRayIsect.x;
-        int y = m_viewRayIsect.y;
-        int z = m_viewRayIsect.z;
-        chunk->put(x, y, z, Block::BlockType::AIR, true);
-    }
 }
 
 void ChunkLoader::renderAll(const Camera& camera) {
@@ -117,9 +144,11 @@ void ChunkLoader::renderAll(const Camera& camera) {
     }
 }
 
-void ChunkLoader::addChunk(int x, int z) {
-    assert(m_chunks.find({ x, z }) == m_chunks.end());
-    Chunk* newChunk = new Chunk(x, z);
+void ChunkLoader::addChunk(int x, int z, const void* data) {
+    if (m_chunks.find({ x, z }) != m_chunks.end()) {
+        return;
+    }
+    Chunk* newChunk = new Chunk(x, z, data);
     auto px = m_chunks.find({ x + 1, z });
     auto mx = m_chunks.find({ x - 1, z });
     auto pz = m_chunks.find({ x, z + 1 });
@@ -145,7 +174,12 @@ void ChunkLoader::addChunk(int x, int z) {
 
 void ChunkLoader::removeChunk(int x, int z) {
     auto itr = m_chunks.find({ x, z });
-    assert(itr != m_chunks.end());
-    delete itr->second; // calls destructor, removes neighbors
-    m_chunks.erase(itr);
+    if (itr != m_chunks.end()) {
+        Chunk* chunk = itr->second;
+        if (chunk->wasUpdated()) {
+            database::request_store(x, z, BLOCKS_PER_CHUNK, chunk->getBlockData());
+        }
+        delete itr->second; // calls destructor, removes neighbors
+        m_chunks.erase(itr);
+    }
 }

@@ -10,11 +10,16 @@
 
 static inline constexpr int UPDATE_ALL = 0xAB2CD6EF;
 
-Chunk::Chunk(int x, int z) : m_posX{ x }, m_posZ{ z } {
+Chunk::Chunk(int x, int z, const void* blockData) : m_posX{ x }, m_posZ{ z } {
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
     m_numNeighbors = 0;
-    generateTerrain();
-    m_updated = false;
+    if (blockData == nullptr) {
+        generateTerrain();
+        m_updated = true;
+    } else {
+        memcpy(m_blockArray, blockData, BLOCKS_PER_CHUNK);
+        m_updated = false;
+    }
 }
 
 void Chunk::updateMesh(int meshIndex) {
@@ -59,6 +64,16 @@ Chunk::~Chunk() {
     if (m_neighbors[MINUS_X] != nullptr) m_neighbors[MINUS_X]->removeNeighbor(PLUS_X);
     if (m_neighbors[PLUS_Z] != nullptr) m_neighbors[PLUS_Z]->removeNeighbor(MINUS_Z);
     if (m_neighbors[MINUS_Z] != nullptr) m_neighbors[MINUS_Z]->removeNeighbor(PLUS_Z);
+}
+
+bool Chunk::wasUpdated() const {
+    return m_updated;
+}
+
+const void* Chunk::getBlockData() const {
+    void* data = new unsigned char[BLOCKS_PER_CHUNK];
+    memcpy(data, m_blockArray, BLOCKS_PER_CHUNK);
+    return data;
 }
 
 void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {

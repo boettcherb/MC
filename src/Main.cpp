@@ -3,10 +3,11 @@
 #include "Camera.h"
 #include "Texture.h"
 #include "ChunkLoader.h"
+#include "Database.h"
 #include <glad/glad.h>
 #include <GLFW/GLFW3.h>
 #include <iostream>
-#include <string>
+#include <cstdlib>
 
 // from UI.cpp
 void initialize_HUD(int width, int height);
@@ -16,6 +17,12 @@ void render_HUD(Shader* shader);
 static Camera camera(PLAYER_INITIAL_POSITION, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
 static bool mouse_captured = true;
 static bool mine_block = false;
+
+// called by std::at_exit()
+void close_app() {
+    database::close();
+    glfwTerminate();
+}
 
 // This callback function executes whenever the user changes the window size
 void window_size_callback(GLFWwindow* /* window */, int width, int height) {
@@ -96,6 +103,8 @@ static void displayFPS() {
 }
 
 int main() {
+    std::atexit(close_app);
+
     // initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
@@ -111,7 +120,6 @@ int main() {
                                           WINDOW_TITLE, nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
-        glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(window);
@@ -124,12 +132,11 @@ int main() {
     // initialize GLAD
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
-        glfwTerminate();
         return -1;
     }
 
     initialize_HUD(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT);
-
+    database::initialize();
 
 
     /////////////////////////////////////////////////////////////////////////////////
@@ -194,7 +201,5 @@ int main() {
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-    glfwTerminate();
     return 0;
 }

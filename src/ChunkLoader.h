@@ -25,7 +25,9 @@ public:
     void renderAll(const Camera& camera);
 
 private:
-    void addChunk(int x, int z);
+    void loadChunks(int camX, int camZ);
+    void checkViewRayCollisions(const Camera& camera);
+    void addChunk(int x, int z, const void* data);
     void removeChunk(int x, int z);
 };
 

@@ -20,7 +20,7 @@ class Chunk {
     bool m_updated;
 
 public:
-    Chunk(int x, int z);
+    Chunk(int x, int z, const void* blockData);
     ~Chunk();
 
     Block::BlockType get(int x, int y, int z) const;
@@ -29,6 +29,8 @@ public:
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
     bool intersects(const sglm::ray& ray, Face::Intersection& isect);
+    const void* getBlockData() const;
+    bool wasUpdated() const;
 
 private:
     void updateMesh(int meshIndex);
