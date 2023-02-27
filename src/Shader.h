@@ -7,7 +7,7 @@
 
 class Shader {
     unsigned int m_shaderID;
-    int m_uniforms[4];
+    int m_uniforms[8];
 
 public:
     Shader(const std::string& vertexFilePath, const std::string& fragmentFilePath);
@@ -17,6 +17,7 @@ public:
     void unbind() const;
     void addTexture(const Texture* texture, const std::string& name);
     void addUniform1i(const std::string& name, int v0);
+    void addUniform3f(const std::string& name, float f1, float f2, float f3);
     void addUniformMat4f(const std::string& name, const sglm::mat4& matrix);
 
 private:

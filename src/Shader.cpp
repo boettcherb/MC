@@ -88,6 +88,11 @@ void Shader::addUniform1i(const std::string& name, int v0) {
     glUniform1i(getUniformLocation(name), v0);
 }
 
+void Shader::addUniform3f(const std::string& name, float f1, float f2, float f3) {
+    bind();
+    glUniform3f(getUniformLocation(name), f1, f2, f3);
+}
+
 void Shader::addUniformMat4f(const std::string& name, const sglm::mat4& matrix) {
     bind();
     glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&matrix));
