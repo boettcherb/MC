@@ -24,14 +24,12 @@ void close_app() {
     glfwTerminate();
 }
 
-// This callback function executes whenever the user changes the window size
 void window_size_callback(GLFWwindow* /* window */, int width, int height) {
     camera.processNewAspectRatio((float) width / height);
     glViewport(0, 0, width, height);
     resize_HUD(width, height);
 }
 
-// This callback function executes whenever the user moves the mouse
 void mouse_motion_callback(GLFWwindow* /* window */, double xpos, double ypos) {
     if (mouse_captured) {
         camera.processMouseMovement((float) xpos, (float) ypos);
@@ -46,14 +44,12 @@ void mouse_button_callback(GLFWwindow* /* window */, int button, int action, int
     }
 }
 
-// This callback function executes whenever the user moves the mouse scroll wheel
 void scroll_callback(GLFWwindow* /* window */, double /* offsetX */, double offsetY) {
     if (mouse_captured) {
         camera.processMouseScroll((float) offsetY);
     }
 }
 
-// The callback function executes whenever a key is pressed or released
 void key_callback(GLFWwindow* window, int key, int /* scancode */, int action, int mods) {
     // If the escape key is pressed, close the window. If the escape key is
     // pressed while shift is pressed, toggle holding / releasing the mouse.
@@ -72,7 +68,6 @@ void key_callback(GLFWwindow* window, int key, int /* scancode */, int action, i
     }
 }
 
-// Called every frame inside the render loop
 static void processInput(GLFWwindow* window, float deltaTime) {
     // WASD for the camera
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -138,6 +133,20 @@ int main() {
     initialize_HUD(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT);
     database::initialize();
 
+    glClearColor(CLEAR_R, CLEAR_G, CLEAR_B, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_MULTISAMPLE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // tell GLFW to capture our mouse cursor
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    // enable VSync (tie the FPS to your monitor's refresh rate)
+    // glfwSwapInterval(1);
+
+
 
     /////////////////////////////////////////////////////////////////////////////////
 
@@ -146,28 +155,17 @@ int main() {
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << '\n';
     std::cout << "Starting Application...\n";
 
-    // tell GLFW to capture our mouse cursor
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    // enable VSync (tie the FPS to your monitor's refresh rate)
-    glfwSwapInterval(1);
-
     Shader blockShader(BLOCK_VERTEX, BLOCK_FRAGMENT);
     Shader uiShader(UI_VERTEX, UI_FRAGMENT);
     Texture textureSheet(TEXTURE_SHEET, 0);
+    blockShader.addUniform3f("u4_bgColor", CLEAR_R, CLEAR_G, CLEAR_B);
+    blockShader.addUniform1i("u5_renderDist", 16 * (LOAD_RADIUS - 3));
     blockShader.addTexture(&textureSheet, "u3_texture");
     uiShader.addTexture(&textureSheet, "u3_texture");
     
     int camX = (int) camera.getPosition().x / CHUNK_WIDTH - (camera.getPosition().x < 0);
     int camZ = (int) camera.getPosition().z / CHUNK_WIDTH - (camera.getPosition().z < 0);
     ChunkLoader chunkLoader(&blockShader, camX, camZ);
-
-    glClearColor(0.2f, 0.3f, 0.8f, 1.0f);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_MULTISAMPLE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // variables for deltaTime
     double previousTime = glfwGetTime();

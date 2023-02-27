@@ -4,27 +4,31 @@ layout(location = 0) in uint a_data;
 
 out vec2 v_texCoords;
 out float v_light;
+out float v_visibility;
 
 uniform mat4 u0_model;
 uniform mat4 u1_view;
 uniform mat4 u2_projection;
+uniform int u5_renderDist;
 
-float light[4] = {
-    0.4f, 0.6f, 0.8f, 1.0f
-};
+const float light[4] = { 0.4, 0.6, 0.8, 1.0 };
 
 void main() {
-    // retrieve the x, y, and z positions from their place in the data
     float xPos = float((a_data >> 23u) & 0x1Fu);
     float yPos = float((a_data >> 15u) & 0xFFu);
     float zPos = float((a_data >> 10u) & 0x1Fu);
-    gl_Position = u2_projection * u1_view * u0_model * vec4(xPos, yPos, zPos, 1.0f);
 
-    // retrieve the tex coords from their place in the data
+    vec4 worldPos = u0_model * vec4(xPos, yPos, zPos, 1.0);
+    vec4 positionRelativeToCam = u1_view * worldPos;
+    gl_Position = u2_projection * positionRelativeToCam;
+
+    float distanceToCam = length(positionRelativeToCam.xyz);
+    v_visibility = exp(-pow((distanceToCam - u5_renderDist) * 0.05, 3));
+    v_visibility = clamp(v_visibility, 0.0, 1.0);
+
     float xTex = float((a_data >> 5u) & 0x1Fu);
     float yTex = float(a_data & 0x1Fu);
-    v_texCoords = vec2(xTex / 16.0f, yTex / 16.0f);
+    v_texCoords = vec2(xTex / 16.0, yTex / 16.0);
 
-    // retrieve the light value
     v_light = light[(a_data >> 28u) & 0x3u];
 }

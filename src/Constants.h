@@ -24,6 +24,11 @@ inline const char* TEXTURE_SHEET = "resources/textures/texture_sheet.png";
 
 inline constexpr sglm::vec3 PLAYER_INITIAL_POSITION = { 0.0f, 80.0f, 0.0f };
 
+// RGB values for the background (the clear color)
+inline constexpr float CLEAR_R = 0.2f;
+inline constexpr float CLEAR_G = 0.3f;
+inline constexpr float CLEAR_B = 0.8f;
+
 // Determines how many chunks will load in each direction outward from the
 // player. Chunks load in a a square around the chunk the player is in. In
 // total there will be (LOAD_RADIUS * 2 + 1)^2 chunks loaded at a time.
