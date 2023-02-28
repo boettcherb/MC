@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cassert>
 #include <cstring>
+#include <chrono>
 
 namespace database {
 
@@ -40,15 +41,14 @@ namespace database {
         check(sqlite3_prepare_v2(db, SELECT_ROW, -1, &select_stmt, nullptr), 4);
         check(sqlite3_prepare_v2(db, INSERT_ROW, -1, &insert_stmt, nullptr), 5);
 
-        while (!thread_should_close || request_queue.size() > 0) {
+        while (!thread_should_close || !request_queue.empty()) {
             Query request = { QUERY_NONE, 0, 0, 0, nullptr };
-            request_queue_mutex.lock();
             if (!request_queue.empty()) {
+                request_queue_mutex.lock();
                 request = request_queue.front();
                 request_queue.pop();
+                request_queue_mutex.unlock();
             }
-            request_queue_mutex.unlock();
-
             if (request.type == QUERY_LOAD) {
                 assert(request.data == nullptr);
                 check(sqlite3_bind_int(select_stmt, 1, request.x), 6);
@@ -76,6 +76,11 @@ namespace database {
                 check(sqlite3_step(insert_stmt), 12);
                 check(sqlite3_reset(insert_stmt), 13);
                 delete[] request.data;
+            }
+            else {
+                // the request queue was empty, so sleep for 100ms (1/10 second)
+                std::chrono::duration<int, std::milli> sleep_time(100);
+                std::this_thread::sleep_for(sleep_time);
             }
         }
         check(sqlite3_finalize(select_stmt), 14);
