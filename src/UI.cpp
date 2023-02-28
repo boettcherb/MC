@@ -12,12 +12,12 @@ static unsigned int crosshair_VAO;
 static unsigned int crosshair_VBO;
 
 static float crosshair_data[24] = {
-    -0.025f, -0.025f, 0.0f,    0.0f,
-     0.025f, -0.025f, 0.0625f, 0.0f,
-     0.025f,  0.025f, 0.0625f, 0.0625f,
-     0.025f,  0.025f, 0.0625f, 0.0625f,
-    -0.025f,  0.025f, 0.0f,    0.0625f,
-    -0.025f, -0.025f, 0.0f,    0.0f,
+    -0.025f, -0.025f, 0.0f / 16.0f, 13.0f / 16.0f,
+     0.025f, -0.025f, 1.0f / 16.0f, 13.0f / 16.0f,
+     0.025f,  0.025f, 1.0f / 16.0f, 14.0f / 16.0f,
+     0.025f,  0.025f, 1.0f / 16.0f, 14.0f / 16.0f,
+    -0.025f,  0.025f, 0.0f / 16.0f, 14.0f / 16.0f,
+    -0.025f, -0.025f, 0.0f / 16.0f, 13.0f / 16.0f,
 };
 
 void initialize_HUD(int width, int height) {
