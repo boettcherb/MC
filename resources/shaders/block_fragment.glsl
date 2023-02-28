@@ -9,7 +9,7 @@ uniform vec3 u4_bgColor;
 
 void main() {
     vec4 tex = texture(u3_texture, v_texCoords);
-    if (tex.w == 0.0) {
+    if (tex.a == 0.0) {
         discard;
     }
     vec4 color = vec4(tex.xyz * v_light, tex.w);

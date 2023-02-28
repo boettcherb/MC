@@ -137,14 +137,12 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_MULTISAMPLE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // tell GLFW to capture our mouse cursor
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // enable VSync (tie the FPS to your monitor's refresh rate)
-    // glfwSwapInterval(1);
+    glfwSwapInterval(1);
 
 
 
