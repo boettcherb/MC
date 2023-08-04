@@ -11,7 +11,7 @@ enum class Movement {
     FORWARD, BACKWARD, LEFT, RIGHT,
 };
 
-inline constexpr int INITIAL_SCREEN_WIDTH = 1200;
+inline constexpr int INITIAL_SCREEN_WIDTH = 800;
 inline constexpr int INITIAL_SCREEN_HEIGHT = 800;
 inline const char* WINDOW_TITLE = "Minecraft in OpenGL";
 
@@ -32,7 +32,7 @@ inline constexpr float CLEAR_B = 0.8f;
 // Determines how many chunks will load in each direction outward from the
 // player. Chunks load in a a square around the chunk the player is in. In
 // total there will be (LOAD_RADIUS * 2 + 1)^2 chunks loaded at a time.
-inline constexpr int LOAD_RADIUS = 10;
+inline constexpr int LOAD_RADIUS = 8;
 inline constexpr int UNLOAD_RADIUS = LOAD_RADIUS + 2;
 
 // This is about the distance from the center of a 16x16x16 sub-chunk to one
@@ -48,7 +48,7 @@ inline constexpr int PLAYER_REACH = 15;
 // In order to render a block to the screen it must be broken up into vertices.
 // Each of the 6 faces of a block are broken up into 2 triangles which have 3
 // vertices each. Each vertex is encoded into a single unsigned int (see 
-// BlockInfo.h and Chunk.cpp) before being sent to the shaders and GPU.
+// BlockInfo.cpp and Chunk.cpp) before being sent to the shaders and GPU.
 inline constexpr int FACES_PER_BLOCK = 6;
 inline constexpr int VERTICES_PER_FACE = 6;
 inline constexpr int VERTICES_PER_BLOCK = VERTICES_PER_FACE * FACES_PER_BLOCK;
