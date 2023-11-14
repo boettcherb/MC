@@ -3,3 +3,5 @@ MC.vcxproj
 MC.vcxproj.user
 MC.vcxproj.filters
 MCDB.db
+
+*.ini

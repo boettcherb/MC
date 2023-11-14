@@ -4,8 +4,13 @@
 #include "Texture.h"
 #include "ChunkLoader.h"
 #include "Database.h"
+
 #include <glad/glad.h>
 #include <GLFW/GLFW3.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
+
 #include <iostream>
 #include <cstdlib>
 
@@ -20,8 +25,15 @@ static bool mine_block = false;
 
 // called by std::at_exit()
 void close_app() {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     database::close();
     glfwTerminate();
+}
+
+static void glfw_error_callback(int error, const char* description) {
+    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
 void window_size_callback(GLFWwindow* /* window */, int width, int height) {
@@ -84,31 +96,74 @@ static void processInput(GLFWwindow* window, float deltaTime) {
     }
 }
 
-// print the FPS to the screen every second
-static void displayFPS() {
-    static int FPS = 0;
-    static double previousTime = glfwGetTime();
-    double currentTime = glfwGetTime();
-    ++FPS;
-    if (currentTime - previousTime >= 1.0) {
-        std::cout << "FPS: " << FPS << '\n';
-        FPS = 0;
-        previousTime = currentTime;
+void render_imgui_window(ImGuiIO& io) {
+    static bool show_demo_window = false;
+    static bool show_another_window = true;
+    static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+    if (show_demo_window)
+        ImGui::ShowDemoWindow(&show_demo_window);
+
+    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+    {
+        static float f = 0.0f;
+        static int counter = 0;
+
+        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+        ImGui::Checkbox("Another Window", &show_another_window);
+
+        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+        ImGui::ColorEdit3("clear color", (float*) &clear_color); // Edit 3 floats representing a color
+
+        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+            counter++;
+        ImGui::SameLine();
+        ImGui::Text("counter = %d", counter);
+
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::End();
     }
+
+    // 3. Show another simple window.
+    if (show_another_window) {
+        ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+        ImGui::Text("Hello from another window!");
+        if (ImGui::Button("Close Me"))
+            show_another_window = false;
+        ImGui::End();
+    }
+
+    // Rendering
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
+
+
+
 
 int main() {
     std::atexit(close_app);
 
     // initialize GLFW
+    glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
         return -1;
     }
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // glfwWindowHint(GLFW_SAMPLES, 1); // anti-aliasing is causing lines between blocks
+    // // glfwWindowHint(GLFW_SAMPLES, 1); // anti-aliasing is causing lines between blocks
 
     // create the main window
     GLFWwindow* window = glfwCreateWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT,
@@ -144,6 +199,15 @@ int main() {
     initialize_HUD(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT);
     database::initialize();
 
+    // initialize imgui
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 150");
+
+
 
     /////////////////////////////////////////////////////////////////////////////////
 
@@ -170,20 +234,22 @@ int main() {
 
     // render loop
     while (!glfwWindowShouldClose(window)) {
-        displayFPS();
+        glfwPollEvents();
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         double currentTime = glfwGetTime();
         deltaTime = currentTime - previousTime;
         previousTime = currentTime;
         if (mouse_captured) {
             processInput(window, (float) deltaTime);
         }
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         chunkLoader.update(camera, mine_block);
         mine_block = false;
         chunkLoader.renderAll(camera);
         render_HUD(&uiShader);
+
+        render_imgui_window(io);
 
 #ifndef NDEBUG
         // catch errors
@@ -194,7 +260,6 @@ int main() {
 #endif
 
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
     return 0;
 }
