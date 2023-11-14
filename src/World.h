@@ -15,7 +15,6 @@ class World {
     int m_cameraX, m_cameraZ; // x and z of chunk that camera is in
 
     Mesh m_blockOutline;
-    int m_outlineX, m_outlineZ; // x and z of chunk that has the block outline mesh
     Face::Intersection m_viewRayIsect;
 
 public:

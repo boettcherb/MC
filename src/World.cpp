@@ -24,7 +24,6 @@ World::World(Shader* shader, int camChunkX, int camChunkZ) {
     m_shader = shader;
     m_cameraX = camChunkX;
     m_cameraZ = camChunkZ;
-    m_outlineX = m_outlineZ = 0;
     m_viewRayIsect = Face::Intersection();
 }
 
@@ -90,7 +89,8 @@ void World::update(const Camera& camera, bool mineBlock) {
 
     // mine block we are looking at
     if (mineBlock && m_viewRayIsect.x != -1) {
-        Chunk* chunk = m_chunks.find({ m_outlineX, m_outlineZ })->second;
+        int cx = m_viewRayIsect.cx, cz = m_viewRayIsect.cz;
+        Chunk* chunk = m_chunks.find({ cx, cz })->second;
         int x = m_viewRayIsect.x;
         int y = m_viewRayIsect.y;
         int z = m_viewRayIsect.z;
@@ -104,7 +104,6 @@ void World::checkViewRayCollisions(const Camera& camera) {
     sglm::ray viewRay = { camera.getPosition(), camera.getDirection() };
     bool foundIntersection = false;
     Face::Intersection bestI = Face::Intersection();
-    int bestX = 0, bestZ = 0; // chunk that contains the block of the best intersection
     // loop through chunks near the player (the player's
     // view distance is < width of 1 chunk)
     for (int x = m_cameraX - 1; x <= m_cameraX + 1; ++x) {
@@ -120,8 +119,8 @@ void World::checkViewRayCollisions(const Camera& camera) {
                 if (!foundIntersection || i.t < bestI.t) {
                     foundIntersection = true;
                     bestI = i;
-                    bestX = x;
-                    bestZ = z;
+                    bestI.cx = x;
+                    bestI.cz = z;
                 }
             }
         }
@@ -130,8 +129,6 @@ void World::checkViewRayCollisions(const Camera& camera) {
         bestI.setData();
         if (!(bestI == m_viewRayIsect)) {
             m_blockOutline.generate(BYTES_PER_BLOCK, bestI.data, false);
-            m_outlineX = bestX;
-            m_outlineZ = bestZ;
             m_viewRayIsect = bestI;
         }
     } else {
@@ -147,8 +144,8 @@ void World::renderAll(const Camera& camera) {
 
     // render block outline
     if (m_blockOutline.generated()) {
-        float x = (float) (m_outlineX * CHUNK_WIDTH);
-        float z = (float) (m_outlineZ * CHUNK_WIDTH);
+        float x = (float) (m_viewRayIsect.cx * CHUNK_WIDTH);
+        float z = (float) (m_viewRayIsect.cz * CHUNK_WIDTH);
         m_shader->addUniformMat4f("u0_model", sglm::translate({ x, 0.0f, z }));
         m_blockOutline.render(m_shader);
     }
