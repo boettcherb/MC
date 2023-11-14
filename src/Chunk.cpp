@@ -215,19 +215,17 @@ bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {
     float z = ray.pos.z;
     int cx = m_posX * CHUNK_WIDTH;
     int cz = m_posZ * CHUNK_WIDTH;
-    if (x + PLAYER_REACH < cx || x - PLAYER_REACH > cx + CHUNK_WIDTH) {
+    if (x + PLAYER_REACH < cx || x - PLAYER_REACH > cx + CHUNK_WIDTH)
         return false;
-    }
-    if (z + PLAYER_REACH < cz || z - PLAYER_REACH > cz + CHUNK_WIDTH) {
+    if (z + PLAYER_REACH < cz || z - PLAYER_REACH > cz + CHUNK_WIDTH)
         return false;
-    }
     bool foundIntersection = false;
-    Face::Intersection i;
     for (int sc_index = 0; sc_index < NUM_SUBCHUNKS; ++sc_index) {
         int sc_y = sc_index * SUBCHUNK_HEIGHT;
         if (y + PLAYER_REACH < sc_y || y - PLAYER_REACH > sc_y + SUBCHUNK_HEIGHT) {
             continue;
         }
+        Face::Intersection i;
         if (m_mesh[sc_index].intersects(ray, i)) {
             if (!foundIntersection || i.t < isect.t) {
                 foundIntersection = true;

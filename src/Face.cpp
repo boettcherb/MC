@@ -24,13 +24,11 @@ bool Face::intersects(const sglm::ray& r, Intersection& isect) const {
     // Determine if the ray intersects the plane of the face
     float d = -sglm::dot(normal, A);
     isect.t = -(sglm::dot(normal, r.pos) + d) / (sglm::dot(normal, r.dir));
-    if (isect.t < 0) {
+    if (isect.t < 0)
         return false;
-    }
     sglm::vec3 Q = r.pos + r.dir * isect.t;
-    if (std::abs(sglm::dot(normal, Q) + d) > 1e-6) {
+    if (std::abs(sglm::dot(normal, Q) + d) > 1e-6)
         return false;
-    }
 
     // Determine if the ray intersects the face
     if (sglm::dot(sglm::cross(B - A, Q - A), normal) < 0.0) return false;
@@ -45,8 +43,9 @@ bool Face::intersects(const sglm::ray& r, Intersection& isect) const {
     return true;
 }
 
+// Find the x, y, and z values of the block that has this face
+// and fill in the data member of the intersection.
 void Face::Intersection::setData() {
-    // find the x, y, and z values of the block that has this face
     if (A.x == B.x && A.x == C.x) {                // +x or -x
         x = (int) (A.z < B.z ? A.x : A.x - 1.0f);
         y = (int) A.y;
@@ -74,6 +73,5 @@ bool Face::Intersection::operator==(const Face::Intersection& other) const {
 
 void Face::Intersection::operator=(const Face::Intersection& other) {
     // copy everything except data
-    assert(sizeof(Intersection) == offsetof(Intersection, data) + sizeof(Intersection::data));
     std::memcpy(this, &other, offsetof(Intersection, data));
 }

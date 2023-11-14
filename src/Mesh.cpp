@@ -94,8 +94,8 @@ void Mesh::render(const Shader* shader) const {
 
 bool Mesh::intersects(const sglm::ray& ray, Face::Intersection& isect) {
     bool foundIntersection = false;
-    Face::Intersection i;
     for (const Face& face : m_faces) {
+        Face::Intersection i;
         if (face.intersects(ray, i)) {
             if (!foundIntersection || i.t < isect.t) {
                 foundIntersection = true;

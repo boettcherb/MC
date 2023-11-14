@@ -15,15 +15,15 @@
 #define SGLM_IMPLEMENTATION
 #include <sglm/sglm.h>
 
-World::World(Shader* shader, int camX, int camZ) {
-    for (int x = camX - LOAD_RADIUS; x <= camX + LOAD_RADIUS; ++x) {
-        for (int z = camZ - LOAD_RADIUS; z <= camZ + LOAD_RADIUS; ++z) {
+World::World(Shader* shader, int camChunkX, int camChunkZ) {
+    for (int x = camChunkX - LOAD_RADIUS; x <= camChunkX + LOAD_RADIUS; ++x) {
+        for (int z = camChunkZ - LOAD_RADIUS; z <= camChunkZ + LOAD_RADIUS; ++z) {
             database::request_load(x, z);
         }
     }
     m_shader = shader;
-    m_cameraX = camX;
-    m_cameraZ = camZ;
+    m_cameraX = camChunkX;
+    m_cameraZ = camChunkZ;
     m_outlineX = m_outlineZ = 0;
     m_viewRayIsect = Face::Intersection();
 }
@@ -62,7 +62,12 @@ void World::loadChunks(int camX, int camZ) {
     }
 }
 
+// called once every frame
+// mineBlock: true if the player has pressed the left mouse button. If the
+// player is looking at a block, it will be mined.
 void World::update(const Camera& camera, bool mineBlock) {
+
+    // each chunk, load at most 1 chunk from the database
     database::Query q = database::get_load_result();
     if (q.type != database::QUERY_NONE) {
         assert(q.type == database::QUERY_LOAD);
@@ -70,6 +75,10 @@ void World::update(const Camera& camera, bool mineBlock) {
         delete[] q.data;
     }
     
+    // each frame, find the chunk the camera is in and compare it to the
+    // camera's position on the previous frame. If the positions are
+    // different, load/unload some chunks
+    // TODO: create another thread to take care of chunk loading/unloading
     sglm::vec3 cameraPos = camera.getPosition();
     int camX = (int) cameraPos.x / CHUNK_WIDTH - (cameraPos.x < 0);
     int camZ = (int) cameraPos.z / CHUNK_WIDTH - (cameraPos.z < 0);
@@ -89,18 +98,24 @@ void World::update(const Camera& camera, bool mineBlock) {
     }
 }
 
+// determine if the player is looking at a block (if yes, we
+// want to render a block outline around that block 
 void World::checkViewRayCollisions(const Camera& camera) {
     sglm::ray viewRay = { camera.getPosition(), camera.getDirection() };
     bool foundIntersection = false;
-    Face::Intersection bestI = Face::Intersection(), i;
-    int bestX = 0, bestZ = 0;
+    Face::Intersection bestI = Face::Intersection();
+    int bestX = 0, bestZ = 0; // chunk that contains the block of the best intersection
+    // loop through chunks near the player (the player's
+    // view distance is < width of 1 chunk)
     for (int x = m_cameraX - 1; x <= m_cameraX + 1; ++x) {
         for (int z = m_cameraZ - 1; z <= m_cameraZ + 1; ++z) {
             auto itr = m_chunks.find({ x, z });
-            if (itr == m_chunks.end()) {
+            if (itr == m_chunks.end())
                 continue;
-            }
             Chunk* chunk = itr->second;
+            // chunk->intersects returns whether there was an intersection).
+            // If yes, the details of that intersection are stored in i.
+            Face::Intersection i;
             if (chunk->intersects(viewRay, i)) {
                 if (!foundIntersection || i.t < bestI.t) {
                     foundIntersection = true;

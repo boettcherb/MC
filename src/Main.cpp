@@ -220,9 +220,9 @@ int main() {
     blockShader.addUniform3f("u4_bgColor", 0.2f, 0.3f, 0.8f);
     blockShader.addUniform1i("u5_renderDist", 16 * (LOAD_RADIUS - 3));
     
-    int camX = (int) camera.getPosition().x / CHUNK_WIDTH - (camera.getPosition().x < 0);
-    int camZ = (int) camera.getPosition().z / CHUNK_WIDTH - (camera.getPosition().z < 0);
-    World chunkLoader(&blockShader, camX, camZ);
+    int camChunkX = (int) camera.getPosition().x / CHUNK_WIDTH - (camera.getPosition().x < 0);
+    int camChunkZ = (int) camera.getPosition().z / CHUNK_WIDTH - (camera.getPosition().z < 0);
+    World chunkLoader(&blockShader, camChunkX, camChunkZ);
 
     // variables for deltaTime
     double previousTime = glfwGetTime();
