@@ -1,4 +1,4 @@
-#include "ChunkLoader.h"
+#include "World.h"
 #include "Constants.h"
 #include "Chunk.h"
 #include "Shader.h"
@@ -15,7 +15,7 @@
 #define SGLM_IMPLEMENTATION
 #include <sglm/sglm.h>
 
-ChunkLoader::ChunkLoader(Shader* shader, int camX, int camZ) {
+World::World(Shader* shader, int camX, int camZ) {
     for (int x = camX - LOAD_RADIUS; x <= camX + LOAD_RADIUS; ++x) {
         for (int z = camZ - LOAD_RADIUS; z <= camZ + LOAD_RADIUS; ++z) {
             database::request_load(x, z);
@@ -28,7 +28,7 @@ ChunkLoader::ChunkLoader(Shader* shader, int camX, int camZ) {
     m_viewRayIsect = Face::Intersection();
 }
 
-ChunkLoader::~ChunkLoader() {
+World::~World() {
     while (!m_chunks.empty()) {
         auto itr = m_chunks.begin();
         int x = itr->first.first;
@@ -37,7 +37,7 @@ ChunkLoader::~ChunkLoader() {
     }
 }
 
-void ChunkLoader::loadChunks(int camX, int camZ) {
+void World::loadChunks(int camX, int camZ) {
     if (camX != m_cameraX) {
         int x = camX + (camX < m_cameraX ? -LOAD_RADIUS : LOAD_RADIUS);
         for (int z = m_cameraZ - LOAD_RADIUS; z <= m_cameraZ + LOAD_RADIUS; ++z) {
@@ -62,7 +62,7 @@ void ChunkLoader::loadChunks(int camX, int camZ) {
     }
 }
 
-void ChunkLoader::update(const Camera& camera, bool mineBlock) {
+void World::update(const Camera& camera, bool mineBlock) {
     database::Query q = database::get_load_result();
     if (q.type != database::QUERY_NONE) {
         assert(q.type == database::QUERY_LOAD);
@@ -89,7 +89,7 @@ void ChunkLoader::update(const Camera& camera, bool mineBlock) {
     }
 }
 
-void ChunkLoader::checkViewRayCollisions(const Camera& camera) {
+void World::checkViewRayCollisions(const Camera& camera) {
     sglm::ray viewRay = { camera.getPosition(), camera.getDirection() };
     bool foundIntersection = false;
     Face::Intersection bestI = Face::Intersection(), i;
@@ -125,7 +125,7 @@ void ChunkLoader::checkViewRayCollisions(const Camera& camera) {
     }
 }
 
-void ChunkLoader::renderAll(const Camera& camera) {
+void World::renderAll(const Camera& camera) {
     // send the view and projection matrices to the shader
     m_shader->addUniformMat4f("u1_view", camera.getViewMatrix());
     m_shader->addUniformMat4f("u2_projection", camera.getProjectionMatrix());
@@ -144,7 +144,7 @@ void ChunkLoader::renderAll(const Camera& camera) {
     }
 }
 
-void ChunkLoader::addChunk(int x, int z, const void* data) {
+void World::addChunk(int x, int z, const void* data) {
     if (m_chunks.find({ x, z }) != m_chunks.end()) {
         return;
     }
@@ -172,7 +172,7 @@ void ChunkLoader::addChunk(int x, int z, const void* data) {
     m_chunks.emplace(std::make_pair(x, z), newChunk);
 }
 
-void ChunkLoader::removeChunk(int x, int z) {
+void World::removeChunk(int x, int z) {
     auto itr = m_chunks.find({ x, z });
     if (itr != m_chunks.end()) {
         Chunk* chunk = itr->second;

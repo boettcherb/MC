@@ -9,7 +9,7 @@
 #include <sglm/sglm.h>
 #include <map>
 
-class ChunkLoader {
+class World {
     std::map<std::pair<int, int>, Chunk*> m_chunks;
     Shader* m_shader;
     int m_cameraX, m_cameraZ; // x and z of chunk that camera is in
@@ -19,8 +19,8 @@ class ChunkLoader {
     Face::Intersection m_viewRayIsect;
 
 public:
-    ChunkLoader(Shader* shader, int camX, int camZ);
-    ~ChunkLoader();
+    World(Shader* shader, int camX, int camZ);
+    ~World();
     void update(const Camera& camera, bool mineBlock);
     void renderAll(const Camera& camera);
 

@@ -2,7 +2,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Texture.h"
-#include "ChunkLoader.h"
+#include "World.h"
 #include "Database.h"
 
 #include <glad/glad.h>
@@ -222,7 +222,7 @@ int main() {
     
     int camX = (int) camera.getPosition().x / CHUNK_WIDTH - (camera.getPosition().x < 0);
     int camZ = (int) camera.getPosition().z / CHUNK_WIDTH - (camera.getPosition().z < 0);
-    ChunkLoader chunkLoader(&blockShader, camX, camZ);
+    World chunkLoader(&blockShader, camX, camZ);
 
     // variables for deltaTime
     double previousTime = glfwGetTime();
