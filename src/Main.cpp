@@ -22,9 +22,10 @@ void render_HUD(Shader* shader);
 static Camera camera(PLAYER_INITIAL_POSITION, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
 static bool mouse_captured = true;
 static bool mine_block = false;
+static bool f3_opened = false;
 
 // called by std::at_exit()
-void close_app() {
+static void close_app() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -33,22 +34,22 @@ void close_app() {
 }
 
 static void glfw_error_callback(int error, const char* description) {
-    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+    std::cout << "GLFW Error " << error << ": " << description << '\n';
 }
 
-void window_size_callback(GLFWwindow* /* window */, int width, int height) {
+static void window_size_callback(GLFWwindow* /* window */, int width, int height) {
     camera.processNewAspectRatio((float) width / height);
     glViewport(0, 0, width, height);
     resize_HUD(width, height);
 }
 
-void mouse_motion_callback(GLFWwindow* /* window */, double xpos, double ypos) {
+static void mouse_motion_callback(GLFWwindow* /* window */, double xpos, double ypos) {
     if (mouse_captured) {
         camera.processMouseMovement((float) xpos, (float) ypos);
     }
 }
 
-void mouse_button_callback(GLFWwindow* /* window */, int button, int action, int /* mods */) {
+static void mouse_button_callback(GLFWwindow* /* window */, int button, int action, int /* mods */) {
     if (mouse_captured) {
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
             mine_block = true;
@@ -56,13 +57,13 @@ void mouse_button_callback(GLFWwindow* /* window */, int button, int action, int
     }
 }
 
-void scroll_callback(GLFWwindow* /* window */, double /* offsetX */, double offsetY) {
+static void scroll_callback(GLFWwindow* /* window */, double /* offsetX */, double offsetY) {
     if (mouse_captured) {
         camera.processMouseScroll((float) offsetY);
     }
 }
 
-void key_callback(GLFWwindow* window, int key, int /* scancode */, int action, int mods) {
+static void key_callback(GLFWwindow* window, int key, int /* scancode */, int action, int mods) {
     // If the escape key is pressed, close the window. If the escape key is
     // pressed while shift is pressed, toggle holding / releasing the mouse.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -76,6 +77,17 @@ void key_callback(GLFWwindow* window, int key, int /* scancode */, int action, i
             }
         } else {
             glfwSetWindowShouldClose(window, true);
+        }
+    }
+    if (key == GLFW_KEY_F3 && action == GLFW_PRESS) {
+        f3_opened = !f3_opened;
+        if (f3_opened) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            mouse_captured = false;
+        } else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            mouse_captured = true;
+
         }
     }
 }
@@ -96,59 +108,44 @@ static void processInput(GLFWwindow* window, float deltaTime) {
     }
 }
 
-void render_imgui_window(ImGuiIO& io) {
+static void render_imgui_window(ImGuiIO& io, Shader& shader) {
     static bool show_demo_window = false;
-    static bool show_another_window = true;
-    static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+    static ImVec4 color = ImVec4(0.2f, 0.3f, 0.8f, 1.0f);
+    static int render_distance = 16 * (LOAD_RADIUS - 3);
+
+    if (!f3_opened)
+        return;
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-
-    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
-
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-    {
-        static float f = 0.0f;
-        static int counter = 0;
-
-        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-        ImGui::Checkbox("Another Window", &show_another_window);
-
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-        ImGui::ColorEdit3("clear color", (float*) &clear_color); // Edit 3 floats representing a color
-
-        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::End();
+    // create imgui window with title
+    ImGui::Begin("Debug Info");
+    // display coordinates
+    sglm::vec3 pos = camera.getPosition();
+    ImGui::Text("Position: x = %.2f, y = %.2f, z = %.2f", pos.x, pos.y, pos.z);
+    // update clear color
+    ImVec4 prev = { color.x, color.y, color.z, color.w };
+    ImGui::ColorEdit3("Clear Color", (float*) &color); // Edit 3 floats representing a color
+    if (prev.x != color.x || prev.y != color.y || prev.z != color.z) {
+        glClearColor(color.x, color.y, color.z, color.w);
+        shader.addUniform3f("u4_bgColor", color.x, color.y, color.z);
     }
-
-    // 3. Show another simple window.
-    if (show_another_window) {
-        ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-        ImGui::Text("Hello from another window!");
-        if (ImGui::Button("Close Me"))
-            show_another_window = false;
-        ImGui::End();
+    // render distance
+    int prev_dist = render_distance;
+    ImGui::SliderInt("render distance", &render_distance, 0, 32 * (LOAD_RADIUS - 3));
+    if (prev_dist != render_distance) {
+        shader.addUniform1i("u5_renderDist", render_distance);
     }
-
-    // Rendering
+    // display fps
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+    ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+    ImGui::End();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
-
-
-
 
 int main() {
     std::atexit(close_app);
@@ -185,7 +182,7 @@ int main() {
         return -1;
     }
 
-    glClearColor(CLEAR_R, CLEAR_G, CLEAR_B, 1.0f);
+    glClearColor(0.2f, 0.3f, 0.8f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_MULTISAMPLE);
@@ -202,8 +199,7 @@ int main() {
     // initialize imgui
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 150");
 
@@ -221,7 +217,7 @@ int main() {
     Texture textureSheet(TEXTURE_SHEET, 0);
     blockShader.addTexture(&textureSheet, "u3_texture");
     uiShader.addTexture(&textureSheet, "u3_texture");
-    blockShader.addUniform3f("u4_bgColor", CLEAR_R, CLEAR_G, CLEAR_B);
+    blockShader.addUniform3f("u4_bgColor", 0.2f, 0.3f, 0.8f);
     blockShader.addUniform1i("u5_renderDist", 16 * (LOAD_RADIUS - 3));
     
     int camX = (int) camera.getPosition().x / CHUNK_WIDTH - (camera.getPosition().x < 0);
@@ -249,7 +245,7 @@ int main() {
         chunkLoader.renderAll(camera);
         render_HUD(&uiShader);
 
-        render_imgui_window(io);
+        render_imgui_window(io, blockShader);
 
 #ifndef NDEBUG
         // catch errors
