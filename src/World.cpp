@@ -15,16 +15,15 @@
 #define SGLM_IMPLEMENTATION
 #include <sglm/sglm.h>
 
-World::World(Shader* shader, int camChunkX, int camChunkZ) {
-    for (int x = camChunkX - LOAD_RADIUS; x <= camChunkX + LOAD_RADIUS; ++x) {
-        for (int z = camChunkZ - LOAD_RADIUS; z <= camChunkZ + LOAD_RADIUS; ++z) {
+World::World(Shader* shader, Player* player) {
+    auto [cx, cz] = player->getPlayerChunk();
+    for (int x = cx - LOAD_RADIUS; x <= cx + LOAD_RADIUS; ++x) {
+        for (int z = cz - LOAD_RADIUS; z <= cz + LOAD_RADIUS; ++z) {
             database::request_load(x, z);
         }
     }
     m_shader = shader;
-    m_cameraX = camChunkX;
-    m_cameraZ = camChunkZ;
-    m_viewRayIsect = Face::Intersection();
+    m_player = player;
 }
 
 World::~World() {
@@ -37,35 +36,38 @@ World::~World() {
 }
 
 void World::loadChunks(int camX, int camZ) {
-    if (camX != m_cameraX) {
-        int x = camX + (camX < m_cameraX ? -LOAD_RADIUS : LOAD_RADIUS);
-        for (int z = m_cameraZ - LOAD_RADIUS; z <= m_cameraZ + LOAD_RADIUS; ++z) {
+    static int prevX = camX;
+    static int prevZ = camZ;
+    assert(std::abs(camX - prevX) <= 1);
+    assert(std::abs(camZ - prevZ) <= 1);
+    if (camX != prevX) {
+        int x = camX + (camX < prevX ? -LOAD_RADIUS : LOAD_RADIUS);
+        for (int z = prevZ - LOAD_RADIUS; z <= prevZ + LOAD_RADIUS; ++z) {
             database::request_load(x, z);
         }
-        x = m_cameraX + (camX < m_cameraX ? UNLOAD_RADIUS : -UNLOAD_RADIUS);
-        for (int z = m_cameraZ - UNLOAD_RADIUS; z <= m_cameraZ + UNLOAD_RADIUS; ++z) {
+        x = prevX + (camX < prevX ? UNLOAD_RADIUS : -UNLOAD_RADIUS);
+        for (int z = prevZ - UNLOAD_RADIUS; z <= prevZ + UNLOAD_RADIUS; ++z) {
             removeChunk(x, z);
         }
-        m_cameraX = camX;
+        prevX = camX;
     }
-    if (camZ != m_cameraZ) {
-        int z = camZ + (camZ < m_cameraZ ? -LOAD_RADIUS : LOAD_RADIUS);
-        for (int x = m_cameraX - LOAD_RADIUS; x <= m_cameraX + LOAD_RADIUS; ++x) {
+    if (camZ != prevZ) {
+        int z = camZ + (camZ < prevZ ? -LOAD_RADIUS : LOAD_RADIUS);
+        for (int x = prevX - LOAD_RADIUS; x <= prevX + LOAD_RADIUS; ++x) {
             database::request_load(x, z);
         }
-        z = m_cameraZ + (camZ < m_cameraZ ? UNLOAD_RADIUS : -UNLOAD_RADIUS);
-        for (int x = m_cameraX - UNLOAD_RADIUS; x <= m_cameraX + UNLOAD_RADIUS; ++x) {
+        z = prevZ + (camZ < prevZ ? UNLOAD_RADIUS : -UNLOAD_RADIUS);
+        for (int x = prevX - UNLOAD_RADIUS; x <= prevX + UNLOAD_RADIUS; ++x) {
             removeChunk(x, z);
         }
-        m_cameraZ = camZ;
+        prevZ = camZ;
     }
 }
 
 // called once every frame
 // mineBlock: true if the player has pressed the left mouse button. If the
 // player is looking at a block, it will be mined.
-void World::update(const Camera& camera, bool mineBlock) {
-
+void World::update(bool mineBlock) {
     // each chunk, load at most 1 chunk from the database
     database::Query q = database::get_load_result();
     if (q.type != database::QUERY_NONE) {
@@ -78,36 +80,31 @@ void World::update(const Camera& camera, bool mineBlock) {
     // camera's position on the previous frame. If the positions are
     // different, load/unload some chunks
     // TODO: create another thread to take care of chunk loading/unloading
-    sglm::vec3 cameraPos = camera.getPosition();
-    int camX = (int) cameraPos.x / CHUNK_WIDTH - (cameraPos.x < 0);
-    int camZ = (int) cameraPos.z / CHUNK_WIDTH - (cameraPos.z < 0);
-    assert(std::abs(camX - m_cameraX) <= 1);
-    assert(std::abs(camZ - m_cameraZ) <= 1);
-    loadChunks(camX, camZ);
+    std::pair<int, int> player_chunk = m_player->getPlayerChunk();
+    loadChunks(player_chunk.first, player_chunk.second);
 
-    checkViewRayCollisions(camera);
+    checkViewRayCollisions();
 
     // mine block we are looking at
-    if (mineBlock && m_viewRayIsect.x != -1) {
-        int cx = m_viewRayIsect.cx, cz = m_viewRayIsect.cz;
-        Chunk* chunk = m_chunks.find({ cx, cz })->second;
-        int x = m_viewRayIsect.x;
-        int y = m_viewRayIsect.y;
-        int z = m_viewRayIsect.z;
-        chunk->put(x, y, z, Block::BlockType::AIR, true);
+    if (mineBlock && m_player->hasViewRayIsect()) {
+        const Face::Intersection& isect = m_player->getViewRayIsect();
+        Chunk* chunk = m_chunks.find({ isect.cx, isect.cz })->second;
+        chunk->put(isect.x, isect.y, isect.z, Block::BlockType::AIR, true);
     }
 }
 
 // determine if the player is looking at a block (if yes, we
 // want to render a block outline around that block 
-void World::checkViewRayCollisions(const Camera& camera) {
-    sglm::ray viewRay = { camera.getPosition(), camera.getDirection() };
+void World::checkViewRayCollisions() {
+    const Camera& cam = m_player->getCamera();
+    sglm::ray viewRay = { cam.getPosition(), cam.getDirection() };
     bool foundIntersection = false;
     Face::Intersection bestI = Face::Intersection();
     // loop through chunks near the player (the player's
     // view distance is < width of 1 chunk)
-    for (int x = m_cameraX - 1; x <= m_cameraX + 1; ++x) {
-        for (int z = m_cameraZ - 1; z <= m_cameraZ + 1; ++z) {
+    auto [cx, cz] = m_player->getPlayerChunk();
+    for (int x = cx - 1; x <= cx + 1; ++x) {
+        for (int z = cz - 1; z <= cz + 1; ++z) {
             auto itr = m_chunks.find({ x, z });
             if (itr == m_chunks.end())
                 continue;
@@ -127,32 +124,30 @@ void World::checkViewRayCollisions(const Camera& camera) {
     }
     if (foundIntersection) {
         bestI.setData();
-        if (!(bestI == m_viewRayIsect)) {
-            m_blockOutline.generate(BYTES_PER_BLOCK, bestI.data, false);
-            m_viewRayIsect = bestI;
-        }
+        m_player->setViewRayIsect(&bestI);
     } else {
-        m_blockOutline.erase();
-        m_viewRayIsect.x = m_viewRayIsect.y = m_viewRayIsect.z = -1;
+        m_player->setViewRayIsect(nullptr);
     }
 }
 
-void World::renderAll(const Camera& camera) {
+void World::renderAll() {
+    const Camera& cam = m_player->getCamera();
     // send the view and projection matrices to the shader
-    m_shader->addUniformMat4f("u1_view", camera.getViewMatrix());
-    m_shader->addUniformMat4f("u2_projection", camera.getProjectionMatrix());
+    m_shader->addUniformMat4f("u1_view", cam.getViewMatrix());
+    m_shader->addUniformMat4f("u2_projection", cam.getProjectionMatrix());
 
     // render block outline
-    if (m_blockOutline.generated()) {
-        float x = (float) (m_viewRayIsect.cx * CHUNK_WIDTH);
-        float z = (float) (m_viewRayIsect.cz * CHUNK_WIDTH);
+    if (m_player->hasViewRayIsect()) {
+        const Face::Intersection& isect = m_player->getViewRayIsect();
+        float x = (float) (isect.cx * CHUNK_WIDTH);
+        float z = (float) (isect.cz * CHUNK_WIDTH);
         m_shader->addUniformMat4f("u0_model", sglm::translate({ x, 0.0f, z }));
-        m_blockOutline.render(m_shader);
+        m_player->renderOutline(m_shader);
     }
     
     // render chunks
     for (const auto& itr : m_chunks) {
-        itr.second->render(m_shader, camera.getFrustum());
+        itr.second->render(m_shader, cam.getFrustum());
     }
 }
 

@@ -19,7 +19,7 @@ void initialize_HUD(int width, int height);
 void resize_HUD(int width, int height);
 void render_HUD(Shader* shader);
 
-static Camera camera(PLAYER_INITIAL_POSITION, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
+static Player player = Player(Camera(PLAYER_INITIAL_POSITION, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT));
 static bool mouse_captured = true;
 static bool mine_block = false;
 static bool f3_opened = false;
@@ -38,14 +38,14 @@ static void glfw_error_callback(int error, const char* description) {
 }
 
 static void window_size_callback(GLFWwindow* /* window */, int width, int height) {
-    camera.processNewAspectRatio((float) width / height);
+    player.setAspectRatio((float) width / height);
     glViewport(0, 0, width, height);
     resize_HUD(width, height);
 }
 
 static void mouse_motion_callback(GLFWwindow* /* window */, double xpos, double ypos) {
     if (mouse_captured) {
-        camera.processMouseMovement((float) xpos, (float) ypos);
+        player.look((float) xpos, (float) ypos);
     }
 }
 
@@ -59,7 +59,7 @@ static void mouse_button_callback(GLFWwindow* /* window */, int button, int acti
 
 static void scroll_callback(GLFWwindow* /* window */, double /* offsetX */, double offsetY) {
     if (mouse_captured) {
-        camera.processMouseScroll((float) offsetY);
+        player.setZoom((float) offsetY);
     }
 }
 
@@ -95,16 +95,16 @@ static void key_callback(GLFWwindow* window, int key, int /* scancode */, int ac
 static void processInput(GLFWwindow* window, float deltaTime) {
     // WASD for the camera
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera.processKeyboard(Movement::FORWARD, deltaTime);
+        player.move(Movement::FORWARD, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera.processKeyboard(Movement::BACKWARD, deltaTime);
+        player.move(Movement::BACKWARD, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera.processKeyboard(Movement::LEFT, deltaTime);
+        player.move(Movement::LEFT, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera.processKeyboard(Movement::RIGHT, deltaTime);
+        player.move(Movement::RIGHT, deltaTime);
     }
 }
 
@@ -124,7 +124,7 @@ static void render_imgui_window(ImGuiIO& io, Shader& shader) {
     // create imgui window with title
     ImGui::Begin("Debug Info");
     // display coordinates
-    sglm::vec3 pos = camera.getPosition();
+    sglm::vec3 pos = player.getCamera().getPosition();
     ImGui::Text("Position: x = %.2f, y = %.2f, z = %.2f", pos.x, pos.y, pos.z);
     // update clear color
     ImVec4 prev = { color.x, color.y, color.z, color.w };
@@ -220,9 +220,7 @@ int main() {
     blockShader.addUniform3f("u4_bgColor", 0.2f, 0.3f, 0.8f);
     blockShader.addUniform1i("u5_renderDist", 16 * (LOAD_RADIUS - 3));
     
-    int camChunkX = (int) camera.getPosition().x / CHUNK_WIDTH - (camera.getPosition().x < 0);
-    int camChunkZ = (int) camera.getPosition().z / CHUNK_WIDTH - (camera.getPosition().z < 0);
-    World chunkLoader(&blockShader, camChunkX, camChunkZ);
+    World chunkLoader(&blockShader, &player);
 
     // variables for deltaTime
     double previousTime = glfwGetTime();
@@ -240,9 +238,9 @@ int main() {
         if (mouse_captured) {
             processInput(window, (float) deltaTime);
         }
-        chunkLoader.update(camera, mine_block);
+        chunkLoader.update(mine_block);
         mine_block = false;
-        chunkLoader.renderAll(camera);
+        chunkLoader.renderAll();
         render_HUD(&uiShader);
 
         render_imgui_window(io, blockShader);
