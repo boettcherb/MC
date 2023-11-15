@@ -2,7 +2,7 @@
 #include "Constants.h"
 #include "Chunk.h"
 #include "Shader.h"
-#include "Camera.h"
+#include "Player.h"
 #include "Face.h"
 #include "Database.h"
 #include <new>
@@ -17,8 +17,9 @@
 
 World::World(Shader* shader, Player* player) {
     auto [cx, cz] = player->getPlayerChunk();
-    for (int x = cx - LOAD_RADIUS; x <= cx + LOAD_RADIUS; ++x) {
-        for (int z = cz - LOAD_RADIUS; z <= cz + LOAD_RADIUS; ++z) {
+    int lr = Player::getLoadRadius();
+    for (int x = cx - lr; x <= cx + lr; ++x) {
+        for (int z = cz - lr; z <= cz + lr; ++z) {
             database::request_load(x, z);
         }
     }
@@ -40,24 +41,26 @@ void World::loadChunks(int camX, int camZ) {
     static int prevZ = camZ;
     assert(std::abs(camX - prevX) <= 1);
     assert(std::abs(camZ - prevZ) <= 1);
+    int lr = Player::getLoadRadius();
+    int ur = Player::getUnloadRadius();
     if (camX != prevX) {
-        int x = camX + (camX < prevX ? -LOAD_RADIUS : LOAD_RADIUS);
-        for (int z = prevZ - LOAD_RADIUS; z <= prevZ + LOAD_RADIUS; ++z) {
+        int x = camX + (camX < prevX ? -lr : lr);
+        for (int z = prevZ - lr; z <= prevZ + lr; ++z) {
             database::request_load(x, z);
         }
-        x = prevX + (camX < prevX ? UNLOAD_RADIUS : -UNLOAD_RADIUS);
-        for (int z = prevZ - UNLOAD_RADIUS; z <= prevZ + UNLOAD_RADIUS; ++z) {
+        x = prevX + (camX < prevX ? ur : -ur);
+        for (int z = prevZ - ur; z <= prevZ + ur; ++z) {
             removeChunk(x, z);
         }
         prevX = camX;
     }
     if (camZ != prevZ) {
-        int z = camZ + (camZ < prevZ ? -LOAD_RADIUS : LOAD_RADIUS);
-        for (int x = prevX - LOAD_RADIUS; x <= prevX + LOAD_RADIUS; ++x) {
+        int z = camZ + (camZ < prevZ ? -lr : lr);
+        for (int x = prevX - lr; x <= prevX + lr; ++x) {
             database::request_load(x, z);
         }
-        z = prevZ + (camZ < prevZ ? UNLOAD_RADIUS : -UNLOAD_RADIUS);
-        for (int x = prevX - UNLOAD_RADIUS; x <= prevX + UNLOAD_RADIUS; ++x) {
+        z = prevZ + (camZ < prevZ ? ur : -ur);
+        for (int x = prevX - ur; x <= prevX + ur; ++x) {
             removeChunk(x, z);
         }
         prevZ = camZ;
@@ -96,8 +99,8 @@ void World::update(bool mineBlock) {
 // determine if the player is looking at a block (if yes, we
 // want to render a block outline around that block 
 void World::checkViewRayCollisions() {
-    const Camera& cam = m_player->getCamera();
-    sglm::ray viewRay = { cam.getPosition(), cam.getDirection() };
+    sglm::ray viewRay = { m_player->getPosition(), 
+        m_player->getDirection(), (float) Player::getReach() };
     bool foundIntersection = false;
     Face::Intersection bestI = Face::Intersection();
     // loop through chunks near the player (the player's
@@ -131,10 +134,9 @@ void World::checkViewRayCollisions() {
 }
 
 void World::renderAll() {
-    const Camera& cam = m_player->getCamera();
     // send the view and projection matrices to the shader
-    m_shader->addUniformMat4f("u1_view", cam.getViewMatrix());
-    m_shader->addUniformMat4f("u2_projection", cam.getProjectionMatrix());
+    m_shader->addUniformMat4f("u1_view", m_player->getViewMatrix());
+    m_shader->addUniformMat4f("u2_projection", m_player->getProjectionMatrix());
 
     // render block outline
     if (m_player->hasViewRayIsect()) {
@@ -147,7 +149,7 @@ void World::renderAll() {
     
     // render chunks
     for (const auto& itr : m_chunks) {
-        itr.second->render(m_shader, cam.getFrustum());
+        itr.second->render(m_shader, m_player->getFrustum());
     }
 }
 

@@ -1,8 +1,6 @@
 #ifndef CONSTANTS_H_INCLUDED
 #define CONSTANTS_H_INCLUDED
 
-#include <sglm/sglm.h>
-
 enum Direction : unsigned char {
     PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y,
 };
@@ -22,23 +20,11 @@ inline const char* UI_VERTEX = "resources/shaders/ui_vertex.glsl";
 inline const char* UI_FRAGMENT = "resources/shaders/ui_fragment.glsl";
 inline const char* TEXTURE_SHEET = "resources/textures/texture_sheet.png";
 
-inline constexpr sglm::vec3 PLAYER_INITIAL_POSITION = { 0.0f, 80.0f, 0.0f };
-
-// Determines how many chunks will load in each direction outward from the
-// player. Chunks load in a a square around the chunk the player is in. In
-// total there will be (LOAD_RADIUS * 2 + 1)^2 chunks loaded at a time.
-inline constexpr int LOAD_RADIUS = 10;
-inline constexpr int UNLOAD_RADIUS = LOAD_RADIUS + 2;
-
 // This is about the distance from the center of a 16x16x16 sub-chunk to one
 // of its corners. This value is used during frustum culling to determine
 // whether a sub-chunk is within the view frustum. It is much easier to treat
 // each sub-chaunk as a sphere than calculate its actual bounding box.
 inline constexpr float SUB_CHUNK_RADIUS = 13.86f;
-
-// Blocks less than PLAYER_REACH blocks away from the
-// player can be mined and/or interacted with.
-inline constexpr int PLAYER_REACH = 15;
 
 // In order to render a block to the screen it must be broken up into vertices.
 // Each of the 6 faces of a block are broken up into 2 triangles which have 3
@@ -68,16 +54,6 @@ inline constexpr int SUBCHUNK_HEIGHT = 16;
 inline constexpr int NUM_SUBCHUNKS = CHUNK_HEIGHT / SUBCHUNK_HEIGHT;
 inline constexpr int BLOCKS_PER_SUBCHUNK = BLOCKS_PER_CHUNK / NUM_SUBCHUNKS;
 inline constexpr int VERTICES_PER_SUBCHUNK = BLOCKS_PER_SUBCHUNK * VERTICES_PER_BLOCK;
-
-inline constexpr sglm::vec3 WORLD_UP{ 0.0f, 1.0f, 0.0f };
-inline constexpr float DEFAULT_YAW = -90.0f;
-inline constexpr float DEFAULT_PITCH = 0.0f;
-inline constexpr float DEFAULT_SPEED = 30.0f;
-inline constexpr float DEFAULT_SENSITIVITY = 0.1f;
-
-inline constexpr float DEFAULT_FOV = 60.0f;
-inline constexpr float MIN_FOV = 5.0f;
-inline constexpr float MAX_FOV = 90.0f;
 
 inline constexpr float NEAR_PLANE = 0.1f;
 inline constexpr float FAR_PLANE = 300.0f;

@@ -1,6 +1,6 @@
 #include "Constants.h"
 #include "Shader.h"
-#include "Camera.h"
+#include "Player.h"
 #include "Texture.h"
 #include "World.h"
 #include "Database.h"
@@ -19,7 +19,7 @@ void initialize_HUD(int width, int height);
 void resize_HUD(int width, int height);
 void render_HUD(Shader* shader);
 
-static Player player = Player(Camera(PLAYER_INITIAL_POSITION, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT));
+static Player player = Player({0.0f, 80.0f, 0.0f}, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
 static bool mouse_captured = true;
 static bool mine_block = false;
 static bool f3_opened = false;
@@ -111,7 +111,7 @@ static void processInput(GLFWwindow* window, float deltaTime) {
 static void render_imgui_window(ImGuiIO& io, Shader& shader) {
     static bool show_demo_window = false;
     static ImVec4 color = ImVec4(0.2f, 0.3f, 0.8f, 1.0f);
-    static int render_distance = 16 * (LOAD_RADIUS - 3);
+    static int render_distance = 16 * (Player::getLoadRadius() - 3);
 
     if (!f3_opened)
         return;
@@ -124,7 +124,7 @@ static void render_imgui_window(ImGuiIO& io, Shader& shader) {
     // create imgui window with title
     ImGui::Begin("Debug Info");
     // display coordinates
-    sglm::vec3 pos = player.getCamera().getPosition();
+    sglm::vec3 pos = player.getPosition();
     ImGui::Text("Position: x = %.2f, y = %.2f, z = %.2f", pos.x, pos.y, pos.z);
     // update clear color
     ImVec4 prev = { color.x, color.y, color.z, color.w };
@@ -135,7 +135,7 @@ static void render_imgui_window(ImGuiIO& io, Shader& shader) {
     }
     // render distance
     int prev_dist = render_distance;
-    ImGui::SliderInt("render distance", &render_distance, 0, 32 * (LOAD_RADIUS - 3));
+    ImGui::SliderInt("render distance", &render_distance, 0, 32 * (Player::getLoadRadius() - 3));
     if (prev_dist != render_distance) {
         shader.addUniform1i("u5_renderDist", render_distance);
     }
@@ -218,7 +218,7 @@ int main() {
     blockShader.addTexture(&textureSheet, "u3_texture");
     uiShader.addTexture(&textureSheet, "u3_texture");
     blockShader.addUniform3f("u4_bgColor", 0.2f, 0.3f, 0.8f);
-    blockShader.addUniform1i("u5_renderDist", 16 * (LOAD_RADIUS - 3));
+    blockShader.addUniform1i("u5_renderDist", 16 * (Player::getLoadRadius() - 3));
     
     World chunkLoader(&blockShader, &player);
 

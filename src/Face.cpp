@@ -14,10 +14,10 @@ Face::Face(sglm::vec3& a, sglm::vec3& b, sglm::vec3& c, sglm::vec3& d)
 
 bool Face::intersects(const sglm::ray& r, Intersection& isect) const {
     // Determine if the point is out of reach
-    if (sglm::magnitude(r.pos - A) > PLAYER_REACH
-        && sglm::magnitude(r.pos - B) > PLAYER_REACH
-        && sglm::magnitude(r.pos - C) > PLAYER_REACH
-        && sglm::magnitude(r.pos - D) > PLAYER_REACH) {
+    if (sglm::magnitude(r.pos - A) > r.length
+        && sglm::magnitude(r.pos - B) > r.length
+        && sglm::magnitude(r.pos - C) > r.length
+        && sglm::magnitude(r.pos - D) > r.length) {
         return false;
     }
 
