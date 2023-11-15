@@ -43,6 +43,7 @@ namespace sglm {
     struct ray {
         vec3 pos;
         vec3 dir;
+        float length;
     };
 
     struct plane {
@@ -247,6 +248,7 @@ namespace sglm {
         print_vec3(ray.pos);
         printf("direction: ");
         print_vec3(ray.dir);
+        printf("length: %.3f", ray.length);
     }
 
     void print_plane(const plane& p) {
