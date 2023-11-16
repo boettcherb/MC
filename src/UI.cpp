@@ -1,13 +1,18 @@
 #include "Constants.h"
 #include "Shader.h"
+#include "Player.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
 #include <cassert>
 #include <iostream>
 
-void initialize_HUD(int width, int height);
+void initialize_HUD();
 void resize_HUD(int width, int height);
 void render_HUD(Shader* shader);
+void render_imgui_window(ImGuiIO& io, Shader& shader, const Player& player);
 
 static int screen_width;
 static int screen_height;
@@ -22,10 +27,10 @@ static float crosshair_data[24] = {
     -0.025f, -0.025f, 0.0f / 16.0f, 0.0f / 16.0f,
 };
 
-void initialize_HUD(int width, int height) {
+void initialize_HUD() {
     // initialize the width and height to be a square so the
     // crosshair is rendered as a square (not skewed)
-    screen_width = screen_height = 800;
+    screen_width = screen_height = 700;
 
     // crosshair
     glGenVertexArrays(1, &crosshair_VAO);
@@ -36,8 +41,6 @@ void initialize_HUD(int width, int height) {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, (void*) 8);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-
-    resize_HUD(width, height);
 }
 
 void resize_HUD(int width, int height) {
@@ -58,4 +61,63 @@ void render_HUD(Shader* shader) {
     glBindVertexArray(crosshair_VAO);
     shader->bind();
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void render_imgui_window(ImGuiIO& io, Shader& shader, const Player& player) {
+    static bool show_demo_window = false;
+    static ImVec4 color = ImVec4(0.2f, 0.3f, 0.8f, 1.0f);
+    static int render_distance = 8;
+    static bool fog = false;
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    if (show_demo_window)
+        ImGui::ShowDemoWindow(&show_demo_window);
+    // create imgui window with title
+    ImGui::Begin("Debug Info");
+    // display coordinates
+    sglm::vec3 pos = player.getPosition();
+    ImGui::Text("Position: x = %.2f, y = %.2f, z = %.2f", pos.x, pos.y, pos.z);
+    if (player.hasViewRayIsect()) {
+        int x = player.getViewRayIsect().x + CHUNK_WIDTH * player.getViewRayIsect().cx;
+        int y = player.getViewRayIsect().y;
+        int z = player.getViewRayIsect().z + CHUNK_WIDTH * player.getViewRayIsect().cz;
+        ImGui::Text("Looking at the block at: x = %d, y = %d, z = %d", x, y, z);
+    } else {
+        ImGui::Text("Looking at the block at: None");
+    }
+    // update clear color
+    ImVec4 prev = { color.x, color.y, color.z, color.w };
+    ImGui::ColorEdit3("Clear Color", (float*) &color); // Edit 3 floats representing a color
+    if (prev.x != color.x || prev.y != color.y || prev.z != color.z) {
+        glClearColor(color.x, color.y, color.z, color.w);
+        shader.addUniform3f("u4_bgColor", color.x, color.y, color.z);
+    }
+    // render distance
+    int prev_dist = render_distance;
+    ImGui::SliderInt("render distance", &render_distance, 0, 32);
+    if (prev_dist != render_distance) {
+        shader.addUniform1i("u5_renderDist", render_distance);
+        Player::setLoadRadius(render_distance);
+    }
+    // fog
+    bool prev_fog = fog;
+    ImGui::Checkbox("Fog", &fog);
+    if (fog != prev_fog) {
+        shader.addUniform1i("u6_fog", fog ? 1 : 0);
+    }
+    // percentage of subchunks rendered
+    auto [rendered, total] = Player::chunks_rendered;
+    ImGui::Text("SubChunks rendered: %d, total: %d (%.2f%%)",
+                rendered, total, (float) rendered / total * 100.0f);
+
+    // display fps
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+                1000.0f / io.Framerate, io.Framerate);
+    ImGui::Checkbox("Demo Window", &show_demo_window);
+
+    ImGui::End();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

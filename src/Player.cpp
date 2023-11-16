@@ -17,6 +17,7 @@ inline constexpr float MAX_FOV = 90.0f;
 
 int Player::load_radius = 8;
 int Player::reach = 15;
+std::pair<int, int> Player::chunks_rendered = { 0, 0 };
 
 static inline float clamp(float value, float low, float high) {
     return value < low ? low : (value > high ? high : value);
@@ -104,30 +105,6 @@ void Player::updateCamera() {
 
     setViewMatrix();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 void Player::look(float mouseX, float mouseY) {
     // only initialized on first function call

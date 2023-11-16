@@ -25,6 +25,7 @@ class Player {
     Face::Intersection m_viewRayIntersection;
 
 public:
+    static std::pair<int, int> chunks_rendered;
     static int getLoadRadius();
     static int getUnloadRadius();
     static void setLoadRadius(int radius);

@@ -25,7 +25,7 @@ public:
 
     Block::BlockType get(int x, int y, int z) const;
     void put(int x, int y, int z, Block::BlockType block, bool updateMesh);
-    void render(Shader* shader, const sglm::frustum& frustum);
+    int render(Shader* shader, const sglm::frustum& frustum);
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
     bool intersects(const sglm::ray& ray, Face::Intersection& isect);

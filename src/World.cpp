@@ -83,8 +83,8 @@ void World::update(bool mineBlock) {
     // camera's position on the previous frame. If the positions are
     // different, load/unload some chunks
     // TODO: create another thread to take care of chunk loading/unloading
-    std::pair<int, int> player_chunk = m_player->getPlayerChunk();
-    loadChunks(player_chunk.first, player_chunk.second);
+    auto [cx, cz] = m_player->getPlayerChunk();
+    loadChunks(cx, cz);
 
     checkViewRayCollisions();
 
@@ -148,9 +148,12 @@ void World::renderAll() {
     }
     
     // render chunks
-    for (const auto& itr : m_chunks) {
-        itr.second->render(m_shader, m_player->getFrustum());
+    int rendered = 0, total = 0;
+    for (const auto& [_, chunk] : m_chunks) {
+        rendered += chunk->render(m_shader, m_player->getFrustum());
+        total += NUM_SUBCHUNKS;
     }
+    Player::chunks_rendered = { rendered, total };
 }
 
 void World::addChunk(int x, int z, const void* data) {

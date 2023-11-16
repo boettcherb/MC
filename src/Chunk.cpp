@@ -117,10 +117,8 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
 }
 
 // the view and projection matrices must be set before this function is called.
-void Chunk::render(Shader* shader, const sglm::frustum& frustum) {
-    if (m_numNeighbors != 4) {
-        return;
-    }
+int Chunk::render(Shader* shader, const sglm::frustum& frustum) {
+    int subChunksRendered = 0;
 
     // send the model matrix to the shaders
     float cx = (float) (m_posX * CHUNK_WIDTH);
@@ -134,8 +132,10 @@ void Chunk::render(Shader* shader, const sglm::frustum& frustum) {
         float cy2 = i * SUBCHUNK_HEIGHT + SUBCHUNK_HEIGHT / 2.0f;
         if (frustum.contains({ cx2, cy2, cz2 }, SUB_CHUNK_RADIUS)) {
             m_mesh[i].render(shader);
+            ++subChunksRendered;
         }
     }
+    return subChunksRendered;
 }
 
 void Chunk::addNeighbor(Chunk* chunk, Direction direction) {

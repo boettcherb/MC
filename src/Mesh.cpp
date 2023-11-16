@@ -76,7 +76,6 @@ void Mesh::getFaces(const unsigned int* data, int chunkX, int chunkZ) {
         sglm::vec3 C = Block::getPosition(data[i + 2]) + offset;
         sglm::vec3 D = Block::getPosition(data[i + 4]) + offset;
         m_faces.emplace_back(Face(A, B, C, D));
-
     }
 }
 
