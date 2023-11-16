@@ -24,11 +24,15 @@ namespace database {
 
     static bool thread_should_close;
 
-    static void check(int error_code, int sqlite_call_index) {
+    static inline void check(int error_code, int sqlite_call_index) {
+#ifndef NDEBUG
         if (error_code != SQLITE_OK && error_code != SQLITE_DONE) {
             std::cout << "Error on sqlite call #" << sqlite_call_index << std::endl;
             std::cout << "SQLiteError: " << sqlite3_errstr(error_code) << std::endl;
         }
+#else
+        (void) error_code, sqlite_call_index; // avoid unused variable warnings
+#endif
     }
 
     static void db_thread_func() {
