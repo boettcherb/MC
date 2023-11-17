@@ -8,6 +8,8 @@
 #include <cstring>
 #include <chrono>
 
+using namespace std::chrono_literals;
+
 namespace database {
 
     static const char* DATABASE_FILE_NAME = "MCDB.db";
@@ -82,9 +84,8 @@ namespace database {
                 delete[] request.data;
             }
             else {
-                // the request queue was empty, so sleep for 100ms (1/10 second)
-                std::chrono::duration<int, std::milli> sleep_time(100);
-                std::this_thread::sleep_for(sleep_time);
+                // the request queue was empty, so sleep for 100ms
+                std::this_thread::sleep_for(100ms);
             }
         }
         check(sqlite3_finalize(select_stmt), 14);
