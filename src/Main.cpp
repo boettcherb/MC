@@ -20,7 +20,6 @@ void resize_HUD(int width, int height);
 void render_HUD(Shader* shader);
 void render_imgui_window(ImGuiIO& io, Shader& shader, const Player& player);
 
-
 static Player player = Player({0.0f, 80.0f, 0.0f}, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
 static bool mouse_captured = true;
 static bool mine_block = false;
@@ -123,12 +122,9 @@ int main() {
     // // glfwWindowHint(GLFW_SAMPLES, 1); // anti-aliasing is causing lines between blocks
 
     // create the main window
-    // auto [scr_width, scr_height] = get_screen_size();
-    int scr_width = 800, scr_height = 600;
-    // GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, WINDOW_TITLE,
-    //                                       glfwGetPrimaryMonitor(), nullptr);
-    GLFWwindow* window = glfwCreateWindow(800, 600, WINDOW_TITLE,
-                                          nullptr, nullptr);
+    auto [scr_width, scr_height] = get_screen_size();
+    GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, WINDOW_TITLE,
+                                          glfwGetPrimaryMonitor(), nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         return -1;

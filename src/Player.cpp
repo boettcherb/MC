@@ -15,7 +15,7 @@ inline constexpr float DEFAULT_FOV = 60.0f;
 inline constexpr float MIN_FOV = 5.0f;
 inline constexpr float MAX_FOV = 90.0f;
 
-int Player::load_radius = 4;
+int Player::load_radius = 10;
 int Player::reach = 15;
 std::pair<int, int> Player::chunks_rendered = { 0, 0 };
 
@@ -57,27 +57,22 @@ Player::Player(sglm::vec3 position, float aspectRatio) : m_position{ position } 
     setProjectionMatrix();
 }
 
-// Todo: make this a const reference
 const sglm::vec3& Player::getPosition() const {
     return m_position;
 }
 
-// Todo: make this a const reference
 const sglm::vec3& Player::getDirection() const {
     return m_forward;
 }
 
-// Todo: make this a const reference
 const sglm::mat4& Player::getViewMatrix() const {
     return m_viewMatrix;
 }
 
-// Todo: make this a const reference
 const sglm::mat4& Player::getProjectionMatrix() const {
     return m_projectionMatrix;
 }
 
-// TODO: make this a const reference
 const sglm::frustum& Player::getFrustum() const {
     return m_frustum;
 }

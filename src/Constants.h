@@ -56,6 +56,6 @@ inline constexpr int BLOCKS_PER_SUBCHUNK = BLOCKS_PER_CHUNK / NUM_SUBCHUNKS;
 inline constexpr int VERTICES_PER_SUBCHUNK = BLOCKS_PER_SUBCHUNK * VERTICES_PER_BLOCK;
 
 inline constexpr float NEAR_PLANE = 0.1f;
-inline constexpr float FAR_PLANE = 300.0f;
+inline constexpr float FAR_PLANE = 600.0f;
 
 #endif

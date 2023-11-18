@@ -167,10 +167,8 @@ void Chunk::removeNeighbor(Direction direction) {
 }
 
 std::pair<std::pair<int, int>, Chunk*> Chunk::getNeighbor(int index) const {
-    if (m_neighbors[index] == nullptr)
-        return { {0, 0}, nullptr };
-    int x = m_neighbors[index]->m_posX;
-    int z = m_neighbors[index]->m_posZ;
+    int x = m_posX + (index == PLUS_X) - (index == MINUS_X);
+    int z = m_posZ + (index == PLUS_Z) - (index == MINUS_Z);
     return { { x, z }, m_neighbors[index] };
 }
 

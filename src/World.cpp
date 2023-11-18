@@ -12,6 +12,8 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <set>
+#include <vector>
 
 #ifdef NDEBUG
 #define SGLM_NO_PRINT
@@ -35,7 +37,6 @@ World::World(Shader* shader, Player* player) {
 World::~World() {
     m_chunkLoaderThreadShouldClose = true;
     m_chunkLoaderThread.join();
-    assert(m_frontier.empty());
     assert(m_chunks.empty());
 }
 
@@ -129,7 +130,65 @@ void World::chunkLoaderThreadFunc() {
     using namespace std::chrono_literals;
     while (!m_chunkLoaderThreadShouldClose) {
 
-    // load chunks from the database
+        // create a copy of the chunks so I can loop through it many times
+        // without having to worry about holding the mutex too long.
+        std::vector<std::pair<std::pair<int, int>, Chunk*>> chunks;
+        m_chunksMutex.lock();
+        chunks.reserve(m_chunks.size());
+        for (const auto& [pos, chunk] : m_chunks) {
+            chunks.push_back({ pos, chunk });
+        }
+        m_chunksMutex.unlock();
+
+        // Find all unloaded chunks that are adjacent to loaded chunks. Add
+        // these chunks to the 'candidates' set (no duplicates)
+        std::set<std::pair<int, int>> candidates;
+        for (const auto& [pos, chunk] : chunks) {
+            for (int i = 0; i < 4; ++i) {
+                auto [neighborPos, neighbor] = chunk->getNeighbor(i);
+                if (neighbor == nullptr) {
+                    candidates.insert(neighborPos);
+                }
+            }
+        }
+
+        // Out of all candidate chunks, find which ones are both within the
+        // player's render distance and within the player's view frustum.
+        // Load these chunks.
+        float diff = CHUNK_WIDTH / 2.0f;
+        auto [px, pz] = m_player->getPlayerChunk();
+        sglm::frustum f = m_player->getFrustum();
+        for (const auto& [x, z] : candidates) {
+            int dist_sq = (x - px) * (x - px) + (z - pz) * (z - pz);
+            if (dist_sq > Player::getLoadRadius() * Player::getLoadRadius())
+                continue;
+            bool contains = false;
+            sglm::vec3 pos = { x *16 + diff, 0.0f, z * 16 + diff };
+            for (int subchunk = 0; subchunk < NUM_SUBCHUNKS; ++subchunk) {
+                pos.y = subchunk * SUBCHUNK_HEIGHT + diff;
+                // +10 b/c some visible chunks on the edges of the frustum are not loading
+                // TODO: find out what is causing this
+                float r = SUB_CHUNK_RADIUS + 10.0f;
+                if (m_player->getFrustum().contains(pos, r)) {
+                    contains = true;
+                    break;
+                }
+            }
+            if (contains) {
+                database::request_load(x, z);
+            }
+        }
+
+        // Remove chunks that are beyond the player's render distance
+        for (const auto& [pos, chunk] : chunks) {
+            int x = pos.first, z = pos.second;
+            int dist_sq = (px - x) * (px - x) + (pz - z) * (pz - z);
+            if (dist_sq > Player::getLoadRadius() * Player::getLoadRadius()) {
+                threadRemoveChunk(x, z, chunk);
+            }
+        }
+
+        // load chunks from the database
         database::Query q = database::get_load_result();
         while (q.type != database::QUERY_NONE) {
             assert(q.type == database::QUERY_LOAD);
@@ -138,107 +197,66 @@ void World::chunkLoaderThreadFunc() {
             q = database::get_load_result();
         }
 
-        std::this_thread::sleep_for(500ms);
+        // prevent busy waiting
+        std::this_thread::sleep_for(50ms);
 
     }
 
     // thread is closing, unload all chunks
-    while (!m_frontier.empty()) {
-        auto itr = m_frontier.begin();
+    while (!m_chunks.empty()) {
+        auto itr = m_chunks.begin();
         int x = itr->first.first;
         int z = itr->first.second;
         Chunk* chunk = itr->second;
         threadRemoveChunk(x, z, chunk);
     }
-    assert(m_frontier.empty());
     assert(m_chunks.empty());
 }
 
 void World::threadAddChunk(int x, int z, const void* data) {
     m_chunksMutex.lock();
-   // if the chunk has already been loaded, don't do anything
-    if (m_chunks.count({ x, z }) == 1 || m_frontier.count({ x, z }) == 1) {
+
+    // if the chunk has already been loaded, don't do anything
+    if (m_chunks.count({ x, z }) == 1) {
         m_chunksMutex.unlock();
         return;
     }
 
-    // none of the neighbors should be in m_chunks
-    assert(m_chunks.count({ x + 1, z }) == 0);
-    assert(m_chunks.count({ x - 1, z }) == 0);
-    assert(m_chunks.count({ x, z + 1 }) == 0);
-    assert(m_chunks.count({ x, z - 1 }) == 0);
-
-    // at least one of the neighbors should be absent from the frontier (not loaded)
-    assert(m_frontier.find({ x + 1, z }) == m_frontier.end()
-           || m_frontier.find({ x - 1, z }) == m_frontier.end()
-           || m_frontier.find({ x, z + 1 }) == m_frontier.end()
-           || m_frontier.find({ x, z - 1 }) == m_frontier.end());
-
-    // create the new chunk and add it to the frontier
+    // create the new chunk and add it to m_chunks
     // unlock while generating terrain for the chunk
     m_chunksMutex.unlock();
     Chunk* newChunk = new Chunk(x, z, data);
     m_chunksMutex.lock();
-    m_frontier.emplace(std::make_pair(x, z), newChunk);
+    m_chunks.emplace(std::make_pair(x, z), newChunk);
 
-    // add neighbors to the new chunk. If the new chunk's neighbors have
-    // all 4 neighbors, remove them from the frontier and add them to m_chunks.
-    auto px = m_frontier.find({ x + 1, z });
-    if (px != m_frontier.end()) {
+    // add neighbors to the new chunk.
+    auto px = m_chunks.find({ x + 1, z });
+    if (px != m_chunks.end()) {
         newChunk->addNeighbor(px->second, PLUS_X);
-        px->second->addNeighbor(newChunk, MINUS_X);
-        if (px->second->getNumNeighbors() == 4) {
-            m_chunks.emplace(std::make_pair(x + 1, z), px->second);
-            m_frontier.erase(px);
-        }
+        px->second->addNeighbor(newChunk, MINUS_X);\
     }
-    auto mx = m_frontier.find({ x - 1, z });
-    if (mx != m_frontier.end()) {
+    auto mx = m_chunks.find({ x - 1, z });
+    if (mx != m_chunks.end()) {
         newChunk->addNeighbor(mx->second, MINUS_X);
         mx->second->addNeighbor(newChunk, PLUS_X);
-        if (mx->second->getNumNeighbors() == 4) {
-            m_chunks.emplace(std::make_pair(x - 1, z), mx->second);
-            m_frontier.erase(mx);
-        }
     }
-    auto pz = m_frontier.find({ x, z + 1 });
-    if (pz != m_frontier.end()) {
+    auto pz = m_chunks.find({ x, z + 1 });
+    if (pz != m_chunks.end()) {
         newChunk->addNeighbor(pz->second, PLUS_Z);
         pz->second->addNeighbor(newChunk, MINUS_Z);
-        if (pz->second->getNumNeighbors() == 4) {
-            m_chunks.emplace(std::make_pair(x, z + 1), pz->second);
-            m_frontier.erase(pz);
-        }
     }
-    auto mz = m_frontier.find({ x, z - 1 });
-    if (mz != m_frontier.end()) {
+    auto mz = m_chunks.find({ x, z - 1 });
+    if (mz != m_chunks.end()) {
         newChunk->addNeighbor(mz->second, MINUS_Z);
         mz->second->addNeighbor(newChunk, PLUS_Z);
-        if (mz->second->getNumNeighbors() == 4) {
-            m_chunks.emplace(std::make_pair(x, z - 1), mz->second);
-            m_frontier.erase(mz);
-        }
     }
-
     m_chunksMutex.unlock();
 }
 
 void World::threadRemoveChunk(int x, int z, Chunk* chunk) {
     m_chunksMutex.lock();
-    assert(m_frontier.count({ x, z }) == 1);
-    m_frontier.erase({ x, z });
-    // Add all neighbors to the frontier (if they aren't already there)
-    for (int i = 0; i < 4; ++i) {
-        auto [pos, neighbor] = chunk->getNeighbor(i);
-        // if the neighbor is already in the frontier, don't do anything
-        if (neighbor == nullptr || m_frontier.count(pos) == 1)
-            continue;
-        // if the neighbor is not in the frontier, then they are in m_chunks
-        assert(m_chunks.count(pos) == 1);
-        // add them to the frontier and remove them from m_chunks
-        m_frontier.emplace(pos, neighbor);
-        m_chunks.erase(pos);
-    }
+    assert(m_chunks.count({ x, z }) == 1);
+    m_chunks.erase({ x, z });
     m_chunksMutex.unlock();
     if (chunk->wasUpdated()) {
         database::request_store(x, z, BLOCKS_PER_CHUNK, chunk->getBlockData());

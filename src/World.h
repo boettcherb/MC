@@ -11,7 +11,6 @@
 
 class World {
     std::map<std::pair<int, int>, Chunk*> m_chunks;
-    std::map<std::pair<int, int>, Chunk*> m_frontier;
     Shader* m_shader;
     Player* m_player;
 
