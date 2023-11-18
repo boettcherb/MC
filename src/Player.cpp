@@ -15,7 +15,7 @@ inline constexpr float DEFAULT_FOV = 60.0f;
 inline constexpr float MIN_FOV = 5.0f;
 inline constexpr float MAX_FOV = 90.0f;
 
-int Player::load_radius = 8;
+int Player::load_radius = 4;
 int Player::reach = 15;
 std::pair<int, int> Player::chunks_rendered = { 0, 0 };
 

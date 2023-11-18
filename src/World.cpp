@@ -17,9 +17,8 @@
 
 World::World(Shader* shader, Player* player) {
     auto [cx, cz] = player->getPlayerChunk();
-    int lr = Player::getLoadRadius();
-    for (int x = cx - lr; x <= cx + lr; ++x) {
-        for (int z = cz - lr; z <= cz + lr; ++z) {
+    for (int x = cx - 2; x <= cx + 2; ++x) {
+        for (int z = cz - 2; z <= cz + 2; ++z) {
             database::request_load(x, z);
         }
     }
@@ -35,6 +34,8 @@ World::~World() {
         removeChunk(x, z);
     }
 }
+
+/*
 
 void World::loadChunks(int camX, int camZ) {
     static int prevX = camX;
@@ -67,10 +68,12 @@ void World::loadChunks(int camX, int camZ) {
     }
 }
 
+*/
+
 // called once every frame
 // mineBlock: true if the player has pressed the left mouse button. If the
 // player is looking at a block, it will be mined.
-void World::update(bool mineBlock) {
+void World::update(bool /* mineBlock */) {
     // each chunk, load at most 1 chunk from the database
     database::Query q = database::get_load_result();
     if (q.type != database::QUERY_NONE) {
@@ -79,6 +82,9 @@ void World::update(bool mineBlock) {
         delete[] q.data;
     }
     
+    /*
+
+
     // each frame, find the chunk the camera is in and compare it to the
     // camera's position on the previous frame. If the positions are
     // different, load/unload some chunks
@@ -88,13 +94,18 @@ void World::update(bool mineBlock) {
 
     checkViewRayCollisions();
 
+
     // mine block we are looking at
     if (mineBlock && m_player->hasViewRayIsect()) {
         const Face::Intersection& isect = m_player->getViewRayIsect();
         Chunk* chunk = m_chunks.find({ isect.cx, isect.cz })->second;
         chunk->put(isect.x, isect.y, isect.z, Block::BlockType::AIR, true);
     }
+
+    */
 }
+
+/*
 
 // determine if the player is looking at a block (if yes, we
 // want to render a block outline around that block 
@@ -133,10 +144,14 @@ void World::checkViewRayCollisions() {
     }
 }
 
+*/
+
 void World::renderAll() {
     // send the view and projection matrices to the shader
     m_shader->addUniformMat4f("u1_view", m_player->getViewMatrix());
     m_shader->addUniformMat4f("u2_projection", m_player->getProjectionMatrix());
+
+    /*
 
     // render block outline
     if (m_player->hasViewRayIsect()) {
@@ -146,6 +161,8 @@ void World::renderAll() {
         m_shader->addUniformMat4f("u0_model", sglm::translate({ x, 0.0f, z }));
         m_player->renderOutline(m_shader);
     }
+
+    */
     
     // render chunks
     int rendered = 0, total = 0;

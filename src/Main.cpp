@@ -38,7 +38,6 @@ static void close_app() {
 std::pair<int, int> get_screen_size() {
     GLFWmonitor* primary = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(primary);
-    std::cout << "width, height: " << mode->width << ' ' << mode->height << std::endl;
     return { mode->width, mode->height };
 }
 
@@ -124,9 +123,12 @@ int main() {
     // // glfwWindowHint(GLFW_SAMPLES, 1); // anti-aliasing is causing lines between blocks
 
     // create the main window
-    auto [scr_width, scr_height] = get_screen_size();
-    GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, WINDOW_TITLE,
-                                          glfwGetPrimaryMonitor(), nullptr);
+    // auto [scr_width, scr_height] = get_screen_size();
+    int scr_width = 800, scr_height = 600;
+    // GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, WINDOW_TITLE,
+    //                                       glfwGetPrimaryMonitor(), nullptr);
+    GLFWwindow* window = glfwCreateWindow(800, 600, WINDOW_TITLE,
+                                          nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         return -1;

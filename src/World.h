@@ -19,8 +19,8 @@ public:
     void renderAll();
 
 private:
-    void loadChunks(int camX, int camZ);
-    void checkViewRayCollisions();
+    // void loadChunks(int camX, int camZ);
+    // void checkViewRayCollisions();
     void addChunk(int x, int z, const void* data);
     void removeChunk(int x, int z);
 };

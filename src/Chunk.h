@@ -28,6 +28,8 @@ public:
     int render(Shader* shader, const sglm::frustum& frustum);
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
+    std::pair<std::pair<int, int>, Chunk*> getNeighbor(int index) const;
+    int getNumNeighbors() const;
     bool intersects(const sglm::ray& ray, Face::Intersection& isect);
     const void* getBlockData() const;
     bool wasUpdated() const;

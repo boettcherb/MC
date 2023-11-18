@@ -165,6 +165,14 @@ void Chunk::removeNeighbor(Direction direction) {
     assert(m_numNeighbors >= 0 && m_numNeighbors <= 4);
 }
 
+std::pair<std::pair<int, int>, Chunk*> Chunk::getNeighbor(int index) const {
+    return { { m_posX, m_posZ }, m_neighbors[index] };
+}
+
+int Chunk::getNumNeighbors() const {
+    return m_numNeighbors;
+}
+
 unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
     unsigned int* start = data; // record the current byte address
     for (int x = 0; x < CHUNK_WIDTH; ++x) {
