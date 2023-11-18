@@ -8,8 +8,6 @@
 #include <new>
 #include <cassert>
 
-static inline constexpr int UPDATE_ALL = 0xAB2CD6EF;
-
 Chunk::Chunk(int x, int z, const void* blockData) : m_posX{ x }, m_posZ{ z } {
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
     m_numNeighbors = 0;
@@ -20,19 +18,16 @@ Chunk::Chunk(int x, int z, const void* blockData) : m_posX{ x }, m_posZ{ z } {
         memcpy(m_blockArray, blockData, BLOCKS_PER_CHUNK);
         m_updated = false;
     }
+    m_rendered = false;
 }
 
 void Chunk::updateMesh(int meshIndex) {
-    assert(meshIndex == UPDATE_ALL || (meshIndex >= 0 && meshIndex < NUM_SUBCHUNKS));
-    int start = meshIndex == UPDATE_ALL ? 0 : meshIndex;
-    int end = meshIndex == UPDATE_ALL ? NUM_SUBCHUNKS : meshIndex + 1;
-    for (int i = start; i < end; ++i) {
-        m_mesh[i].erase();
-        unsigned int* data = new unsigned int[VERTICES_PER_SUBCHUNK];
-        unsigned int size = getVertexData(data, i);
-        m_mesh[i].generate(size, data, true, m_posX, m_posZ);
-        delete[] data;
-    }
+    assert(meshIndex >= 0 && meshIndex < NUM_SUBCHUNKS);
+    m_mesh[meshIndex].erase();
+    unsigned int* data = new unsigned int[VERTICES_PER_SUBCHUNK];
+    unsigned int size = getVertexData(data, meshIndex);
+    m_mesh[meshIndex].generate(size, data, true, m_posX, m_posZ);
+    delete[] data;
 }
 
 void Chunk::generateTerrain() {
@@ -138,35 +133,45 @@ int Chunk::render(Shader* shader, const sglm::frustum& frustum) {
     return subChunksRendered;
 }
 
+void Chunk::update() {
+    if (!m_rendered && m_numNeighbors == 4) {
+        // render this chunk
+        for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
+            updateMesh(i);
+        }
+        m_rendered = true;
+    }
+    if (m_rendered && m_numNeighbors != 4) {
+        // unload this chunk
+        for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
+            m_mesh[i].erase();
+        }
+        m_rendered = false;
+    }
+}
+
 void Chunk::addNeighbor(Chunk* chunk, Direction direction) {
+    // assert(std::this_thread::get_id() != g_mainThreadID);
     assert(m_neighbors[direction] == nullptr);
     m_neighbors[direction] = chunk;
     ++m_numNeighbors;
     assert(m_numNeighbors >= 0 && m_numNeighbors <= 4);
-
-    // all 4 neighboring chunks are loaded so we can now render this chunk
-    if (m_numNeighbors == 4) {
-        updateMesh(UPDATE_ALL);
-    }
 }
 
 void Chunk::removeNeighbor(Direction direction) {
+    // assert(std::this_thread::get_id() != g_mainThreadID);
     assert(m_neighbors[direction] != nullptr);
     m_neighbors[direction] = nullptr;
-
-    // one of this chunk's neighbors was un-loaded
-    // so we can no longer render this chunk
-    if (m_numNeighbors == 4) {
-        for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-            m_mesh[i].erase();
-        }
-    }
     --m_numNeighbors;
-    assert(m_numNeighbors >= 0 && m_numNeighbors <= 4);
+    assert(m_numNeighbors >= 0 && m_numNeighbors < 4);
 }
 
 std::pair<std::pair<int, int>, Chunk*> Chunk::getNeighbor(int index) const {
-    return { { m_posX, m_posZ }, m_neighbors[index] };
+    if (m_neighbors[index] == nullptr)
+        return { {0, 0}, nullptr };
+    int x = m_neighbors[index]->m_posX;
+    int z = m_neighbors[index]->m_posZ;
+    return { { x, z }, m_neighbors[index] };
 }
 
 int Chunk::getNumNeighbors() const {

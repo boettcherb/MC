@@ -18,6 +18,7 @@ class Chunk {
     Chunk* m_neighbors[4];
     int m_numNeighbors;
     bool m_updated;
+    bool m_rendered; // true if meshes have been generated
 
 public:
     Chunk(int x, int z, const void* blockData);
@@ -25,11 +26,15 @@ public:
 
     Block::BlockType get(int x, int y, int z) const;
     void put(int x, int y, int z, Block::BlockType block, bool updateMesh);
+
+    void update();
     int render(Shader* shader, const sglm::frustum& frustum);
+
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
     std::pair<std::pair<int, int>, Chunk*> getNeighbor(int index) const;
     int getNumNeighbors() const;
+
     bool intersects(const sglm::ray& ray, Face::Intersection& isect);
     const void* getBlockData() const;
     bool wasUpdated() const;

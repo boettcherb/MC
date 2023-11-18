@@ -6,11 +6,18 @@
 #include "Player.h"
 #include <sglm/sglm.h>
 #include <map>
+#include <mutex>
+#include <thread>
 
 class World {
     std::map<std::pair<int, int>, Chunk*> m_chunks;
+    std::map<std::pair<int, int>, Chunk*> m_frontier;
     Shader* m_shader;
     Player* m_player;
+
+    bool m_chunkLoaderThreadShouldClose;
+    std::thread m_chunkLoaderThread;
+    std::mutex m_chunksMutex;
 
 public:
     World(Shader* shader, Player* player);
@@ -19,10 +26,11 @@ public:
     void renderAll();
 
 private:
-    // void loadChunks(int camX, int camZ);
-    // void checkViewRayCollisions();
-    void addChunk(int x, int z, const void* data);
-    void removeChunk(int x, int z);
+    void checkViewRayCollisions();
+
+    void chunkLoaderThreadFunc();
+    void threadAddChunk(int x, int z, const void* data);
+    void threadRemoveChunk(int x, int z, Chunk* chunk);
 };
 
 #endif
