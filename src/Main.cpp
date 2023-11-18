@@ -18,7 +18,7 @@
 void initialize_HUD();
 void resize_HUD(int width, int height);
 void render_HUD(Shader* shader);
-void render_imgui_window(ImGuiIO& io, Shader& shader, const Player& player);
+void render_imgui_window(ImGuiIO& io, const Player& player);
 
 static Player player = Player({0.0f, 80.0f, 0.0f}, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
 static bool mouse_captured = true;
@@ -178,9 +178,6 @@ int main() {
     Texture textureSheet(TEXTURE_SHEET, 0);
     blockShader.addTexture(&textureSheet, "u3_texture");
     uiShader.addTexture(&textureSheet, "u3_texture");
-    blockShader.addUniform3f("u4_bgColor", 0.2f, 0.3f, 0.8f);
-    blockShader.addUniform1i("u5_renderDist", 16 * (Player::getLoadRadius() - 3));
-    blockShader.addUniform1i("u6_fog", 0);
     
     World chunkLoader(&blockShader, &player);
 
@@ -206,7 +203,7 @@ int main() {
         render_HUD(&uiShader);
 
         if (f3_opened)
-            render_imgui_window(io, blockShader, player);
+            render_imgui_window(io, player);
 
 #ifndef NDEBUG
         // catch errors

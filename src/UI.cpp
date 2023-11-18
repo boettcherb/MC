@@ -63,11 +63,10 @@ void render_HUD(Shader* shader) {
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void render_imgui_window(ImGuiIO& io, Shader& shader, const Player& player) {
+void render_imgui_window(ImGuiIO& io, const Player& player) {
     static bool show_demo_window = false;
     static ImVec4 color = ImVec4(0.2f, 0.3f, 0.8f, 1.0f);
-    static int render_distance = 8;
-    static bool fog = false;
+    static int render_distance = Player::getLoadRadius();
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -92,20 +91,12 @@ void render_imgui_window(ImGuiIO& io, Shader& shader, const Player& player) {
     ImGui::ColorEdit3("Clear Color", (float*) &color); // Edit 3 floats representing a color
     if (prev.x != color.x || prev.y != color.y || prev.z != color.z) {
         glClearColor(color.x, color.y, color.z, color.w);
-        shader.addUniform3f("u4_bgColor", color.x, color.y, color.z);
     }
     // render distance
     int prev_dist = render_distance;
-    ImGui::SliderInt("render distance", &render_distance, 0, 32);
+    ImGui::SliderInt("render distance", &render_distance, 1, 32);
     if (prev_dist != render_distance) {
-        shader.addUniform1i("u5_renderDist", render_distance);
         Player::setLoadRadius(render_distance);
-    }
-    // fog
-    bool prev_fog = fog;
-    ImGui::Checkbox("Fog", &fog);
-    if (fog != prev_fog) {
-        shader.addUniform1i("u6_fog", fog ? 1 : 0);
     }
     // percentage of subchunks rendered
     auto [rendered, total] = Player::chunks_rendered;

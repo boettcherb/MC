@@ -4,12 +4,10 @@ layout(location = 0) in uint a_data;
 
 out vec2 v_texCoords;
 out float v_light;
-out float v_visibility;
 
 uniform mat4 u0_model;
 uniform mat4 u1_view;
 uniform mat4 u2_projection;
-uniform int u5_renderDist;
 
 const float light[4] = { 0.4, 0.6, 0.8, 1.0 };
 
@@ -21,10 +19,6 @@ void main() {
     vec4 worldPos = u0_model * vec4(xPos, yPos, zPos, 1.0);
     vec4 positionRelativeToCam = u1_view * worldPos;
     gl_Position = u2_projection * positionRelativeToCam;
-
-    float distanceToCam = length(positionRelativeToCam.xyz);
-    v_visibility = exp(-pow((distanceToCam - u5_renderDist) * 0.05, 3));
-    v_visibility = clamp(v_visibility, 0.0, 1.0);
 
     float xTex = float((a_data >> 5u) & 0x1Fu);
     float yTex = float(a_data & 0x1Fu);
