@@ -78,6 +78,10 @@ void render_imgui_window(ImGuiIO& io, const Player& player) {
     // display coordinates
     sglm::vec3 pos = player.getPosition();
     ImGui::Text("Position: x = %.2f, y = %.2f, z = %.2f", pos.x, pos.y, pos.z);
+    // player's chunk
+    auto [px, pz] = player.getPlayerChunk();
+    ImGui::Text("Player Chunk: x = %d, z = %d", px, pz);
+    // coordinates of block player is looking at
     if (player.hasViewRayIsect()) {
         int x = player.getViewRayIsect().x + CHUNK_WIDTH * player.getViewRayIsect().cx;
         int y = player.getViewRayIsect().y;
@@ -102,7 +106,8 @@ void render_imgui_window(ImGuiIO& io, const Player& player) {
     auto [rendered, total] = Player::chunks_rendered;
     ImGui::Text("SubChunks rendered: %d, total: %d (%.2f%%)",
                 rendered, total, (float) rendered / total * 100.0f);
-
+    // fov
+    ImGui::Text("FOV: %.2f", player.getFOV());
     // display fps
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / io.Framerate, io.Framerate);

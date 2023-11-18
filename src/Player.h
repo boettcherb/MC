@@ -36,8 +36,9 @@ public:
     void look(float xdiff, float ydiff);
     void move(Movement direction, float deltaTime);
     void renderOutline(const Shader* shader) const;
-    void setAspectRatio(float fov);
-    void setZoom(float zoom);
+    void setAspectRatio(float aspectRatio);
+    void setFOV(float fov);
+    float getFOV() const;
     const Face::Intersection& getViewRayIsect() const;
     void setViewRayIsect(const Face::Intersection* isect);
     bool hasViewRayIsect() const;

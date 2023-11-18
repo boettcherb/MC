@@ -137,9 +137,13 @@ void Player::setAspectRatio(float aspectRatio) {
     setProjectionMatrix();
 }
 
-void Player::setZoom(float zoom) {
-    m_fov = clamp(m_fov - zoom, MIN_FOV, MAX_FOV);
+void Player::setFOV(float fov) {
+    m_fov = clamp(m_fov - fov, MIN_FOV, MAX_FOV);
     setProjectionMatrix();
+}
+
+float Player::getFOV() const {
+    return m_fov;
 }
 
 void Player::setViewRayIsect(const Face::Intersection* isect) {

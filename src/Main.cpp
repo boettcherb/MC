@@ -66,7 +66,7 @@ static void mouse_button_callback(GLFWwindow* /* window */, int button, int acti
 
 static void scroll_callback(GLFWwindow* /* window */, double /* offsetX */, double offsetY) {
     if (mouse_captured) {
-        player.setZoom((float) offsetY);
+        player.setFOV((float) offsetY);
     }
 }
 
