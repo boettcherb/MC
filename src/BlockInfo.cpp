@@ -4,38 +4,27 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
+#include <map>
+#include <array>
 
-
-
-//
-// New representation:
-// block type (2 bits) 11000000000000000000000000000000
-// direction  (2 bits) 00110000000000000000000000000000
-// flipped?   (1 bits) 00001000000000000000000000000000
-// x texcoord (4 bits) 00000111100000000000000000000000
-// y texcoord (3 bits) 00000000011100000000000000000000
-// light val  (2 bits) 00000000000011000000000000000000
-// vertex pos (3 bits) 00000000000000111000000000000000
-// x position (4 bits) 00000000000000000111100000000000
-// y position (7 bits) 00000000000000000000011111110000
-// z position (4 bits) 00000000000000000000000000001111
 // 
-// block type: normal (0), slab (1), plant (2) 
-// direction: +x (0), -x (1), +z (2), -z (3)
-// flipped: right side up (0), upside down (1)
-// light value: 0 = dimmest, 3 = brightest
+// NEW REPRESENTATION:
+// Maybe each vertex has a block position within a subchunk (4 bits for each
+// coordinate) but also a pixel position within a block (6 bits for each
+// coordinate, to allow rendering up to 1 block outside the acutal block for
+// things like crops and fences)
 // 
-// The texture coordinates range from 0 to 15 (0 to 7 for y). The vertex
-// shader divides these values by 16 and the results (floats from 0 to 1)
-// determine where in the texture to sample from. (0, 0) is bottom left and
-// (1, 1) is top right.
+// x position (4 bits)
+// y position (4 bits)
+// z position (4 bits)
+// pixel x    (6 bits)
+// pixel y    (6 bits)
+// pixel z    (6 bits)
+// texture x  (5 bits)
+// texture y  (5 bits)
+// light      (4 bits)
 // 
-// the x, y, and z positions are the positions of the block within the chunk.
-// 
-// The vertex position determines whether the current vertex is on the plus
-// side of the block for each direction or the minus side.
-//
-
 
 //
 // A vertex is represented by 1 32-bit unsigned integer:
@@ -60,197 +49,93 @@
 
 namespace Block {
 
-    static inline constexpr unsigned int GRASS_BLOCK_DATA[] = {
-    //   light  posX   posY    posZ  texX  texY
-        0b0010'00001'00000000'00001'00000'00110, // right (+x)
-        0b0010'00001'00000000'00000'00001'00110,
-        0b0010'00001'00000001'00000'00001'00111,
-        0b0010'00001'00000001'00000'00001'00111,
-        0b0010'00001'00000001'00001'00000'00111,
-        0b0010'00001'00000000'00001'00000'00110,
-
-        0b0010'00000'00000000'00000'00000'00110, // left (-x)
-        0b0010'00000'00000000'00001'00001'00110,
-        0b0010'00000'00000001'00001'00001'00111,
-        0b0010'00000'00000001'00001'00001'00111,
-        0b0010'00000'00000001'00000'00000'00111,
-        0b0010'00000'00000000'00000'00000'00110,
-
-        0b0001'00000'00000000'00001'00000'00110, // front (+z)
-        0b0001'00001'00000000'00001'00001'00110,
-        0b0001'00001'00000001'00001'00001'00111,
-        0b0001'00001'00000001'00001'00001'00111,
-        0b0001'00000'00000001'00001'00000'00111,
-        0b0001'00000'00000000'00001'00000'00110,
-
-        0b0001'00001'00000000'00000'00000'00110, // back (-z)
-        0b0001'00000'00000000'00000'00001'00110,
-        0b0001'00000'00000001'00000'00001'00111,
-        0b0001'00000'00000001'00000'00001'00111,
-        0b0001'00001'00000001'00000'00000'00111,
-        0b0001'00001'00000000'00000'00000'00110,
-
-        0b0011'00000'00000001'00001'00010'00110, // top (+y)
-        0b0011'00001'00000001'00001'00011'00110,
-        0b0011'00001'00000001'00000'00011'00111,
-        0b0011'00001'00000001'00000'00011'00111,
-        0b0011'00000'00000001'00000'00010'00111,
-        0b0011'00000'00000001'00001'00010'00110,
-
-        0b0000'00000'00000000'00000'00001'00110, // bottom (-y)
-        0b0000'00001'00000000'00000'00010'00110,
-        0b0000'00001'00000000'00001'00010'00111,
-        0b0000'00001'00000000'00001'00010'00111,
-        0b0000'00000'00000000'00001'00001'00111,
-        0b0000'00000'00000000'00000'00001'00110,
+    enum class Tex {
+        GRASS_TOP, GRASS_SIDES, DIRT, STONE, OUTLINE
     };
 
-    static inline constexpr unsigned int DIRT_BLOCK_DATA[] = {
-    //   light  posX   posY    posZ  texX  texY
-        0b0010'00001'00000000'00001'00001'00110, // right (+x)
-        0b0010'00001'00000000'00000'00010'00110,
-        0b0010'00001'00000001'00000'00010'00111,
-        0b0010'00001'00000001'00000'00010'00111,
-        0b0010'00001'00000001'00001'00001'00111,
-        0b0010'00001'00000000'00001'00001'00110,
-
-        0b0010'00000'00000000'00000'00001'00110, // left (-x)
-        0b0010'00000'00000000'00001'00010'00110,
-        0b0010'00000'00000001'00001'00010'00111,
-        0b0010'00000'00000001'00001'00010'00111,
-        0b0010'00000'00000001'00000'00001'00111,
-        0b0010'00000'00000000'00000'00001'00110,
-
-        0b0001'00000'00000000'00001'00001'00110, // front (+z)
-        0b0001'00001'00000000'00001'00010'00110,
-        0b0001'00001'00000001'00001'00010'00111,
-        0b0001'00001'00000001'00001'00010'00111,
-        0b0001'00000'00000001'00001'00001'00111,
-        0b0001'00000'00000000'00001'00001'00110,
-
-        0b0001'00001'00000000'00000'00001'00110, // back (-z)
-        0b0001'00000'00000000'00000'00010'00110,
-        0b0001'00000'00000001'00000'00010'00111,
-        0b0001'00000'00000001'00000'00010'00111,
-        0b0001'00001'00000001'00000'00001'00111,
-        0b0001'00001'00000000'00000'00001'00110,
-
-        0b0011'00000'00000001'00001'00001'00110, // top (+y)
-        0b0011'00001'00000001'00001'00010'00110,
-        0b0011'00001'00000001'00000'00010'00111,
-        0b0011'00001'00000001'00000'00010'00111,
-        0b0011'00000'00000001'00000'00001'00111,
-        0b0011'00000'00000001'00001'00001'00110,
-
-        0b0000'00000'00000000'00000'00001'00110, // bottom (-y)
-        0b0000'00001'00000000'00000'00010'00110,
-        0b0000'00001'00000000'00001'00010'00111,
-        0b0000'00001'00000000'00001'00010'00111,
-        0b0000'00000'00000000'00001'00001'00111,
-        0b0000'00000'00000000'00000'00001'00110,
+    // Store the locations of each texture in the texture sheet as a point
+    // (x and y range from 0 to 16)
+    std::map<Tex, std::pair<int, int>> textures = {
+        {Tex::GRASS_SIDES, {0, 6}},
+        {Tex::DIRT,        {1, 6}},
+        {Tex::GRASS_TOP,   {2, 6}},
+        {Tex::STONE,       {3, 6}},
+        {Tex::OUTLINE,     {1, 0}},
     };
 
-    static inline constexpr unsigned int STONE_BLOCK_DATA[] = {
-    //   light  posX   posY    posZ  texX  texY
-        0b0010'00001'00000000'00001'00011'00110, // right (+x)
-        0b0010'00001'00000000'00000'00100'00110,
-        0b0010'00001'00000001'00000'00100'00111,
-        0b0010'00001'00000001'00000'00100'00111,
-        0b0010'00001'00000001'00001'00011'00111,
-        0b0010'00001'00000000'00001'00011'00110,
-
-        0b0010'00000'00000000'00000'00011'00110, // left (-x)
-        0b0010'00000'00000000'00001'00100'00110,
-        0b0010'00000'00000001'00001'00100'00111,
-        0b0010'00000'00000001'00001'00100'00111,
-        0b0010'00000'00000001'00000'00011'00111,
-        0b0010'00000'00000000'00000'00011'00110,
-
-        0b0001'00000'00000000'00001'00011'00110, // front (+z)
-        0b0001'00001'00000000'00001'00100'00110,
-        0b0001'00001'00000001'00001'00100'00111,
-        0b0001'00001'00000001'00001'00100'00111,
-        0b0001'00000'00000001'00001'00011'00111,
-        0b0001'00000'00000000'00001'00011'00110,
-
-        0b0001'00001'00000000'00000'00011'00110, // back (-z)
-        0b0001'00000'00000000'00000'00100'00110,
-        0b0001'00000'00000001'00000'00100'00111,
-        0b0001'00000'00000001'00000'00100'00111,
-        0b0001'00001'00000001'00000'00011'00111,
-        0b0001'00001'00000000'00000'00011'00110,
-
-        0b0011'00000'00000001'00001'00011'00110, // top (+y)
-        0b0011'00001'00000001'00001'00100'00110,
-        0b0011'00001'00000001'00000'00100'00111,
-        0b0011'00001'00000001'00000'00100'00111,
-        0b0011'00000'00000001'00000'00011'00111,
-        0b0011'00000'00000001'00001'00011'00110,
-
-        0b0000'00000'00000000'00000'00011'00110, // bottom (-y)
-        0b0000'00001'00000000'00000'00100'00110,
-        0b0000'00001'00000000'00001'00100'00111,
-        0b0000'00001'00000000'00001'00100'00111,
-        0b0000'00000'00000000'00001'00011'00111,
-        0b0000'00000'00000000'00000'00011'00110,
+    //
+    // For each block type, store the textures on each face of the block. Textures
+    // are listed in this order: (+x, -x, +z, -z, +y, -y), and we are assuming that
+    // the block is in a default rotation facing the +x direction.
+    // 
+    // Most blocks are the same on all 6 sides. For example, a dirt block has the
+    // dirt texture (Tex::DIRT) on every side. However, some blocks, such as the
+    // chest, are different on most sides. This is where the ordering above is
+    // important. We are assuming that the 'forward' direction of the block is +x
+    // and the 'up' direction is +y. 
+    //
+    std::map<BlockType, std::array<Tex, 6>> blocks = {
+        {BlockType::GRASS,   {Tex::GRASS_SIDES, Tex::GRASS_SIDES, Tex::GRASS_SIDES, Tex::GRASS_SIDES, Tex::GRASS_TOP, Tex::DIRT}},
+        {BlockType::DIRT,    {Tex::DIRT,        Tex::DIRT,        Tex::DIRT,        Tex::DIRT,        Tex::DIRT,      Tex::DIRT}},
+        {BlockType::STONE,   {Tex::STONE,       Tex::STONE,       Tex::STONE,       Tex::STONE,       Tex::STONE,     Tex::STONE}},
+        {BlockType::OUTLINE, {Tex::OUTLINE,     Tex::OUTLINE,     Tex::OUTLINE,     Tex::OUTLINE,     Tex::OUTLINE,   Tex::OUTLINE}},
     };
 
-    static inline constexpr unsigned int BLOCK_OUTLINE_DATA[] = {
-    //   light  posX   posY    posZ  texX  texY
-        0b0010'00001'00000000'00001'00001'00000, // right (+x)
-        0b0010'00001'00000000'00000'00010'00000,
-        0b0010'00001'00000001'00000'00010'00001,
-        0b0010'00001'00000001'00000'00010'00001,
-        0b0010'00001'00000001'00001'00001'00001,
-        0b0010'00001'00000000'00001'00001'00000,
+    inline constexpr int LIGHT_BITS = 2;
+    inline constexpr int POS_X_BITS = 5;
+    inline constexpr int POS_Y_BITS = 8;
+    inline constexpr int POS_Z_BITS = 5;
+    inline constexpr int TEX_X_BITS = 5;
+    inline constexpr int TEX_Y_BITS = 5;
 
-        0b0010'00000'00000000'00000'00001'00000, // left (-x)
-        0b0010'00000'00000000'00001'00010'00000,
-        0b0010'00000'00000001'00001'00010'00001,
-        0b0010'00000'00000001'00001'00010'00001,
-        0b0010'00000'00000001'00000'00001'00001,
-        0b0010'00000'00000000'00000'00001'00000,
-
-        0b0001'00000'00000000'00001'00001'00000, // front (+z)
-        0b0001'00001'00000000'00001'00010'00000,
-        0b0001'00001'00000001'00001'00010'00001,
-        0b0001'00001'00000001'00001'00010'00001,
-        0b0001'00000'00000001'00001'00001'00001,
-        0b0001'00000'00000000'00001'00001'00000,
-
-        0b0001'00001'00000000'00000'00001'00000, // back (-z)
-        0b0001'00000'00000000'00000'00010'00000,
-        0b0001'00000'00000001'00000'00010'00001,
-        0b0001'00000'00000001'00000'00010'00001,
-        0b0001'00001'00000001'00000'00001'00001,
-        0b0001'00001'00000000'00000'00001'00000,
-
-        0b0011'00000'00000001'00001'00001'00000, // top (+y)
-        0b0011'00001'00000001'00001'00010'00000,
-        0b0011'00001'00000001'00000'00010'00001,
-        0b0011'00001'00000001'00000'00010'00001,
-        0b0011'00000'00000001'00000'00001'00001,
-        0b0011'00000'00000001'00001'00001'00000,
-
-        0b0000'00000'00000000'00000'00001'00000, // bottom (-y)
-        0b0000'00001'00000000'00000'00010'00000,
-        0b0000'00001'00000000'00001'00010'00001,
-        0b0000'00001'00000000'00001'00010'00001,
-        0b0000'00000'00000000'00001'00001'00001,
-        0b0000'00000'00000000'00000'00001'00000,
+    // Stores the offsets for the x, y, and z positions of each vertex and the
+    // offsets for the x and y texture coordinates of each vertex.
+    int offs[6][6][5] = {
+        {{1, 0, 1, 0, 0}, {1, 0, 0, 1, 0}, {1, 1, 0, 1, 1},    // +x
+         {1, 1, 0, 1, 1}, {1, 1, 1, 0, 1}, {1, 0, 1, 0, 0}},
+        {{0, 0, 0, 0, 0}, {0, 0, 1, 1, 0}, {0, 1, 1, 1, 1},    // -x
+         {0, 1, 1, 1, 1}, {0, 1, 0, 0, 1}, {0, 0, 0, 0, 0}},
+        {{0, 0, 1, 0, 0}, {1, 0, 1, 1, 0}, {1, 1, 1, 1, 1},    // +z
+         {1, 1, 1, 1, 1}, {0, 1, 1, 0, 1}, {0, 0, 1, 0, 0}},
+        {{1, 0, 0, 0, 0}, {0, 0, 0, 1, 0}, {0, 1, 0, 1, 1},    // -z
+         {0, 1, 0, 1, 1}, {1, 1, 0, 0, 1}, {1, 0, 0, 0, 0}},
+        {{0, 1, 1, 0, 0}, {1, 1, 1, 1, 0}, {1, 1, 0, 1, 1},    // +y
+         {1, 1, 0, 1, 1}, {0, 1, 0, 0, 1}, {0, 1, 1, 0, 0}},
+        {{0, 0, 0, 0, 0}, {1, 0, 0, 1, 0}, {1, 0, 1, 1, 1},    // -y
+         {1, 0, 1, 1, 1}, {0, 0, 1, 0, 1}, {0, 0, 0, 0, 0}}
     };
+
+    std::vector<unsigned int> getData(BlockType block, Direction up = PLUS_Y, Direction forward = PLUS_X) {
+        // assuming default orientation
+        (void) up, forward;
+
+        // for now, light value is 3 for top, 2 +x/-x, 1 for +z/-z, and 0 for bottom
+        int light[VERTICES_PER_FACE] = { 2, 2, 1, 1, 3, 0 };
+        int faces = FACES_PER_BLOCK; // assume 6 for now; might change when adding plants
+
+        std::vector<unsigned int> data;
+        for (int f = 0; f < faces; ++f) {
+            auto& [texX, texY] = textures[blocks[block][f]];
+            for (int v = 0; v < VERTICES_PER_FACE; ++v) {
+                unsigned int val = light[f];
+                val = (val << POS_X_BITS) + offs[f][v][0];
+                val = (val << POS_Y_BITS) + offs[f][v][1];
+                val = (val << POS_Z_BITS) + offs[f][v][2];
+                val = (val << TEX_X_BITS) + texX + offs[f][v][3];
+                val = (val << TEX_Y_BITS) + texY + offs[f][v][4];
+                data.push_back(val);
+            }
+        }
+        return data;
+    }
 
     void getFaceData(BlockType type, int x, int y, int z, unsigned int* data, Direction face) {
         assert(face >= 0 && face < 6);
+        assert(type != BlockType::AIR && type != BlockType::NO_BLOCK);
         int offset = UINTS_PER_FACE * (int) face;
-        switch (type) {
-            case BlockType::GRASS:         std::memcpy(data, GRASS_BLOCK_DATA + offset, BYTES_PER_FACE); break;
-            case BlockType::DIRT:          std::memcpy(data, DIRT_BLOCK_DATA + offset, BYTES_PER_FACE); break;
-            case BlockType::STONE:         std::memcpy(data, STONE_BLOCK_DATA + offset, BYTES_PER_FACE); break;
-            case BlockType::BLOCK_OUTLINE: std::memcpy(data, BLOCK_OUTLINE_DATA + offset, BYTES_PER_FACE); break;
-            default:
-                assert(0 && "Invalid type / No data for this block");
-                std::exit(-1);
+        std::vector<unsigned int> blockData = getData(type);
+        for (int i = 0; i < FACES_PER_BLOCK; ++i) {
+            data[i] = blockData[offset + i];
         }
         for (int i = 0; i < UINTS_PER_FACE; ++i) {
             data[i] += (x << 23) + (y << 15) + (z << 10);

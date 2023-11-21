@@ -11,7 +11,7 @@ namespace Block {
         GRASS,
         DIRT,
         STONE,
-        BLOCK_OUTLINE,
+        OUTLINE,
         NO_BLOCK,
     };
 

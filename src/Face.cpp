@@ -64,7 +64,7 @@ void Face::Intersection::setData() {
     x = (x < 0 ? x % CHUNK_WIDTH + CHUNK_WIDTH : x) % CHUNK_WIDTH;
     z = (z < 0 ? z % CHUNK_WIDTH + CHUNK_WIDTH : z) % CHUNK_WIDTH;
 
-    Block::getBlockData(Block::BlockType::BLOCK_OUTLINE, x, y, z, data);
+    Block::getBlockData(Block::BlockType::OUTLINE, x, y, z, data);
 }
 
 bool Face::Intersection::operator==(const Face::Intersection& other) const {
