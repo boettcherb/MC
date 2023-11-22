@@ -16,10 +16,10 @@ namespace Block {
     };
 
     void setBlockData();
-    void getFaceData(BlockType type, int x, int y, int z, unsigned int* data, Direction face);
-    void getBlockData(BlockType type, int x, int y, int z, unsigned int* data);
+    void getFaceData(BlockType type, int x, int y, int z, VertexAttribType* data, Direction face);
+    void getBlockData(BlockType type, int x, int y, int z, VertexAttribType* data);
 
-    sglm::vec3 getPosition(unsigned int vertex);
+    sglm::vec3 getPosition(const Vertex& vertex);
     bool isTransparent(BlockType type);
 
 }

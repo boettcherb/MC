@@ -27,7 +27,7 @@ void Chunk::updateMesh(int meshIndex) {
     // VERTICES_PER_SUBCHUNK * UINTS_PER_VERTEX is the maximum possible number
     // of uints that can be rendered per subchunk. Most subchunks will not be
     // anywhere near this number, so divide by 16 to save memory.
-    unsigned int* data = new unsigned int[VERTICES_PER_SUBCHUNK * UINTS_PER_VERTEX / 16];
+    VertexAttribType* data = new VertexAttribType[VERTICES_PER_SUBCHUNK * UINTS_PER_VERTEX / 16];
     unsigned int size = getVertexData(data, meshIndex);
     m_mesh[meshIndex].generate(size, data, true, m_posX, m_posZ);
     delete[] data;
@@ -177,8 +177,8 @@ int Chunk::getNumNeighbors() const {
     return m_numNeighbors;
 }
 
-unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
-    unsigned int* start = data; // record the current byte address
+unsigned int Chunk::getVertexData(VertexAttribType* data, int meshIndex) const {
+    VertexAttribType* start = data; // record the current byte address
     for (int x = 0; x < CHUNK_WIDTH; ++x) {
         for (int y = meshIndex * SUBCHUNK_HEIGHT; y < (meshIndex + 1) * SUBCHUNK_HEIGHT; ++y) {
             for (int z = 0; z < CHUNK_WIDTH; ++z) {
@@ -217,7 +217,7 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
         }
     }
     // return the number of bytes that were initialized
-    return (unsigned int) (data - start) * sizeof(unsigned int);
+    return (unsigned int) ((data - start) * sizeof(VertexAttribType));
 }
 
 bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {

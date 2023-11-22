@@ -95,26 +95,26 @@ namespace Block {
          {1, 0, 1, 1, 1}, {0, 0, 1, 0, 1}, {0, 0, 0, 0, 0}}
     };
 
-    static std::map<BlockType, std::vector<unsigned int>> blockData;
+    static std::map<BlockType, std::vector<VertexAttribType>> blockData;
 
     static void setData(BlockType block) {
         // for now, light value is 3 for top, 2 +x/-x, 1 for +z/-z, and 0 for bottom
         int light[VERTICES_PER_FACE] = { 2, 2, 1, 1, 3, 0 };
         int faces = FACES_PER_BLOCK; // assume 6 for now; might change when adding plants
 
-        std::vector<unsigned int> data;
+        std::vector<VertexAttribType> data;
         for (int f = 0; f < faces; ++f) {
             auto& [texX, texY] = textures[blocks[block][f]];
             for (int v = 0; v < VERTICES_PER_FACE; ++v) {
-                unsigned int val = light[f];
-                val = (val << POS_X_BITS) + offs[f][v][0];
-                val = (val << POS_Y_BITS) + offs[f][v][1];
-                val = (val << POS_Z_BITS) + offs[f][v][2];
-                val = (val << TEX_X_BITS) + texX + offs[f][v][3];
-                val = (val << TEX_Y_BITS) + texY + offs[f][v][4];
+                VertexAttribType val = (VertexAttribType) light[f];
+                val = (val << POS_X_BITS) + (VertexAttribType) offs[f][v][0];
+                val = (val << POS_Y_BITS) + (VertexAttribType) offs[f][v][1];
+                val = (val << POS_Z_BITS) + (VertexAttribType) offs[f][v][2];
+                val = (val << TEX_X_BITS) + (VertexAttribType) (texX + offs[f][v][3]);
+                val = (val << TEX_Y_BITS) + (VertexAttribType) (texY + offs[f][v][4]);
                 data.push_back(val);
-                data.push_back(0);
-                data.push_back(0);
+                for (int i = 0; i < VERTEX_SIZE / sizeof(VertexAttribType) - 1; ++i)
+                    data.push_back(0);
             }
         }
         blockData[block] = data;
@@ -126,21 +126,21 @@ namespace Block {
         }
     }
 
-    void getFaceData(BlockType type, int x, int y, int z, unsigned int* data, Direction face) {
+    void getFaceData(BlockType type, int x, int y, int z, VertexAttribType* data, Direction face) {
         assert(face >= 0 && face < 6);
         assert(type != BlockType::AIR && type != BlockType::NO_BLOCK);
         int offset = UINTS_PER_FACE * (int) face;
-        std::vector<unsigned int>& curBlockData = blockData[type];
+        std::vector<VertexAttribType>& curBlockData = blockData[type];
         assert(curBlockData.size() == UINTS_PER_BLOCK);
         for (int i = 0; i < UINTS_PER_FACE; ++i) {
             data[i] = curBlockData[offset + i];
         }
         for (int i = 0; i < UINTS_PER_FACE; i += UINTS_PER_VERTEX) {
-            data[i] += (x << 23) + (y << 15) + (z << 10);
+            data[i] += (VertexAttribType) ((x << 23) + (y << 15) + (z << 10));
         }
     }
 
-    void getBlockData(BlockType type, int x, int y, int z, unsigned int* data) {
+    void getBlockData(BlockType type, int x, int y, int z, VertexAttribType* data) {
         getFaceData(type, x, y, z, data, PLUS_X); data += UINTS_PER_FACE;
         getFaceData(type, x, y, z, data, MINUS_X); data += UINTS_PER_FACE;
         getFaceData(type, x, y, z, data, PLUS_Z); data += UINTS_PER_FACE;
@@ -149,11 +149,12 @@ namespace Block {
         getFaceData(type, x, y, z, data, MINUS_Y);
     }
 
-    sglm::vec3 getPosition(unsigned int vertex) {
-        unsigned int x = (vertex >> 23) & 0x1F;
-        unsigned int y = (vertex >> 15) & 0xFF;
-        unsigned int z = (vertex >> 10) & 0x1F;
-        return { (float) x, (float) y, (float) z };
+    sglm::vec3 getPosition(const Vertex& vertex) {
+        VertexAttribType first = vertex.v1;
+        float x = (float) ((first >> 23) & 0x1F);
+        float y = (float) ((first >> 15) & 0xFF);
+        float z = (float) ((first >> 10) & 0x1F);
+        return { x, y, z };
     };
 
     bool isTransparent(BlockType type) {

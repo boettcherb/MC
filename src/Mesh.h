@@ -25,7 +25,7 @@ public:
     bool intersects(const sglm::ray& ray, Face::Intersection& isect);
 
 private:
-    void getFaces(const unsigned int* data, int chunkX, int chunkZ);
+    void getFaces(const VertexAttribType* data, int chunkX, int chunkZ);
 };
 
 #endif

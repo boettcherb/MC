@@ -42,7 +42,7 @@ public:
 private:
     void updateMesh(int meshIndex);
     void generateTerrain();
-    unsigned int getVertexData(unsigned int* data, int meshIndex) const;
+    unsigned int getVertexData(VertexAttribType* data, int meshIndex) const;
 };
 
 #endif
