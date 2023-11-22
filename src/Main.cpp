@@ -21,7 +21,7 @@ void render_HUD(Shader* shader);
 void render_imgui_window(ImGuiIO& io, const Player& player);
 
 static Player player = Player({0.0f, 80.0f, 0.0f}, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
-static bool mouse_captured = true;
+static bool mouse_captured = false;
 static bool mine_block = false;
 static bool f3_opened = false;
 
@@ -122,9 +122,15 @@ int main() {
     // // glfwWindowHint(GLFW_SAMPLES, 1); // anti-aliasing is causing lines between blocks
 
     // create the main window
-    auto [scr_width, scr_height] = get_screen_size();
+    //auto [scr_width, scr_height] = get_screen_size();
+    //GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, WINDOW_TITLE,
+    //                                      glfwGetPrimaryMonitor(), nullptr);
+    int scr_width = 800, scr_height = 600;
     GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, WINDOW_TITLE,
-                                          glfwGetPrimaryMonitor(), nullptr);
+                                          nullptr, nullptr);
+
+
+
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         return -1;
@@ -148,7 +154,8 @@ int main() {
     glEnable(GL_MULTISAMPLE);
 
     // tell GLFW to capture our mouse cursor
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (mouse_captured)
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // enable VSync (tie the FPS to your monitor's refresh rate)
     glfwSwapInterval(1);

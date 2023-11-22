@@ -22,6 +22,7 @@
 #include <sglm/sglm.h>
 
 World::World(Shader* shader, Player* player) {
+    // initially, load a 5x5 grid of chunks around the player
     auto [cx, cz] = player->getPlayerChunk();
     for (int x = cx - 2; x <= cx + 2; ++x) {
         for (int z = cz - 2; z <= cz + 2; ++z) {
@@ -43,13 +44,13 @@ World::~World() {
 // called once every frame
 // mineBlock: true if the player has pressed the left mouse button. If the
 // player is looking at a block, it will be mined.
-void World::update(bool mineBlock) {
+void World::update(bool /* mineBlock */) {
     m_chunksMutex.lock();
     for (const auto& [_, chunk] : m_chunks) {
         chunk->update();
     }
     m_chunksMutex.unlock();
-
+    /*
     checkViewRayCollisions();
 
     // mine block we are looking at
@@ -60,10 +61,12 @@ void World::update(bool mineBlock) {
         m_chunksMutex.unlock();
         chunk->put(isect.x, isect.y, isect.z, Block::BlockType::AIR, true);
     }
+    */
 }
 
 // determine if the player is looking at a block (if yes, we
-// want to render a block outline around that block 
+// want to render a block outline around that block
+/*
 void World::checkViewRayCollisions() {
     sglm::ray viewRay = { m_player->getPosition(), 
         m_player->getDirection(), (float) Player::getReach() };
@@ -100,12 +103,13 @@ void World::checkViewRayCollisions() {
         m_player->setViewRayIsect(nullptr);
     }
 }
+*/
 
 void World::renderAll() {
     // send the view and projection matrices to the shader
     m_shader->addUniformMat4f("u1_view", m_player->getViewMatrix());
     m_shader->addUniformMat4f("u2_projection", m_player->getProjectionMatrix());
-
+    /*
     // render block outline
     if (m_player->hasViewRayIsect()) {
         const Face::Intersection& isect = m_player->getViewRayIsect();
@@ -114,6 +118,7 @@ void World::renderAll() {
         m_shader->addUniformMat4f("u0_model", sglm::translate({ x, 0.0f, z }));
         m_player->renderOutline(m_shader);
     }
+    */
     
     // render chunks
     int rendered = 0, total = 0;
@@ -129,7 +134,7 @@ void World::renderAll() {
 void World::chunkLoaderThreadFunc() {
     using namespace std::chrono_literals;
     while (!m_chunkLoaderThreadShouldClose) {
-
+        /*
         // create a copy of the chunks so I can loop through it many times
         // without having to worry about holding the mutex too long.
         std::vector<std::pair<std::pair<int, int>, Chunk*>> chunks;
@@ -188,6 +193,8 @@ void World::chunkLoaderThreadFunc() {
             }
         }
 
+        */
+
         // load chunks from the database
         database::Query q = database::get_load_result();
         while (q.type != database::QUERY_NONE) {
@@ -233,7 +240,7 @@ void World::threadAddChunk(int x, int z, const void* data) {
     auto px = m_chunks.find({ x + 1, z });
     if (px != m_chunks.end()) {
         newChunk->addNeighbor(px->second, PLUS_X);
-        px->second->addNeighbor(newChunk, MINUS_X);\
+        px->second->addNeighbor(newChunk, MINUS_X);
     }
     auto mx = m_chunks.find({ x - 1, z });
     if (mx != m_chunks.end()) {
