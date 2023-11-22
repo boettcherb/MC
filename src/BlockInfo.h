@@ -15,6 +15,7 @@ namespace Block {
         NO_BLOCK,
     };
 
+    void setBlockData();
     void getFaceData(BlockType type, int x, int y, int z, unsigned int* data, Direction face);
     void getBlockData(BlockType type, int x, int y, int z, unsigned int* data);
 

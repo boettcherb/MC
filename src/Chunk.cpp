@@ -24,7 +24,10 @@ Chunk::Chunk(int x, int z, const void* blockData) : m_posX{ x }, m_posZ{ z } {
 void Chunk::updateMesh(int meshIndex) {
     assert(meshIndex >= 0 && meshIndex < NUM_SUBCHUNKS);
     m_mesh[meshIndex].erase();
-    unsigned int* data = new unsigned int[VERTICES_PER_SUBCHUNK];
+    // VERTICES_PER_SUBCHUNK * UINTS_PER_VERTEX is the maximum possible number
+    // of uints that can be rendered per subchunk. Most subchunks will not be
+    // anywhere near this number, so divide by 16 to save memory.
+    unsigned int* data = new unsigned int[VERTICES_PER_SUBCHUNK * UINTS_PER_VERTEX / 16];
     unsigned int size = getVertexData(data, meshIndex);
     m_mesh[meshIndex].generate(size, data, true, m_posX, m_posZ);
     delete[] data;
@@ -36,7 +39,7 @@ void Chunk::generateTerrain() {
         for (int Z = 0; Z < CHUNK_WIDTH; ++Z) {
             float noiseX = (float) X + CHUNK_WIDTH * m_posX;
             float noiseZ = (float) Z + CHUNK_WIDTH * m_posZ;
-            int groundHeight = (int) ((noise.GetSimplexFractal(noiseX, noiseZ) + 1.0) / 2.0 * 120.0);
+            int groundHeight = (int) ((noise.GetSimplexFractal(noiseX, noiseZ) + 1.0) / 2.0 * 50.0 + 50);
             for (int Y = 0; Y <= groundHeight - 4; ++Y) {
                 put(X, Y, Z, Block::BlockType::STONE, false);
             }
@@ -141,7 +144,7 @@ void Chunk::update() {
         }
         m_rendered = true;
     }
-    if (m_rendered && m_numNeighbors != 4) {
+    else if (m_rendered && m_numNeighbors != 4) {
         // unload this chunk
         for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
             m_mesh[i].erase();
@@ -151,7 +154,6 @@ void Chunk::update() {
 }
 
 void Chunk::addNeighbor(Chunk* chunk, Direction direction) {
-    // assert(std::this_thread::get_id() != g_mainThreadID);
     assert(m_neighbors[direction] == nullptr);
     m_neighbors[direction] = chunk;
     ++m_numNeighbors;
@@ -159,7 +161,6 @@ void Chunk::addNeighbor(Chunk* chunk, Direction direction) {
 }
 
 void Chunk::removeNeighbor(Direction direction) {
-    // assert(std::this_thread::get_id() != g_mainThreadID);
     assert(m_neighbors[direction] != nullptr);
     m_neighbors[direction] = nullptr;
     --m_numNeighbors;
@@ -215,7 +216,6 @@ unsigned int Chunk::getVertexData(unsigned int* data, int meshIndex) const {
             }
         }
     }
-
     // return the number of bytes that were initialized
     return (unsigned int) (data - start) * sizeof(unsigned int);
 }

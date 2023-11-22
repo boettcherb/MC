@@ -24,8 +24,9 @@
 World::World(Shader* shader, Player* player) {
     // initially, load a 5x5 grid of chunks around the player
     auto [cx, cz] = player->getPlayerChunk();
-    for (int x = cx - 2; x <= cx + 2; ++x) {
-        for (int z = cz - 2; z <= cz + 2; ++z) {
+    int spawnRadius = 2;
+    for (int x = cx - spawnRadius; x <= cx + spawnRadius; ++x) {
+        for (int z = cz - spawnRadius; z <= cz + spawnRadius; ++z) {
             database::request_load(x, z);
         }
     }
@@ -44,13 +45,13 @@ World::~World() {
 // called once every frame
 // mineBlock: true if the player has pressed the left mouse button. If the
 // player is looking at a block, it will be mined.
-void World::update(bool /* mineBlock */) {
+void World::update(bool mineBlock) {
     m_chunksMutex.lock();
     for (const auto& [_, chunk] : m_chunks) {
         chunk->update();
     }
     m_chunksMutex.unlock();
-    /*
+    
     checkViewRayCollisions();
 
     // mine block we are looking at
@@ -61,12 +62,10 @@ void World::update(bool /* mineBlock */) {
         m_chunksMutex.unlock();
         chunk->put(isect.x, isect.y, isect.z, Block::BlockType::AIR, true);
     }
-    */
 }
 
 // determine if the player is looking at a block (if yes, we
-// want to render a block outline around that block
-/*
+// want to render a block outline around that block)
 void World::checkViewRayCollisions() {
     sglm::ray viewRay = { m_player->getPosition(), 
         m_player->getDirection(), (float) Player::getReach() };
@@ -103,13 +102,12 @@ void World::checkViewRayCollisions() {
         m_player->setViewRayIsect(nullptr);
     }
 }
-*/
 
 void World::renderAll() {
     // send the view and projection matrices to the shader
     m_shader->addUniformMat4f("u1_view", m_player->getViewMatrix());
     m_shader->addUniformMat4f("u2_projection", m_player->getProjectionMatrix());
-    /*
+    
     // render block outline
     if (m_player->hasViewRayIsect()) {
         const Face::Intersection& isect = m_player->getViewRayIsect();
@@ -118,7 +116,6 @@ void World::renderAll() {
         m_shader->addUniformMat4f("u0_model", sglm::translate({ x, 0.0f, z }));
         m_player->renderOutline(m_shader);
     }
-    */
     
     // render chunks
     int rendered = 0, total = 0;
@@ -134,21 +131,11 @@ void World::renderAll() {
 void World::chunkLoaderThreadFunc() {
     using namespace std::chrono_literals;
     while (!m_chunkLoaderThreadShouldClose) {
-        /*
-        // create a copy of the chunks so I can loop through it many times
-        // without having to worry about holding the mutex too long.
-        std::vector<std::pair<std::pair<int, int>, Chunk*>> chunks;
-        m_chunksMutex.lock();
-        chunks.reserve(m_chunks.size());
-        for (const auto& [pos, chunk] : m_chunks) {
-            chunks.push_back({ pos, chunk });
-        }
-        m_chunksMutex.unlock();
 
         // Find all unloaded chunks that are adjacent to loaded chunks. Add
         // these chunks to the 'candidates' set (no duplicates)
         std::set<std::pair<int, int>> candidates;
-        for (const auto& [pos, chunk] : chunks) {
+        for (const auto& [pos, chunk] : m_chunks) {
             for (int i = 0; i < 4; ++i) {
                 auto [neighborPos, neighbor] = chunk->getNeighbor(i);
                 if (neighbor == nullptr) {
@@ -184,6 +171,13 @@ void World::chunkLoaderThreadFunc() {
             }
         }
 
+        // create a copy of the chunks so I can loop through through all the
+        // chunks and add chunks at the same time.
+        std::vector<std::pair<std::pair<int, int>, Chunk*>> chunks;
+        chunks.reserve(m_chunks.size());
+        for (const auto& [pos, chunk] : m_chunks) {
+            chunks.push_back({ pos, chunk });
+        }
         // Remove chunks that are beyond the player's render distance
         for (const auto& [pos, chunk] : chunks) {
             int x = pos.first, z = pos.second;
@@ -192,8 +186,6 @@ void World::chunkLoaderThreadFunc() {
                 threadRemoveChunk(x, z, chunk);
             }
         }
-
-        */
 
         // load chunks from the database
         database::Query q = database::get_load_result();
@@ -221,17 +213,17 @@ void World::chunkLoaderThreadFunc() {
 }
 
 void World::threadAddChunk(int x, int z, const void* data) {
-    m_chunksMutex.lock();
 
     // if the chunk has already been loaded, don't do anything
+    m_chunksMutex.lock();
     if (m_chunks.count({ x, z }) == 1) {
         m_chunksMutex.unlock();
         return;
     }
+    m_chunksMutex.unlock();
 
     // create the new chunk and add it to m_chunks
     // unlock while generating terrain for the chunk
-    m_chunksMutex.unlock();
     Chunk* newChunk = new Chunk(x, z, data);
     m_chunksMutex.lock();
     m_chunks.emplace(std::make_pair(x, z), newChunk);

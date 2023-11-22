@@ -3,6 +3,7 @@
 #include "Player.h"
 #include "Texture.h"
 #include "World.h"
+#include "BlockInfo.h"
 #include "Database.h"
 
 #include <glad/glad.h>
@@ -34,7 +35,7 @@ static void close_app() {
     glfwTerminate();
 }
 
-std::pair<int, int> get_screen_size() {
+static std::pair<int, int> get_screen_size() {
     GLFWmonitor* primary = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(primary);
     return { mode->width, mode->height };
@@ -126,6 +127,7 @@ int main() {
     //GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, WINDOW_TITLE,
     //                                      glfwGetPrimaryMonitor(), nullptr);
     int scr_width = 800, scr_height = 600;
+    get_screen_size();
     GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, WINDOW_TITLE,
                                           nullptr, nullptr);
 
@@ -163,6 +165,7 @@ int main() {
     initialize_HUD();
     window_size_callback(nullptr, scr_width, scr_height);
     database::initialize();
+    Block::setBlockData();
 
     // initialize imgui
     ImGui::CreateContext();

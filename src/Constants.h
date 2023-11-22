@@ -26,14 +26,16 @@ inline const char* TEXTURE_SHEET = "resources/textures/texture_sheet.png";
 // each sub-chaunk as a sphere than calculate its actual bounding box.
 inline constexpr float SUB_CHUNK_RADIUS = 13.86f;
 
-// In order to render a block to the screen it must be broken up into vertices.
-// Each of the 6 faces of a block are broken up into 2 triangles which have 3
-// vertices each. Each vertex is encoded into a single unsigned int (see 
-// BlockInfo.cpp and Chunk.cpp) before being sent to the shaders and GPU.
+typedef unsigned short VertexAttribType;
+inline constexpr int VERTEX_SIZE = sizeof(VertexAttribType) * 3;
+struct Vertex {
+    VertexAttribType v1, v2, v3;
+};
+
 inline constexpr int FACES_PER_BLOCK = 6;
 inline constexpr int VERTICES_PER_FACE = 6;
 inline constexpr int VERTICES_PER_BLOCK = VERTICES_PER_FACE * FACES_PER_BLOCK;
-inline constexpr int UINTS_PER_VERTEX = 1;
+inline constexpr int UINTS_PER_VERTEX = 3;
 inline constexpr int UINTS_PER_FACE = VERTICES_PER_FACE * UINTS_PER_VERTEX;
 inline constexpr int UINTS_PER_BLOCK = UINTS_PER_FACE * FACES_PER_BLOCK;
 inline constexpr int BYTES_PER_FACE = UINTS_PER_FACE * sizeof(unsigned int);

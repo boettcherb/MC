@@ -37,10 +37,10 @@ void Mesh::generate(unsigned int size, const void* data, bool setFaceData,
 
     // tell openGL the layout of our vertex data
     glEnableVertexAttribArray(0);
-    glVertexAttribIPointer(0, 1, GL_UNSIGNED_INT, sizeof(unsigned int), 0);
+    glVertexAttribIPointer(0, 3, GL_UNSIGNED_INT, 3 * sizeof(unsigned int), 0);
 
     // store the number of vertices
-    m_vertexCount = size / sizeof(unsigned int);
+    m_vertexCount = size / (3 * sizeof(unsigned int));
 
     // set the face data (used for collisions)
     if (setFaceData) {
@@ -66,15 +66,15 @@ void Mesh::erase() {
 
 void Mesh::getFaces(const unsigned int* data, int chunkX, int chunkZ) {
     m_faces.reserve(m_vertexCount / VERTICES_PER_FACE);
-    for (unsigned int i = 0; i < m_vertexCount; i += VERTICES_PER_FACE) {
+    for (unsigned int i = 0; i < m_vertexCount * UINTS_PER_VERTEX; i += UINTS_PER_FACE) {
         // each face has 6 vertices. However, the xyz coordinates of the 3rd
         // and 4th vertex are the same, as well as the 1st and 6th (seen in
         // Blockinfo.h). So take the 1st, 2nd, 3rd, and 5th vertex.
         sglm::vec3 offset = { (float) chunkX * CHUNK_WIDTH, 0.0f, (float) chunkZ * CHUNK_WIDTH };
-        sglm::vec3 A = Block::getPosition(data[i + 0]) + offset;
-        sglm::vec3 B = Block::getPosition(data[i + 1]) + offset;
-        sglm::vec3 C = Block::getPosition(data[i + 2]) + offset;
-        sglm::vec3 D = Block::getPosition(data[i + 4]) + offset;
+        sglm::vec3 A = Block::getPosition(data[i + 3 * 0]) + offset;
+        sglm::vec3 B = Block::getPosition(data[i + 3 * 1]) + offset;
+        sglm::vec3 C = Block::getPosition(data[i + 3 * 2]) + offset;
+        sglm::vec3 D = Block::getPosition(data[i + 3 * 4]) + offset;
         m_faces.emplace_back(Face(A, B, C, D));
     }
 }
