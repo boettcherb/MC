@@ -6,7 +6,7 @@
 #include <cstring>
 #include <vector>
 #include <map>
-#include <array>
+#include <tuple>
 
 // 
 // NEW REPRESENTATION:
@@ -56,6 +56,7 @@ namespace Block {
     // Store the locations of each texture as a point. This point (x and y
     // range from 0 to 16) corresponds to the texture's location on the
     // texture sheet.
+
     static std::map<Tex, std::pair<int, int>> textures = {
         {Tex::GRASS_SIDES, {0, 6}},
         {Tex::DIRT,        {1, 6}},
@@ -64,11 +65,46 @@ namespace Block {
         {Tex::OUTLINE,     {1, 0}},
     };
 
-    static std::map<BlockType, std::array<Tex, 6>> blocks = {
-        {BlockType::GRASS,   {Tex::GRASS_SIDES, Tex::GRASS_SIDES, Tex::GRASS_SIDES, Tex::GRASS_SIDES, Tex::GRASS_TOP, Tex::DIRT}},
-        {BlockType::DIRT,    {Tex::DIRT,        Tex::DIRT,        Tex::DIRT,        Tex::DIRT,        Tex::DIRT,      Tex::DIRT}},
-        {BlockType::STONE,   {Tex::STONE,       Tex::STONE,       Tex::STONE,       Tex::STONE,       Tex::STONE,     Tex::STONE}},
-        {BlockType::OUTLINE, {Tex::OUTLINE,     Tex::OUTLINE,     Tex::OUTLINE,     Tex::OUTLINE,     Tex::OUTLINE,   Tex::OUTLINE}},
+    enum class FaceType {
+        PLUS_X_NORMAL, MINUS_X_NORMAL, PLUS_Z_NORMAL, MINUS_Z_NORMAL, PLUS_Y_NORMAL, MINUS_Y_NORMAL,
+        NUM_FACE_TYPES
+        // future: PLUS_X_FENCE, PLUS_X_SLAB, PLUS_X_STAIR
+    };
+
+    // For each block type, store a vector listing its faces (most have 6 faces,
+    // but some blocks, such as fences, stairs, and plants, can have different
+    // amounts). For each face, store the face's texture and a direction. If there
+    // is a full, non-transparent block next to the current block in the given
+    // direction, then DONT render the face.
+
+    static std::map<BlockType, std::vector<std::tuple<Tex, FaceType, Direction>>> blocks = {
+        {BlockType::GRASS,   {{ Tex::GRASS_SIDES, FaceType::PLUS_X_NORMAL,  PLUS_X },
+                              { Tex::GRASS_SIDES, FaceType::MINUS_X_NORMAL, MINUS_X },
+                              { Tex::GRASS_SIDES, FaceType::PLUS_Z_NORMAL,  PLUS_Z },
+                              { Tex::GRASS_SIDES, FaceType::MINUS_Z_NORMAL, MINUS_Z },
+                              { Tex::GRASS_TOP,   FaceType::PLUS_Y_NORMAL,  PLUS_Y },
+                              { Tex::DIRT,        FaceType::MINUS_Y_NORMAL, MINUS_Y }}},
+
+        {BlockType::DIRT,    {{Tex::DIRT, FaceType::PLUS_X_NORMAL,  PLUS_X},
+                              {Tex::DIRT, FaceType::MINUS_X_NORMAL, MINUS_X},
+                              {Tex::DIRT, FaceType::PLUS_Z_NORMAL,  PLUS_Z},
+                              {Tex::DIRT, FaceType::MINUS_Z_NORMAL, MINUS_Z},
+                              {Tex::DIRT, FaceType::PLUS_Y_NORMAL,  PLUS_Y },
+                              {Tex::DIRT, FaceType::MINUS_Y_NORMAL, MINUS_Y }}},
+        
+        {BlockType::STONE,   {{Tex::STONE, FaceType::PLUS_X_NORMAL,  PLUS_X},
+                              {Tex::STONE, FaceType::MINUS_X_NORMAL, MINUS_X},
+                              {Tex::STONE, FaceType::PLUS_Z_NORMAL,  PLUS_Z},
+                              {Tex::STONE, FaceType::MINUS_Z_NORMAL, MINUS_Z},
+                              {Tex::STONE, FaceType::PLUS_Y_NORMAL,  PLUS_Y },
+                              {Tex::STONE, FaceType::MINUS_Y_NORMAL, MINUS_Y }}},
+
+        {BlockType::OUTLINE, {{Tex::OUTLINE, FaceType::PLUS_X_NORMAL,  PLUS_X},
+                              {Tex::OUTLINE, FaceType::MINUS_X_NORMAL, MINUS_X},
+                              {Tex::OUTLINE, FaceType::PLUS_Z_NORMAL,  PLUS_Z},
+                              {Tex::OUTLINE, FaceType::MINUS_Z_NORMAL, MINUS_Z},
+                              {Tex::OUTLINE, FaceType::PLUS_Y_NORMAL,  PLUS_Y },
+                              {Tex::OUTLINE, FaceType::MINUS_Y_NORMAL, MINUS_Y }}},
     };
 
     static inline constexpr int LIGHT_BITS = 2;
@@ -80,40 +116,45 @@ namespace Block {
 
     // Stores the offsets for the x, y, and z positions of each vertex and the
     // offsets for the x and y texture coordinates of each vertex.
-    static int offs[6][6][5] = {
-        {{1, 0, 1, 0, 0}, {1, 0, 0, 1, 0}, {1, 1, 0, 1, 1},    // +x
-         {1, 1, 0, 1, 1}, {1, 1, 1, 0, 1}, {1, 0, 1, 0, 0}},
-        {{0, 0, 0, 0, 0}, {0, 0, 1, 1, 0}, {0, 1, 1, 1, 1},    // -x
-         {0, 1, 1, 1, 1}, {0, 1, 0, 0, 1}, {0, 0, 0, 0, 0}},
-        {{0, 0, 1, 0, 0}, {1, 0, 1, 1, 0}, {1, 1, 1, 1, 1},    // +z
-         {1, 1, 1, 1, 1}, {0, 1, 1, 0, 1}, {0, 0, 1, 0, 0}},
-        {{1, 0, 0, 0, 0}, {0, 0, 0, 1, 0}, {0, 1, 0, 1, 1},    // -z
-         {0, 1, 0, 1, 1}, {1, 1, 0, 0, 1}, {1, 0, 0, 0, 0}},
-        {{0, 1, 1, 0, 0}, {1, 1, 1, 1, 0}, {1, 1, 0, 1, 1},    // +y
-         {1, 1, 0, 1, 1}, {0, 1, 0, 0, 1}, {0, 1, 1, 0, 0}},
-        {{0, 0, 0, 0, 0}, {1, 0, 0, 1, 0}, {1, 0, 1, 1, 1},    // -y
-         {1, 0, 1, 1, 1}, {0, 0, 1, 0, 1}, {0, 0, 0, 0, 0}}
+    static VertexAttribType offs[(int) FaceType::NUM_FACE_TYPES][VERTICES_PER_FACE][6] = {
+        // +x (normal)
+        {{2, 1, 0, 1, 0, 0}, {2, 1, 0, 0, 1, 0}, {2, 1, 1, 0, 1, 1},
+         {2, 1, 1, 0, 1, 1}, {2, 1, 1, 1, 0, 1}, {2, 1, 0, 1, 0, 0}},
+        // -x (normal)
+        {{2, 0, 0, 0, 0, 0}, {2, 0, 0, 1, 1, 0}, {2, 0, 1, 1, 1, 1},
+         {2, 0, 1, 1, 1, 1}, {2, 0, 1, 0, 0, 1}, {2, 0, 0, 0, 0, 0}},
+        // +z (normal)
+        {{1, 0, 0, 1, 0, 0}, {1, 1, 0, 1, 1, 0}, {1, 1, 1, 1, 1, 1},
+         {1, 1, 1, 1, 1, 1}, {1, 0, 1, 1, 0, 1}, {1, 0, 0, 1, 0, 0}},
+        // -z (normal)
+        {{1, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 1, 0}, {1, 0, 1, 0, 1, 1},
+         {1, 0, 1, 0, 1, 1}, {1, 1, 1, 0, 0, 1}, {1, 1, 0, 0, 0, 0}},
+        // +y (normal)
+        {{3, 0, 1, 1, 0, 0}, {3, 1, 1, 1, 1, 0}, {3, 1, 1, 0, 1, 1},
+         {3, 1, 1, 0, 1, 1}, {3, 0, 1, 0, 0, 1}, {3, 0, 1, 1, 0, 0}},
+        // -y (normal)
+        {{0, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 1, 0}, {0, 1, 0, 1, 1, 1},
+         {0, 1, 0, 1, 1, 1}, {0, 0, 0, 1, 0, 1}, {0, 0, 0, 0, 0, 0}}
+        // future: data for plants, slabs, stairs, fences, torches, etc.
     };
 
     static std::map<BlockType, std::vector<VertexAttribType>> blockData;
 
     static void setData(BlockType block) {
-        // for now, light value is 3 for top, 2 +x/-x, 1 for +z/-z, and 0 for bottom
-        int light[VERTICES_PER_FACE] = { 2, 2, 1, 1, 3, 0 };
-        int faces = FACES_PER_BLOCK; // assume 6 for now; might change when adding plants
-
         std::vector<VertexAttribType> data;
-        for (int f = 0; f < faces; ++f) {
-            auto& [texX, texY] = textures[blocks[block][f]];
+        for (int f = 0; f < (int) blocks[block].size(); ++f) {
+            auto& [tex, face, _] = blocks[block][f];
+            auto& [texX, texY] = textures[tex];
             for (int v = 0; v < VERTICES_PER_FACE; ++v) {
-                VertexAttribType val = (VertexAttribType) light[f];
-                val = (val << POS_X_BITS) + (VertexAttribType) offs[f][v][0];
-                val = (val << POS_Y_BITS) + (VertexAttribType) offs[f][v][1];
-                val = (val << POS_Z_BITS) + (VertexAttribType) offs[f][v][2];
-                val = (val << TEX_X_BITS) + (VertexAttribType) (texX + offs[f][v][3]);
-                val = (val << TEX_Y_BITS) + (VertexAttribType) (texY + offs[f][v][4]);
+                VertexAttribType val = 0;
+                val = (val << LIGHT_BITS) + offs[(int) face][v][0];
+                val = (val << POS_X_BITS) + offs[(int) face][v][1];
+                val = (val << POS_Y_BITS) + offs[(int) face][v][2];
+                val = (val << POS_Z_BITS) + offs[(int) face][v][3];
+                val = (val << TEX_X_BITS) + offs[(int) face][v][4] + texX;
+                val = (val << TEX_Y_BITS) + offs[(int) face][v][5] + texY;
                 data.push_back(val);
-                for (int i = 0; i < VERTEX_SIZE / sizeof(VertexAttribType) - 1; ++i)
+                for (int i = 0; i < ATTRIBS_PER_VERTEX - 1; ++i)
                     data.push_back(0);
             }
         }
@@ -125,28 +166,30 @@ namespace Block {
             setData(static_cast<BlockType>(blockType));
         }
     }
-
-    void getFaceData(BlockType type, int x, int y, int z, VertexAttribType* data, Direction face) {
-        assert(face >= 0 && face < 6);
-        assert(type != BlockType::AIR && type != BlockType::NO_BLOCK);
-        int offset = UINTS_PER_FACE * (int) face;
-        std::vector<VertexAttribType>& curBlockData = blockData[type];
-        assert(curBlockData.size() == UINTS_PER_BLOCK);
-        for (int i = 0; i < UINTS_PER_FACE; ++i) {
-            data[i] = curBlockData[offset + i];
+    
+    // Return the number of VertexAttribTypes set in data
+    int getBlockData(BlockType type, int x, int y, int z,
+                     VertexAttribType* data, bool dirHasBlock[NUM_DIRECTIONS]) {
+        int size = 0;
+        for (int face = 0; face < (int) blocks[type].size(); ++face) {
+            // if there is a block in the face's direction, don't retrieve its
+            // data (because it is hidden by the block)
+            Direction dir = std::get<2>(blocks[type][face]);
+            assert(dir >= 0);
+            if (dir < NUM_DIRECTIONS && dirHasBlock[dir])
+                continue;
+            // No block, so retrieve the face's data
+            int offset = face * ATTRIBS_PER_FACE;
+            for (int v = 0; v < ATTRIBS_PER_FACE; v += ATTRIBS_PER_VERTEX) {
+                data[size + v] = blockData[type][offset + v];
+                data[size + v] += (x << 23) + (y << 15) + (z << 10);
+                data[size + v + 1] = blockData[type][offset + v + 1];
+                data[size + v + 2] = blockData[type][offset + v + 2];
+                
+            }
+            size += ATTRIBS_PER_FACE;
         }
-        for (int i = 0; i < UINTS_PER_FACE; i += UINTS_PER_VERTEX) {
-            data[i] += (VertexAttribType) ((x << 23) + (y << 15) + (z << 10));
-        }
-    }
-
-    void getBlockData(BlockType type, int x, int y, int z, VertexAttribType* data) {
-        getFaceData(type, x, y, z, data, PLUS_X); data += UINTS_PER_FACE;
-        getFaceData(type, x, y, z, data, MINUS_X); data += UINTS_PER_FACE;
-        getFaceData(type, x, y, z, data, PLUS_Z); data += UINTS_PER_FACE;
-        getFaceData(type, x, y, z, data, MINUS_Z); data += UINTS_PER_FACE;
-        getFaceData(type, x, y, z, data, PLUS_Y); data += UINTS_PER_FACE;
-        getFaceData(type, x, y, z, data, MINUS_Y);
+        return size;
     }
 
     sglm::vec3 getPosition(const Vertex& vertex) {

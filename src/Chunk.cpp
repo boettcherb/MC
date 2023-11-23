@@ -184,35 +184,17 @@ unsigned int Chunk::getVertexData(VertexAttribType* data, int meshIndex) const {
             for (int z = 0; z < CHUNK_WIDTH; ++z) {
                 Block::BlockType currentBlock = get(x, y, z);
                 assert(currentBlock != Block::BlockType::NO_BLOCK);
-                if (currentBlock == Block::BlockType::AIR) {
+                if (currentBlock == Block::BlockType::AIR)
                     continue;
-                }
-                // check each of the six sides to see if this block is adjacent to a transparent block
-                // if so, add its vertex data to the data array
-                if (Block::isTransparent(get(x + 1, y, z))) {
-                    Block::getFaceData(currentBlock, x, y, z, data, PLUS_X);
-                    data += UINTS_PER_FACE;
-                }
-                if (Block::isTransparent(get(x - 1, y, z))) {
-                    Block::getFaceData(currentBlock, x, y, z, data, MINUS_X);
-                    data += UINTS_PER_FACE;
-                }
-                if (Block::isTransparent(get(x, y + 1, z))) {
-                    Block::getFaceData(currentBlock, x, y, z, data, PLUS_Y);
-                    data += UINTS_PER_FACE;
-                }
-                if (Block::isTransparent(get(x, y - 1, z))) {
-                    Block::getFaceData(currentBlock, x, y, z, data, MINUS_Y);
-                    data += UINTS_PER_FACE;
-                }
-                if (Block::isTransparent(get(x, y, z + 1))) {
-                    Block::getFaceData(currentBlock, x, y, z, data, PLUS_Z);
-                    data += UINTS_PER_FACE;
-                }
-                if (Block::isTransparent(get(x, y, z - 1))) {
-                    Block::getFaceData(currentBlock, x, y, z, data, MINUS_Z);
-                    data += UINTS_PER_FACE;
-                }
+                bool dirHasBlock[(int) NUM_DIRECTIONS] = {
+                    !Block::isTransparent(get(x + 1, y, z)),
+                    !Block::isTransparent(get(x - 1, y, z)),
+                    !Block::isTransparent(get(x, y, z + 1)),
+                    !Block::isTransparent(get(x, y, z - 1)),
+                    !Block::isTransparent(get(x, y + 1, z)),
+                    !Block::isTransparent(get(x, y - 1, z)),
+                };
+                data += Block::getBlockData(currentBlock, x, y, z, data, dirHasBlock);
             }
         }
     }

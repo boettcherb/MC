@@ -37,7 +37,7 @@ void Mesh::generate(unsigned int size, const void* data, bool setFaceData,
 
     // tell openGL the layout of our vertex data
     glEnableVertexAttribArray(0);
-    glVertexAttribIPointer(0, 3, GL_UNSIGNED_INT, VERTEX_SIZE, 0);
+    glVertexAttribIPointer(0, ATTRIBS_PER_VERTEX, GL_UNSIGNED_INT, VERTEX_SIZE, 0);
 
     // store the number of vertices
     m_vertexCount = size / VERTEX_SIZE;

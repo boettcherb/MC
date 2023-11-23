@@ -1,8 +1,12 @@
 #ifndef CONSTANTS_H_INCLUDED
 #define CONSTANTS_H_INCLUDED
 
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
 enum Direction : unsigned char {
-    PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y,
+    PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y, NUM_DIRECTIONS
 };
 
 enum class Movement {
@@ -27,13 +31,15 @@ inline const char* TEXTURE_SHEET = "resources/textures/texture_sheet.png";
 inline constexpr float SUB_CHUNK_RADIUS = 13.86f;
 
 typedef unsigned int VertexAttribType;
-inline constexpr int VERTEX_SIZE = sizeof(VertexAttribType) * 3;
 struct Vertex {
     VertexAttribType v1, v2, v3;
 };
+inline constexpr int ATTRIBS_PER_VERTEX = 3;
+inline constexpr int VERTICES_PER_FACE = 6;
+inline constexpr int ATTRIBS_PER_FACE = ATTRIBS_PER_VERTEX * VERTICES_PER_FACE;
+inline constexpr int VERTEX_SIZE = sizeof(VertexAttribType) * ATTRIBS_PER_VERTEX;
 
 inline constexpr int FACES_PER_BLOCK = 6;
-inline constexpr int VERTICES_PER_FACE = 6;
 inline constexpr int VERTICES_PER_BLOCK = VERTICES_PER_FACE * FACES_PER_BLOCK;
 inline constexpr int UINTS_PER_VERTEX = 3;
 inline constexpr int UINTS_PER_FACE = VERTICES_PER_FACE * UINTS_PER_VERTEX;

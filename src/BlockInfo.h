@@ -16,8 +16,8 @@ namespace Block {
     };
 
     void setBlockData();
-    void getFaceData(BlockType type, int x, int y, int z, VertexAttribType* data, Direction face);
-    void getBlockData(BlockType type, int x, int y, int z, VertexAttribType* data);
+    int getBlockData(BlockType type, int x, int y, int z,
+                     VertexAttribType* data, bool dirHasBlock[NUM_DIRECTIONS]);
 
     sglm::vec3 getPosition(const Vertex& vertex);
     bool isTransparent(BlockType type);
