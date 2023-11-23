@@ -27,7 +27,7 @@ public:
     Block::BlockType get(int x, int y, int z) const;
     void put(int x, int y, int z, Block::BlockType block, bool updateMesh);
 
-    void update();
+    bool update();
     int render(Shader* shader, const sglm::frustum& frustum);
 
     void addNeighbor(Chunk* chunk, Direction direction);

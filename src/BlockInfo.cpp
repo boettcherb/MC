@@ -5,8 +5,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
-#include <map>
-#include <tuple>
 
 // 
 // NEW REPRESENTATION:
@@ -50,20 +48,9 @@
 namespace Block {
 
     enum class Tex {
-        GRASS_TOP, GRASS_SIDES, DIRT, STONE, OUTLINE
+        GRASS_TOP, GRASS_SIDES, DIRT, STONE, OUTLINE, NUM_TEXTURES
     };
 
-    // Store the locations of each texture as a point. This point (x and y
-    // range from 0 to 16) corresponds to the texture's location on the
-    // texture sheet.
-
-    static std::map<Tex, std::pair<int, int>> textures = {
-        {Tex::GRASS_SIDES, {0, 6}},
-        {Tex::DIRT,        {1, 6}},
-        {Tex::GRASS_TOP,   {2, 6}},
-        {Tex::STONE,       {3, 6}},
-        {Tex::OUTLINE,     {1, 0}},
-    };
 
     enum class FaceType {
         PLUS_X_NORMAL, MINUS_X_NORMAL, PLUS_Z_NORMAL, MINUS_Z_NORMAL, PLUS_Y_NORMAL, MINUS_Y_NORMAL,
@@ -71,80 +58,99 @@ namespace Block {
         // future: PLUS_X_FENCE, PLUS_X_SLAB, PLUS_X_STAIR
     };
 
-    // For each block type, store a vector listing its faces (most have 6 faces,
-    // but some blocks, such as fences, stairs, and plants, can have different
-    // amounts). For each face, store the face's texture and a direction. If there
-    // is a full, non-transparent block next to the current block in the given
-    // direction, then DONT render the face.
-
-    static std::map<BlockType, std::vector<std::tuple<Tex, FaceType, Direction>>> blocks = {
-        {BlockType::GRASS,   {{ Tex::GRASS_SIDES, FaceType::PLUS_X_NORMAL,  PLUS_X },
-                              { Tex::GRASS_SIDES, FaceType::MINUS_X_NORMAL, MINUS_X },
-                              { Tex::GRASS_SIDES, FaceType::PLUS_Z_NORMAL,  PLUS_Z },
-                              { Tex::GRASS_SIDES, FaceType::MINUS_Z_NORMAL, MINUS_Z },
-                              { Tex::GRASS_TOP,   FaceType::PLUS_Y_NORMAL,  PLUS_Y },
-                              { Tex::DIRT,        FaceType::MINUS_Y_NORMAL, MINUS_Y }}},
-
-        {BlockType::DIRT,    {{Tex::DIRT, FaceType::PLUS_X_NORMAL,  PLUS_X},
-                              {Tex::DIRT, FaceType::MINUS_X_NORMAL, MINUS_X},
-                              {Tex::DIRT, FaceType::PLUS_Z_NORMAL,  PLUS_Z},
-                              {Tex::DIRT, FaceType::MINUS_Z_NORMAL, MINUS_Z},
-                              {Tex::DIRT, FaceType::PLUS_Y_NORMAL,  PLUS_Y },
-                              {Tex::DIRT, FaceType::MINUS_Y_NORMAL, MINUS_Y }}},
-        
-        {BlockType::STONE,   {{Tex::STONE, FaceType::PLUS_X_NORMAL,  PLUS_X},
-                              {Tex::STONE, FaceType::MINUS_X_NORMAL, MINUS_X},
-                              {Tex::STONE, FaceType::PLUS_Z_NORMAL,  PLUS_Z},
-                              {Tex::STONE, FaceType::MINUS_Z_NORMAL, MINUS_Z},
-                              {Tex::STONE, FaceType::PLUS_Y_NORMAL,  PLUS_Y },
-                              {Tex::STONE, FaceType::MINUS_Y_NORMAL, MINUS_Y }}},
-
-        {BlockType::OUTLINE, {{Tex::OUTLINE, FaceType::PLUS_X_NORMAL,  PLUS_X},
-                              {Tex::OUTLINE, FaceType::MINUS_X_NORMAL, MINUS_X},
-                              {Tex::OUTLINE, FaceType::PLUS_Z_NORMAL,  PLUS_Z},
-                              {Tex::OUTLINE, FaceType::MINUS_Z_NORMAL, MINUS_Z},
-                              {Tex::OUTLINE, FaceType::PLUS_Y_NORMAL,  PLUS_Y },
-                              {Tex::OUTLINE, FaceType::MINUS_Y_NORMAL, MINUS_Y }}},
+    // for each block type, store a direction for each face. This direction is
+    // the direction that will determine whether we render this face (if there
+    // is a solid block in that direction, don't render the face)
+    static std::vector<Direction> DIR[] = {
+        {}, // air
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // grass
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // dirt
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // stone
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // outline
     };
 
-    static inline constexpr int LIGHT_BITS = 2;
-    static inline constexpr int POS_X_BITS = 5;
-    static inline constexpr int POS_Y_BITS = 8;
-    static inline constexpr int POS_Z_BITS = 5;
-    static inline constexpr int TEX_X_BITS = 5;
-    static inline constexpr int TEX_Y_BITS = 5;
-
-    // Stores the offsets for the x, y, and z positions of each vertex and the
-    // offsets for the x and y texture coordinates of each vertex.
-    static VertexAttribType offs[(int) FaceType::NUM_FACE_TYPES][VERTICES_PER_FACE][6] = {
-        // +x (normal)
-        {{2, 1, 0, 1, 0, 0}, {2, 1, 0, 0, 1, 0}, {2, 1, 1, 0, 1, 1},
-         {2, 1, 1, 0, 1, 1}, {2, 1, 1, 1, 0, 1}, {2, 1, 0, 1, 0, 0}},
-        // -x (normal)
-        {{2, 0, 0, 0, 0, 0}, {2, 0, 0, 1, 1, 0}, {2, 0, 1, 1, 1, 1},
-         {2, 0, 1, 1, 1, 1}, {2, 0, 1, 0, 0, 1}, {2, 0, 0, 0, 0, 0}},
-        // +z (normal)
-        {{1, 0, 0, 1, 0, 0}, {1, 1, 0, 1, 1, 0}, {1, 1, 1, 1, 1, 1},
-         {1, 1, 1, 1, 1, 1}, {1, 0, 1, 1, 0, 1}, {1, 0, 0, 1, 0, 0}},
-        // -z (normal)
-        {{1, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 1, 0}, {1, 0, 1, 0, 1, 1},
-         {1, 0, 1, 0, 1, 1}, {1, 1, 1, 0, 0, 1}, {1, 1, 0, 0, 0, 0}},
-        // +y (normal)
-        {{3, 0, 1, 1, 0, 0}, {3, 1, 1, 1, 1, 0}, {3, 1, 1, 0, 1, 1},
-         {3, 1, 1, 0, 1, 1}, {3, 0, 1, 0, 0, 1}, {3, 0, 1, 1, 0, 0}},
-        // -y (normal)
-        {{0, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 1, 0}, {0, 1, 0, 1, 1, 1},
-         {0, 1, 0, 1, 1, 1}, {0, 0, 0, 1, 0, 1}, {0, 0, 0, 0, 0, 0}}
-        // future: data for plants, slabs, stairs, fences, torches, etc.
-    };
-
-    static std::map<BlockType, std::vector<VertexAttribType>> blockData;
+    static constexpr int numBlockTypes = (int) BlockType::NO_BLOCK;
+    static std::vector<VertexAttribType> blockData[numBlockTypes];
 
     static void setData(BlockType block) {
+
+        // Store the locations of each texture as a point. This point (x and y
+        // range from 0 to 16) corresponds to the texture's location on the
+        // texture sheet.
+        std::pair<int, int> textures[] = {
+            { 2, 6 },
+            { 0, 6 },
+            { 1, 6 },
+            { 3, 6 },
+            { 1, 0 },
+        };
+
+        std::vector<std::pair<Tex, FaceType>> blocks[] = {
+            {},
+            {{ Tex::GRASS_SIDES, FaceType::PLUS_X_NORMAL },
+             { Tex::GRASS_SIDES, FaceType::MINUS_X_NORMAL },
+             { Tex::GRASS_SIDES, FaceType::PLUS_Z_NORMAL },
+             { Tex::GRASS_SIDES, FaceType::MINUS_Z_NORMAL },
+             { Tex::GRASS_TOP,   FaceType::PLUS_Y_NORMAL },
+             { Tex::DIRT,        FaceType::MINUS_Y_NORMAL }},
+
+            {{Tex::DIRT, FaceType::PLUS_X_NORMAL },
+             {Tex::DIRT, FaceType::MINUS_X_NORMAL },
+             {Tex::DIRT, FaceType::PLUS_Z_NORMAL },
+             {Tex::DIRT, FaceType::MINUS_Z_NORMAL },
+             {Tex::DIRT, FaceType::PLUS_Y_NORMAL },
+             {Tex::DIRT, FaceType::MINUS_Y_NORMAL }},
+
+            {{Tex::STONE, FaceType::PLUS_X_NORMAL },
+             {Tex::STONE, FaceType::MINUS_X_NORMAL },
+             {Tex::STONE, FaceType::PLUS_Z_NORMAL },
+             {Tex::STONE, FaceType::MINUS_Z_NORMAL },
+             {Tex::STONE, FaceType::PLUS_Y_NORMAL },
+             {Tex::STONE, FaceType::MINUS_Y_NORMAL }},
+
+            {{Tex::OUTLINE, FaceType::PLUS_X_NORMAL },
+             {Tex::OUTLINE, FaceType::MINUS_X_NORMAL },
+             {Tex::OUTLINE, FaceType::PLUS_Z_NORMAL },
+             {Tex::OUTLINE, FaceType::MINUS_Z_NORMAL },
+             {Tex::OUTLINE, FaceType::PLUS_Y_NORMAL },
+             {Tex::OUTLINE, FaceType::MINUS_Y_NORMAL }},
+        };
+
+        constexpr int LIGHT_BITS = 2;
+        constexpr int POS_X_BITS = 5;
+        constexpr int POS_Y_BITS = 8;
+        constexpr int POS_Z_BITS = 5;
+        constexpr int TEX_X_BITS = 5;
+        constexpr int TEX_Y_BITS = 5;
+
+        // Stores the offsets for the x, y, and z positions of each vertex and the
+        // offsets for the x and y texture coordinates of each vertex.
+        VertexAttribType offs[][VERTICES_PER_FACE][6] = {
+            // +x (normal)
+            {{2, 1, 0, 1, 0, 0}, {2, 1, 0, 0, 1, 0}, {2, 1, 1, 0, 1, 1},
+             {2, 1, 1, 0, 1, 1}, {2, 1, 1, 1, 0, 1}, {2, 1, 0, 1, 0, 0}},
+            // -x (normal)
+            {{2, 0, 0, 0, 0, 0}, {2, 0, 0, 1, 1, 0}, {2, 0, 1, 1, 1, 1},
+             {2, 0, 1, 1, 1, 1}, {2, 0, 1, 0, 0, 1}, {2, 0, 0, 0, 0, 0}},
+            // +z (normal)
+            {{1, 0, 0, 1, 0, 0}, {1, 1, 0, 1, 1, 0}, {1, 1, 1, 1, 1, 1},
+             {1, 1, 1, 1, 1, 1}, {1, 0, 1, 1, 0, 1}, {1, 0, 0, 1, 0, 0}},
+            // -z (normal)
+            {{1, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 1, 0}, {1, 0, 1, 0, 1, 1},
+             {1, 0, 1, 0, 1, 1}, {1, 1, 1, 0, 0, 1}, {1, 1, 0, 0, 0, 0}},
+            // +y (normal)
+            {{3, 0, 1, 1, 0, 0}, {3, 1, 1, 1, 1, 0}, {3, 1, 1, 0, 1, 1},
+             {3, 1, 1, 0, 1, 1}, {3, 0, 1, 0, 0, 1}, {3, 0, 1, 1, 0, 0}},
+            // -y (normal)
+            {{0, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 1, 0}, {0, 1, 0, 1, 1, 1},
+             {0, 1, 0, 1, 1, 1}, {0, 0, 0, 1, 0, 1}, {0, 0, 0, 0, 0, 0}}
+            // future: data for plants, slabs, stairs, fences, torches, etc.
+        };
+
         std::vector<VertexAttribType> data;
-        for (int f = 0; f < (int) blocks[block].size(); ++f) {
-            auto& [tex, face, _] = blocks[block][f];
-            auto& [texX, texY] = textures[tex];
+        for (int f = 0; f < (int) blocks[(int) block].size(); ++f) {
+            auto& [tex, face] = blocks[(int) block][f];
+            auto& [texX, texY] = textures[(int) tex];
             for (int v = 0; v < VERTICES_PER_FACE; ++v) {
                 VertexAttribType val = 0;
                 val = (val << LIGHT_BITS) + offs[(int) face][v][0];
@@ -158,7 +164,7 @@ namespace Block {
                     data.push_back(0);
             }
         }
-        blockData[block] = data;
+        blockData[(int) block] = data;
     }
 
     void setBlockData() {
@@ -171,20 +177,25 @@ namespace Block {
     int getBlockData(BlockType type, int x, int y, int z,
                      VertexAttribType* data, bool dirHasBlock[NUM_DIRECTIONS]) {
         int size = 0;
-        for (int face = 0; face < (int) blocks[type].size(); ++face) {
+        // std::vector<std::tuple<Tex, FaceType, Direction>>& faces = blocks[(int) type];
+        std::vector<Direction>& d = DIR[(int) type];
+        int numFaces = (int) d.size();
+        std::vector<VertexAttribType>& curBlockData = blockData[(int) type];
+
+        for (int face = 0; face < (int) numFaces; ++face) {
             // if there is a block in the face's direction, don't retrieve its
             // data (because it is hidden by the block)
-            Direction dir = std::get<2>(blocks[type][face]);
+            Direction dir = d[face];
             assert(dir >= 0);
             if (dir < NUM_DIRECTIONS && dirHasBlock[dir])
                 continue;
             // No block, so retrieve the face's data
             int offset = face * ATTRIBS_PER_FACE;
             for (int v = 0; v < ATTRIBS_PER_FACE; v += ATTRIBS_PER_VERTEX) {
-                data[size + v] = blockData[type][offset + v];
+                data[size + v] = curBlockData[offset + v];
                 data[size + v] += (x << 23) + (y << 15) + (z << 10);
-                data[size + v + 1] = blockData[type][offset + v + 1];
-                data[size + v + 2] = blockData[type][offset + v + 2];
+                data[size + v + 1] = curBlockData[offset + v + 1];
+                data[size + v + 2] = curBlockData[offset + v + 2];
                 
             }
             size += ATTRIBS_PER_FACE;

@@ -45,10 +45,15 @@ World::~World() {
 // called once every frame
 // mineBlock: true if the player has pressed the left mouse button. If the
 // player is looking at a block, it will be mined.
+// Update a max of 5 chunks per frame. This will prevent lag spikes if there
+// are suddenly 40+ chunks to load
 void World::update(bool mineBlock) {
+    int numUpdated = 0;
     m_chunksMutex.lock();
     for (const auto& [_, chunk] : m_chunks) {
-        chunk->update();
+        numUpdated += chunk->update();
+        if (numUpdated >= 5)
+            break;
     }
     m_chunksMutex.unlock();
     

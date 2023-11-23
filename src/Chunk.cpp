@@ -136,13 +136,15 @@ int Chunk::render(Shader* shader, const sglm::frustum& frustum) {
     return subChunksRendered;
 }
 
-void Chunk::update() {
+bool Chunk::update() {
+    bool updated = false;
     if (!m_rendered && m_numNeighbors == 4) {
         // render this chunk
         for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
             updateMesh(i);
         }
         m_rendered = true;
+        updated = true;
     }
     else if (m_rendered && m_numNeighbors != 4) {
         // unload this chunk
@@ -151,6 +153,7 @@ void Chunk::update() {
         }
         m_rendered = false;
     }
+    return updated;
 }
 
 void Chunk::addNeighbor(Chunk* chunk, Direction direction) {
