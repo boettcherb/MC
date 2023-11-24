@@ -14,7 +14,7 @@ public:
         int cx, cz; // coordinates of chunk the block is in
         float t; // TODO: do I really need to store t?
         sglm::vec3 A, B, C, D; // 4 corner positions of face
-        VertexAttribType data[UINTS_PER_BLOCK];
+        VertexAttribType data[ATTRIBS_PER_FACE * 6];
         
         void setData();
         bool operator==(const Intersection& other) const;

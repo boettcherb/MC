@@ -39,14 +39,6 @@ inline constexpr int VERTICES_PER_FACE = 6;
 inline constexpr int ATTRIBS_PER_FACE = ATTRIBS_PER_VERTEX * VERTICES_PER_FACE;
 inline constexpr int VERTEX_SIZE = sizeof(VertexAttribType) * ATTRIBS_PER_VERTEX;
 
-inline constexpr int FACES_PER_BLOCK = 6;
-inline constexpr int VERTICES_PER_BLOCK = VERTICES_PER_FACE * FACES_PER_BLOCK;
-inline constexpr int UINTS_PER_VERTEX = 3;
-inline constexpr int UINTS_PER_FACE = VERTICES_PER_FACE * UINTS_PER_VERTEX;
-inline constexpr int UINTS_PER_BLOCK = UINTS_PER_FACE * FACES_PER_BLOCK;
-inline constexpr int BYTES_PER_FACE = UINTS_PER_FACE * sizeof(VertexAttribType);
-inline constexpr int BYTES_PER_BLOCK = BYTES_PER_FACE * FACES_PER_BLOCK;
-
 // Each chunk is a 16x128x16 section of the world. Dividing the world into
 // chunks allows us to load only the portion of the world that is around the
 // player while un-loading anything far away from the player.
@@ -61,7 +53,6 @@ inline constexpr int BLOCKS_PER_CHUNK = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH
 inline constexpr int SUBCHUNK_HEIGHT = 16;
 inline constexpr int NUM_SUBCHUNKS = CHUNK_HEIGHT / SUBCHUNK_HEIGHT;
 inline constexpr int BLOCKS_PER_SUBCHUNK = BLOCKS_PER_CHUNK / NUM_SUBCHUNKS;
-inline constexpr int VERTICES_PER_SUBCHUNK = BLOCKS_PER_SUBCHUNK * VERTICES_PER_BLOCK;
 
 inline constexpr float NEAR_PLANE = 0.1f;
 inline constexpr float FAR_PLANE = 600.0f;

@@ -152,7 +152,8 @@ void Player::setViewRayIsect(const Face::Intersection* isect) {
         m_blockOutline.erase();
     } else if (*isect != m_viewRayIntersection) {
         m_viewRayIntersection = *isect;
-        m_blockOutline.generate(BYTES_PER_BLOCK, isect->data, false);
+        unsigned int size = ATTRIBS_PER_FACE * 6 * sizeof(VertexAttribType);
+        m_blockOutline.generate(size, isect->data, false);
     }
 }
 

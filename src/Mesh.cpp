@@ -66,7 +66,7 @@ void Mesh::erase() {
 
 void Mesh::getFaces(const VertexAttribType* data, int chunkX, int chunkZ) {
     m_faces.reserve(m_vertexCount / VERTICES_PER_FACE);
-    for (unsigned int i = 0; i < m_vertexCount * UINTS_PER_VERTEX; i += UINTS_PER_FACE) {
+    for (unsigned int i = 0; i < m_vertexCount * ATTRIBS_PER_VERTEX; i += ATTRIBS_PER_FACE) {
         // each face has 6 vertices. However, the xyz coordinates of the 3rd
         // and 4th vertex are the same, as well as the 1st and 6th (seen in
         // Blockinfo.h). So take the 1st, 2nd, 3rd, and 5th vertex.
