@@ -23,6 +23,21 @@
 // texture x  (5 bits)
 // texture y  (5 bits)
 // 
+// v1: light: 1111000000000000
+//     x pos: 0000111100000000
+//     y pos: 0000000011110000
+//     z pos: 0000000000001111
+// 
+// v2: x pix: 0000111111000000
+//     y pix: 0000000000111111
+// 
+// v3: z pix: 1111110000000000
+//     x tex: 0000001111100000
+//     y tex: 0000000000011111
+//
+// 
+// 
+
 
 //
 // A vertex is represented by 1 32-bit unsigned integer:
@@ -49,6 +64,7 @@ namespace Block {
 
     enum class Tex {
         GRASS_TOP, GRASS_SIDES, DIRT, STONE, OUTLINE, NUM_TEXTURES
+        // LOG, LOG_END
     };
 
 
@@ -58,10 +74,13 @@ namespace Block {
         // future: PLUS_X_FENCE, PLUS_X_SLAB, PLUS_X_STAIR
     };
 
+    static constexpr int NUM_BLOCK_TYPES = (int) BlockType::NO_BLOCK;
+    static std::vector<Vertex> blockData[NUM_BLOCK_TYPES];
+
     // for each block type, store a direction for each face. This direction is
     // the direction that will determine whether we render this face (if there
     // is a solid block in that direction, don't render the face)
-    static std::vector<Direction> DIR[] = {
+    static const std::vector<Direction> DIR[NUM_BLOCK_TYPES] = {
         {}, // air
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // grass
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // dirt
@@ -69,14 +88,13 @@ namespace Block {
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // outline
     };
 
-    static constexpr int numBlockTypes = (int) BlockType::NO_BLOCK;
-    static std::vector<VertexAttribType> blockData[numBlockTypes];
 
     static void setData(BlockType block) {
 
         // Store the locations of each texture as a point. This point (x and y
         // range from 0 to 16) corresponds to the texture's location on the
-        // texture sheet.
+        // texture sheet (its bottom left corner).
+        // Index into this array with the Tex enum.
         std::pair<int, int> textures[] = {
             { 2, 6 },
             { 0, 6 },
@@ -84,30 +102,34 @@ namespace Block {
             { 3, 6 },
             { 1, 0 },
         };
-
-        std::vector<std::pair<Tex, FaceType>> blocks[] = {
+        
+        // for each face of each block, store a texture and a face type. The
+        // face type is used to index into the offs array (below).
+        std::vector<std::pair<Tex, FaceType>> blocks[NUM_BLOCK_TYPES] = {
+            // air:
             {},
+            // grass:
             {{ Tex::GRASS_SIDES, FaceType::PLUS_X_NORMAL },
              { Tex::GRASS_SIDES, FaceType::MINUS_X_NORMAL },
              { Tex::GRASS_SIDES, FaceType::PLUS_Z_NORMAL },
              { Tex::GRASS_SIDES, FaceType::MINUS_Z_NORMAL },
              { Tex::GRASS_TOP,   FaceType::PLUS_Y_NORMAL },
              { Tex::DIRT,        FaceType::MINUS_Y_NORMAL }},
-
+            // dirt
             {{Tex::DIRT, FaceType::PLUS_X_NORMAL },
              {Tex::DIRT, FaceType::MINUS_X_NORMAL },
              {Tex::DIRT, FaceType::PLUS_Z_NORMAL },
              {Tex::DIRT, FaceType::MINUS_Z_NORMAL },
              {Tex::DIRT, FaceType::PLUS_Y_NORMAL },
              {Tex::DIRT, FaceType::MINUS_Y_NORMAL }},
-
+            // stone
             {{Tex::STONE, FaceType::PLUS_X_NORMAL },
              {Tex::STONE, FaceType::MINUS_X_NORMAL },
              {Tex::STONE, FaceType::PLUS_Z_NORMAL },
              {Tex::STONE, FaceType::MINUS_Z_NORMAL },
              {Tex::STONE, FaceType::PLUS_Y_NORMAL },
              {Tex::STONE, FaceType::MINUS_Y_NORMAL }},
-
+            // outline
             {{Tex::OUTLINE, FaceType::PLUS_X_NORMAL },
              {Tex::OUTLINE, FaceType::MINUS_X_NORMAL },
              {Tex::OUTLINE, FaceType::PLUS_Z_NORMAL },
@@ -116,15 +138,9 @@ namespace Block {
              {Tex::OUTLINE, FaceType::MINUS_Y_NORMAL }},
         };
 
-        constexpr int LIGHT_BITS = 2;
-        constexpr int POS_X_BITS = 5;
-        constexpr int POS_Y_BITS = 8;
-        constexpr int POS_Z_BITS = 5;
-        constexpr int TEX_X_BITS = 5;
-        constexpr int TEX_Y_BITS = 5;
-
-        // Stores the offsets for the x, y, and z positions of each vertex and the
-        // offsets for the x and y texture coordinates of each vertex.
+        // For each vertex, store the light value, the offsets for the x, y,
+        // and z positions, and the offsets for the x and y texture coordinates.
+        // Index into this array with the FaceType enum.
         VertexAttribType offs[][VERTICES_PER_FACE][6] = {
             // +x (normal)
             {{2, 1, 0, 1, 0, 0}, {2, 1, 0, 0, 1, 0}, {2, 1, 1, 0, 1, 1},
@@ -147,21 +163,20 @@ namespace Block {
             // future: data for plants, slabs, stairs, fences, torches, etc.
         };
 
-        std::vector<VertexAttribType> data;
+        std::vector<Vertex> data;
         for (int f = 0; f < (int) blocks[(int) block].size(); ++f) {
             auto& [tex, face] = blocks[(int) block][f];
             auto& [texX, texY] = textures[(int) tex];
             for (int v = 0; v < VERTICES_PER_FACE; ++v) {
-                VertexAttribType val = 0;
-                val = (val << LIGHT_BITS) + offs[(int) face][v][0];
-                val = (val << POS_X_BITS) + offs[(int) face][v][1];
-                val = (val << POS_Y_BITS) + offs[(int) face][v][2];
-                val = (val << POS_Z_BITS) + offs[(int) face][v][3];
-                val = (val << TEX_X_BITS) + offs[(int) face][v][4] + texX;
-                val = (val << TEX_Y_BITS) + offs[(int) face][v][5] + texY;
-                data.push_back(val);
-                for (int i = 0; i < ATTRIBS_PER_VERTEX - 1; ++i)
-                    data.push_back(0);
+                Vertex vert = { 0, 0, 0 };
+                vert.v1 = offs[(int) face][v][0] << 28; // light value
+                vert.v1 += offs[(int) face][v][1] << 23; // x position
+                vert.v1 += offs[(int) face][v][2] << 15; // y position
+                vert.v1 += offs[(int) face][v][3] << 10; // z position
+
+                vert.v3 = (offs[(int) face][v][4] + texX) << 5; // x texture
+                vert.v3 += offs[(int) face][v][5] + texY;       // y texture
+                data.push_back(vert);
             }
         }
         blockData[(int) block] = data;
@@ -176,29 +191,44 @@ namespace Block {
     // Return the number of VertexAttribTypes set in data
     int getBlockData(BlockType type, int x, int y, int z,
                      VertexAttribType* data, bool dirHasBlock[NUM_DIRECTIONS]) {
+        const std::vector<Direction>& d = DIR[(int) type];
         int size = 0;
-        // std::vector<std::tuple<Tex, FaceType, Direction>>& faces = blocks[(int) type];
-        std::vector<Direction>& d = DIR[(int) type];
-        int numFaces = (int) d.size();
-        std::vector<VertexAttribType>& curBlockData = blockData[(int) type];
-
-        for (int face = 0; face < (int) numFaces; ++face) {
+        std::vector<Vertex>& curBlockData = blockData[(int) type];
+        // std::cout << "curBlockData length: " << curBlockData.size() << std::endl;
+        for (int face = 0; face < (int) d.size(); ++face) {
             // if there is a block in the face's direction, don't retrieve its
             // data (because it is hidden by the block)
             Direction dir = d[face];
-            assert(dir >= 0);
-            if (dir < NUM_DIRECTIONS && dirHasBlock[dir])
+            
+            assert(dir >= 0 && dir < Direction::NUM_DIRECTIONS);
+            if (dirHasBlock[dir])
                 continue;
+            // assert(dir >= 0);
+            // if (dir < NUM_DIRECTIONS && dirHasBlock[dir])
+            //     continue;
+            
+
+            // blockData[block] ==> a vector of 6 vertices
+
             // No block, so retrieve the face's data
-            int offset = face * ATTRIBS_PER_FACE;
-            for (int v = 0; v < ATTRIBS_PER_FACE; v += ATTRIBS_PER_VERTEX) {
-                data[size + v] = curBlockData[offset + v];
-                data[size + v] += (x << 23) + (y << 15) + (z << 10);
-                data[size + v + 1] = curBlockData[offset + v + 1];
-                data[size + v + 2] = curBlockData[offset + v + 2];
-                
+            for (int vert = 0; vert < VERTICES_PER_FACE; ++vert) {
+                int index = face * VERTICES_PER_FACE + vert;
+                data[size] = curBlockData[index].v1;
+                data[size++] += (x << 23) + (y << 15) + (z << 10);
+                data[size++] = curBlockData[index].v2;
+                data[size++] = curBlockData[index].v3;
             }
-            size += ATTRIBS_PER_FACE;
+
+
+            // int offset = face * ATTRIBS_PER_FACE;
+            // for (int v = 0; v < ATTRIBS_PER_FACE; v += ATTRIBS_PER_VERTEX) {
+            //     data[size + v] = curBlockData[offset + v];
+            //     data[size + v] += (x << 23) + (y << 15) + (z << 10);
+            //     data[size + v + 1] = curBlockData[offset + v + 1];
+            //     data[size + v + 2] = curBlockData[offset + v + 2];
+            //     
+            // }
+            // size += ATTRIBS_PER_FACE;
         }
         return size;
     }

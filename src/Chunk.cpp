@@ -209,9 +209,7 @@ unsigned int Chunk::getVertexData(VertexAttribType* data, int meshIndex) const {
 }
 
 bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {
-    float x = ray.pos.x;
-    float y = ray.pos.y;
-    float z = ray.pos.z;
+    auto [x, y, z] = ray.pos;
     int cx = m_posX * CHUNK_WIDTH;
     int cz = m_posZ * CHUNK_WIDTH;
     if (x + ray.length < cx || x - ray.length > cx + CHUNK_WIDTH)
