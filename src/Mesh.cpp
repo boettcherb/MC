@@ -37,7 +37,7 @@ void Mesh::generate(unsigned int size, const void* data, bool setFaceData,
 
     // tell openGL the layout of our vertex data
     glEnableVertexAttribArray(0);
-    glVertexAttribIPointer(0, ATTRIBS_PER_VERTEX, GL_UNSIGNED_INT, VERTEX_SIZE, 0);
+    glVertexAttribIPointer(0, ATTRIBS_PER_VERTEX, GL_UNSIGNED_SHORT, VERTEX_SIZE, 0);
 
     // store the number of vertices
     m_vertexCount = size / VERTEX_SIZE;
@@ -70,18 +70,24 @@ void Mesh::getFaces(const VertexAttribType* data, int chunkX, int chunkZ) {
         // each face has 6 vertices. However, the xyz coordinates of the 3rd
         // and 4th vertex are the same, as well as the 1st and 6th (seen in
         // Blockinfo.h). So take the 1st, 2nd, 3rd, and 5th vertex.
+        Vertex v1, v2, v3, v4;
+        v1.v1 = data[i + 0];
+        v1.v2 = data[i + 1];
+        v1.v3 = data[i + 2];
+
+        v2.v1 = data[i + 3];
+        v2.v2 = data[i + 4];
+        v2.v3 = data[i + 5];
+
+        v3.v1 = data[i + 6];
+        v3.v2 = data[i + 7];
+        v3.v3 = data[i + 8];
+
+        v4.v1 = data[i + 12];
+        v4.v2 = data[i + 13];
+        v4.v3 = data[i + 14];
 
         sglm::vec3 offset = { (float) chunkX * CHUNK_WIDTH, 0.0f, (float) chunkZ * CHUNK_WIDTH };
-
-        constexpr int o = VERTEX_SIZE / sizeof(VertexAttribType);
-
-        Vertex v1, v2, v3, v4;
-        v1.v1 = data[i + 0 * o];
-        v2.v1 = data[i + 1 * o];
-        v3.v1 = data[i + 2 * o];
-        v4.v1 = data[i + 4 * o];
-
-
         sglm::vec3 A = Block::getPosition(v1) + offset;
         sglm::vec3 B = Block::getPosition(v2) + offset;
         sglm::vec3 C = Block::getPosition(v3) + offset;

@@ -6,56 +6,35 @@
 #include <cstring>
 #include <vector>
 
+
 // 
-// NEW REPRESENTATION:
-// Maybe each vertex has a block position within a subchunk (4 bits for each
-// coordinate) but also a pixel position within a block (6 bits for each
-// coordinate, to allow rendering up to 1 block outside the acutal block for
-// things like crops and fences)
+// A vertex is represented using 3 16-bit integers:
 // 
-// light      (4 bits)
-// x position (4 bits)
-// y position (4 bits)
-// z position (4 bits)
-// pixel x    (6 bits)
-// pixel y    (6 bits)
-// pixel z    (6 bits)
-// texture x  (5 bits)
-// texture y  (5 bits)
-// 
-// v1: light: 1111000000000000
-//     x pos: 0000111100000000
-//     y pos: 0000000011110000
+// v1: x pos: 1111000000000000
+//     y pos: 0000011111110000
 //     z pos: 0000000000001111
 // 
-// v2: x pix: 0000111111000000
+// v2: light: 1111000000000000
+//     x pix: 0000111111000000
 //     y pix: 0000000000111111
 // 
 // v3: z pix: 1111110000000000
 //     x tex: 0000001111100000
 //     y tex: 0000000000011111
-//
 // 
+// The x and z positions are values from 0 to 15 and the y position is a value
+// from 0 to 127. These represent the position (within a single chunk) of the
+// block that contains the vertex.
 // 
-
-
-//
-// A vertex is represented by 1 32-bit unsigned integer:
-// light val  (2 bits): 00110000000000000000000000000000
-// x position (5 bits): 00001111100000000000000000000000
-// y position (8 bits): 00000000011111111000000000000000
-// z position (5 bits): 00000000000000000111110000000000
-// x texcoord (5 bits): 00000000000000000000001111100000
-// y texcoord (5 bits): 00000000000000000000000000011111
-//
+// The x, y, and z pixel values represent the position of the vertex within a
+// block. These values are stored using 6 bits in order to allow for vertex
+// positions outside of a normal block (for example: crops, fences)
+// 
 // The light value is an index into an array of values from 0 to 1 that
 // represent the intensity of light hitting the block face. 1 is full
 // brightness and 0 is full darkness (array is defined in vertex shader).
-// 
-// The x and z positions are values from 0 to 16 and the y position is a value
-// from 0 to 128. These represent the position of the vertex within a chunk.
 //
-// The texture coordinates also range from 0 to 16. The vertex shader divides
+// The texture coordinates range from 0 to 16. The vertex shader divides
 // these values by 16 and the results (floats from 0 to 1) determine where in
 // the texture to sample from. (0, 0) is bottom left and (1, 1) is top right.
 //
@@ -66,7 +45,6 @@ namespace Block {
         GRASS_TOP, GRASS_SIDES, DIRT, STONE, OUTLINE, NUM_TEXTURES
         // LOG, LOG_END
     };
-
 
     enum class FaceType {
         PLUS_X_NORMAL, MINUS_X_NORMAL, PLUS_Z_NORMAL, MINUS_Z_NORMAL, PLUS_Y_NORMAL, MINUS_Y_NORMAL,
@@ -87,7 +65,6 @@ namespace Block {
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // stone
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // outline
     };
-
 
     static void setData(BlockType block) {
 
@@ -141,25 +118,38 @@ namespace Block {
         // For each vertex, store the light value, the offsets for the x, y,
         // and z positions, and the offsets for the x and y texture coordinates.
         // Index into this array with the FaceType enum.
+        // 
+        // Each face has 6 vertices, each with 6 attributes
+        // The first is a light value. For now, this is either 0 (-y face),
+        // 1 (+z/-z face), 2 (+x/-x face) or 3 (+y face). In the future, this
+        // value will be from 0-16 depending on how close it is to a light source
+        // 
+        // The next 3 are the x, y, and z pixel offsets. These values are from
+        // 0-48 and are the pixel offsets of the vertex. In some blocks, such as
+        // crops and fences, the faces go outside the block. The larger range
+        // allows for this. 16-32 is inside the block.
+        // 
+        // The last 2 values are the x and y texture offsets. These are always
+        // either 0 or 1 ((0,0) is bottom left of texture, (1,1) is top right).
         VertexAttribType offs[][VERTICES_PER_FACE][6] = {
             // +x (normal)
-            {{2, 1, 0, 1, 0, 0}, {2, 1, 0, 0, 1, 0}, {2, 1, 1, 0, 1, 1},
-             {2, 1, 1, 0, 1, 1}, {2, 1, 1, 1, 0, 1}, {2, 1, 0, 1, 0, 0}},
+            {{2, 32, 16, 32, 0, 0}, {2, 32, 16, 16, 1, 0}, {2, 32, 32, 16, 1, 1},
+             {2, 32, 32, 16, 1, 1}, {2, 32, 32, 32, 0, 1}, {2, 32, 16, 32, 0, 0}},
             // -x (normal)
-            {{2, 0, 0, 0, 0, 0}, {2, 0, 0, 1, 1, 0}, {2, 0, 1, 1, 1, 1},
-             {2, 0, 1, 1, 1, 1}, {2, 0, 1, 0, 0, 1}, {2, 0, 0, 0, 0, 0}},
+            {{2, 16, 16, 16, 0, 0}, {2, 16, 16, 32, 1, 0}, {2, 16, 32, 32, 1, 1},
+             {2, 16, 32, 32, 1, 1}, {2, 16, 32, 16, 0, 1}, {2, 16, 16, 16, 0, 0}},
             // +z (normal)
-            {{1, 0, 0, 1, 0, 0}, {1, 1, 0, 1, 1, 0}, {1, 1, 1, 1, 1, 1},
-             {1, 1, 1, 1, 1, 1}, {1, 0, 1, 1, 0, 1}, {1, 0, 0, 1, 0, 0}},
+            {{1, 16, 16, 32, 0, 0}, {1, 32, 16, 32, 1, 0}, {1, 32, 32, 32, 1, 1},
+             {1, 32, 32, 32, 1, 1}, {1, 16, 32, 32, 0, 1}, {1, 16, 16, 32, 0, 0}},
             // -z (normal)
-            {{1, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 1, 0}, {1, 0, 1, 0, 1, 1},
-             {1, 0, 1, 0, 1, 1}, {1, 1, 1, 0, 0, 1}, {1, 1, 0, 0, 0, 0}},
+            {{1, 32, 16, 16, 0, 0}, {1, 16, 16, 16, 1, 0}, {1, 16, 32, 16, 1, 1},
+             {1, 16, 32, 16, 1, 1}, {1, 32, 32, 16, 0, 1}, {1, 32, 16, 16, 0, 0}},
             // +y (normal)
-            {{3, 0, 1, 1, 0, 0}, {3, 1, 1, 1, 1, 0}, {3, 1, 1, 0, 1, 1},
-             {3, 1, 1, 0, 1, 1}, {3, 0, 1, 0, 0, 1}, {3, 0, 1, 1, 0, 0}},
+            {{3, 16, 32, 32, 0, 0}, {3, 32, 32, 32, 1, 0}, {3, 32, 32, 16, 1, 1},
+             {3, 32, 32, 16, 1, 1}, {3, 16, 32, 16, 0, 1}, {3, 16, 32, 32, 0, 0}},
             // -y (normal)
-            {{0, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 1, 0}, {0, 1, 0, 1, 1, 1},
-             {0, 1, 0, 1, 1, 1}, {0, 0, 0, 1, 0, 1}, {0, 0, 0, 0, 0, 0}}
+            {{0, 16, 16, 16, 0, 0}, {0, 32, 16, 16, 1, 0}, {0, 32, 16, 32, 1, 1},
+             {0, 32, 16, 32, 1, 1}, {0, 16, 16, 32, 0, 1}, {0, 16, 16, 16, 0, 0}}
             // future: data for plants, slabs, stairs, fences, torches, etc.
         };
 
@@ -169,13 +159,13 @@ namespace Block {
             auto& [texX, texY] = textures[(int) tex];
             for (int v = 0; v < VERTICES_PER_FACE; ++v) {
                 Vertex vert = { 0, 0, 0 };
-                vert.v1 = offs[(int) face][v][0] << 28; // light value
-                vert.v1 += offs[(int) face][v][1] << 23; // x position
-                vert.v1 += offs[(int) face][v][2] << 15; // y position
-                vert.v1 += offs[(int) face][v][3] << 10; // z position
+                vert.v2 = offs[(int) face][v][0] << 12; // light value
+                vert.v2 += offs[(int) face][v][1] << 6; // x pixel position
+                vert.v2 += offs[(int) face][v][2];      // y pixel position
 
-                vert.v3 = (offs[(int) face][v][4] + texX) << 5; // x texture
-                vert.v3 += offs[(int) face][v][5] + texY;       // y texture
+                vert.v3 = offs[(int) face][v][3] << 10;          // z pixel position
+                vert.v3 += (offs[(int) face][v][4] + (VertexAttribType) texX) << 5; // x texture
+                vert.v3 += offs[(int) face][v][5] + (VertexAttribType) texY;        // y texture
                 data.push_back(vert);
             }
         }
@@ -191,53 +181,40 @@ namespace Block {
     // Return the number of VertexAttribTypes set in data
     int getBlockData(BlockType type, int x, int y, int z,
                      VertexAttribType* data, bool dirHasBlock[NUM_DIRECTIONS]) {
-        const std::vector<Direction>& d = DIR[(int) type];
+
+        // position data: combine xyz coordinates into 16 bits
+        VertexAttribType posData = (VertexAttribType) ((x << 12) + (y << 4) + z);
+
         int size = 0;
+        const std::vector<Direction>& d = DIR[(int) type];
         std::vector<Vertex>& curBlockData = blockData[(int) type];
-        // std::cout << "curBlockData length: " << curBlockData.size() << std::endl;
+
         for (int face = 0; face < (int) d.size(); ++face) {
             // if there is a block in the face's direction, don't retrieve its
             // data (because it is hidden by the block)
-            Direction dir = d[face];
-            
-            assert(dir >= 0 && dir < Direction::NUM_DIRECTIONS);
-            if (dirHasBlock[dir])
+            assert(d[face] >= 0 && d[face] < Direction::NUM_DIRECTIONS);
+            if (dirHasBlock[d[face]])
                 continue;
-            // assert(dir >= 0);
-            // if (dir < NUM_DIRECTIONS && dirHasBlock[dir])
-            //     continue;
-            
-
-            // blockData[block] ==> a vector of 6 vertices
 
             // No block, so retrieve the face's data
             for (int vert = 0; vert < VERTICES_PER_FACE; ++vert) {
                 int index = face * VERTICES_PER_FACE + vert;
                 data[size] = curBlockData[index].v1;
-                data[size++] += (x << 23) + (y << 15) + (z << 10);
+                data[size++] += posData;
                 data[size++] = curBlockData[index].v2;
                 data[size++] = curBlockData[index].v3;
             }
-
-
-            // int offset = face * ATTRIBS_PER_FACE;
-            // for (int v = 0; v < ATTRIBS_PER_FACE; v += ATTRIBS_PER_VERTEX) {
-            //     data[size + v] = curBlockData[offset + v];
-            //     data[size + v] += (x << 23) + (y << 15) + (z << 10);
-            //     data[size + v + 1] = curBlockData[offset + v + 1];
-            //     data[size + v + 2] = curBlockData[offset + v + 2];
-            //     
-            // }
-            // size += ATTRIBS_PER_FACE;
         }
         return size;
     }
 
     sglm::vec3 getPosition(const Vertex& vertex) {
-        VertexAttribType first = vertex.v1;
-        float x = (float) ((first >> 23) & 0x1F);
-        float y = (float) ((first >> 15) & 0xFF);
-        float z = (float) ((first >> 10) & 0x1F);
+        float x = (float) ((vertex.v1 >> 12) & 0xF);
+        float y = (float) ((vertex.v1 >> 4) & 0x7F);
+        float z = (float) (vertex.v1 & 0xF);
+        x += (float((vertex.v2 >> 6) & 0x3F)  - 16.0f) / 16.0f;
+        y += (float(vertex.v2 & 0x3F)         - 16.0f) / 16.0f;
+        z += (float((vertex.v3 >> 10) & 0x3F) - 16.0f) / 16.0f;
         return { x, y, z };
     };
 

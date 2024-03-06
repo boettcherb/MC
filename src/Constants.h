@@ -30,7 +30,7 @@ inline const char* TEXTURE_SHEET = "resources/textures/texture_sheet.png";
 // each sub-chaunk as a sphere than calculate its actual bounding box.
 inline constexpr float SUB_CHUNK_RADIUS = 13.86f;
 
-typedef unsigned int VertexAttribType;
+typedef unsigned short VertexAttribType;
 struct Vertex {
     VertexAttribType v1, v2, v3;
 };

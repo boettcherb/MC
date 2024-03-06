@@ -24,10 +24,11 @@ Chunk::Chunk(int x, int z, const void* blockData) : m_posX{ x }, m_posZ{ z } {
 void Chunk::updateMesh(int meshIndex) {
     assert(meshIndex >= 0 && meshIndex < NUM_SUBCHUNKS);
     m_mesh[meshIndex].erase();
-    // ATTRIBS_PER_VERTEX * VERTICES_PER_SUBCHUNK is the maximum possible number
-    // of attributs that can be rendered per subchunk. Most subchunks will not be
-    // anywhere near this number, so divide by 8 to save memory. (also, assume
-    // average of 6 faces per block)
+    // lim is the maximum possible number of attributes that can be rendered per
+    // subchunk (3 attribs per vertex, 6 vertices per face, 6 faces per block,
+    // 4096 blocks per subchunk). This is an estimate because some blocks do not
+    // have 6 faces (ex: plants only have 4). Most subchunks will not be
+    // anywhere near this number, so divide by 8 to save memory.
     constexpr unsigned int lim = ATTRIBS_PER_FACE * 6 * BLOCKS_PER_SUBCHUNK / 8;
     VertexAttribType* data = new VertexAttribType[lim];
     unsigned int size = getVertexData(data, meshIndex);
