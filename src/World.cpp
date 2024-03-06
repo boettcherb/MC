@@ -34,7 +34,7 @@ World::World(Shader* shader, Player* player) {
     m_shader = shader;
     m_player = player;
     m_chunkLoaderThreadShouldClose = false;
-    m_chunkLoaderThread = std::thread(&World::chunkLoaderThreadFunc, this);
+    m_chunkLoaderThread = std::thread(&World::LoadChunks, this);
 }
 
 World::~World() {
@@ -137,7 +137,7 @@ void World::renderAll() {
     Player::chunks_rendered = { rendered, total };
 }
 
-void World::chunkLoaderThreadFunc() {
+void World::LoadChunks() {
     using namespace std::chrono_literals;
     while (!m_chunkLoaderThreadShouldClose) {
 
@@ -164,13 +164,10 @@ void World::chunkLoaderThreadFunc() {
             if (dist_sq > Player::getLoadRadius() * Player::getLoadRadius())
                 continue;
             bool contains = false;
-            sglm::vec3 pos = { x *16 + diff, 0.0f, z * 16 + diff };
+            sglm::vec3 pos = { x * 16 + diff, 0.0f, z * 16 + diff };
             for (int subchunk = 0; subchunk < NUM_SUBCHUNKS; ++subchunk) {
                 pos.y = subchunk * SUBCHUNK_HEIGHT + diff;
-                // +10 b/c some visible chunks on the edges of the frustum are not loading
-                // TODO: find out what is causing this
-                float r = SUB_CHUNK_RADIUS + 10.0f;
-                if (m_player->getFrustum().contains(pos, r)) {
+                if (m_player->getFrustum().contains(pos, SUB_CHUNK_RADIUS)) {
                     contains = true;
                     break;
                 }
@@ -192,7 +189,7 @@ void World::chunkLoaderThreadFunc() {
             int x = pos.first, z = pos.second;
             int dist_sq = (px - x) * (px - x) + (pz - z) * (pz - z);
             if (dist_sq > Player::getLoadRadius() * Player::getLoadRadius()) {
-                threadRemoveChunk(x, z, chunk);
+                removeChunk(x, z, chunk);
             }
         }
 
@@ -200,7 +197,7 @@ void World::chunkLoaderThreadFunc() {
         database::Query q = database::get_load_result();
         while (q.type != database::QUERY_NONE) {
             assert(q.type == database::QUERY_LOAD);
-            threadAddChunk(q.x, q.z, q.data);
+            addChunk(q.x, q.z, q.data);
             delete[] q.data;
             q = database::get_load_result();
         }
@@ -216,12 +213,12 @@ void World::chunkLoaderThreadFunc() {
         int x = itr->first.first;
         int z = itr->first.second;
         Chunk* chunk = itr->second;
-        threadRemoveChunk(x, z, chunk);
+        removeChunk(x, z, chunk);
     }
     assert(m_chunks.empty());
 }
 
-void World::threadAddChunk(int x, int z, const void* data) {
+void World::addChunk(int x, int z, const void* data) {
 
     // if the chunk has already been loaded, don't do anything
     m_chunksMutex.lock();
@@ -261,7 +258,7 @@ void World::threadAddChunk(int x, int z, const void* data) {
     m_chunksMutex.unlock();
 }
 
-void World::threadRemoveChunk(int x, int z, Chunk* chunk) {
+void World::removeChunk(int x, int z, Chunk* chunk) {
     m_chunksMutex.lock();
     assert(m_chunks.count({ x, z }) == 1);
     m_chunks.erase({ x, z });
