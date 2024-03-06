@@ -71,28 +71,18 @@ void Mesh::getFaces(const VertexAttribType* data, int chunkX, int chunkZ) {
         // and 4th vertex are the same, as well as the 1st and 6th (seen in
         // Blockinfo.h). So take the 1st, 2nd, 3rd, and 5th vertex.
         Vertex v1, v2, v3, v4;
-        v1.v1 = data[i + 0];
-        v1.v2 = data[i + 1];
-        v1.v3 = data[i + 2];
-
-        v2.v1 = data[i + 3];
-        v2.v2 = data[i + 4];
-        v2.v3 = data[i + 5];
-
-        v3.v1 = data[i + 6];
-        v3.v2 = data[i + 7];
-        v3.v3 = data[i + 8];
-
-        v4.v1 = data[i + 12];
-        v4.v2 = data[i + 13];
-        v4.v3 = data[i + 14];
+        std::memcpy(&v1, &data[i], sizeof(Vertex));
+        std::memcpy(&v2, &data[i + 3], sizeof(Vertex));
+        std::memcpy(&v3, &data[i + 6], sizeof(Vertex));
+        std::memcpy(&v4, &data[i + 12], sizeof(Vertex));
 
         sglm::vec3 offset = { (float) chunkX * CHUNK_WIDTH, 0.0f, (float) chunkZ * CHUNK_WIDTH };
-        sglm::vec3 A = Block::getPosition(v1) + offset;
-        sglm::vec3 B = Block::getPosition(v2) + offset;
-        sglm::vec3 C = Block::getPosition(v3) + offset;
-        sglm::vec3 D = Block::getPosition(v4) + offset;
-        m_faces.emplace_back(Face(A, B, C, D));
+        sglm::vec3 A = Block::getVertexPosition(v1) + offset;
+        sglm::vec3 B = Block::getVertexPosition(v2) + offset;
+        sglm::vec3 C = Block::getVertexPosition(v3) + offset;
+        sglm::vec3 D = Block::getVertexPosition(v4) + offset;
+        sglm::vec3 blockPosition = Block::getBlockPosition(v1);
+        m_faces.emplace_back(Face(A, B, C, D, blockPosition));
     }
 }
 

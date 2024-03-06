@@ -7,6 +7,7 @@
 class Face {
     sglm::vec3 A, B, C, D;
     sglm::vec3 normal;
+    int bx, by, bz; // xyz position of block that contains this face
 
 public:
     struct Intersection {
@@ -16,12 +17,12 @@ public:
         sglm::vec3 A, B, C, D; // 4 corner positions of face
         VertexAttribType data[ATTRIBS_PER_FACE * 6];
         
-        void setData();
         bool operator==(const Intersection& other) const;
         void operator=(const Intersection& other);
     };
 
-    Face(sglm::vec3& a, sglm::vec3& b, sglm::vec3& c, sglm::vec3& d);
+    Face(sglm::vec3& a, sglm::vec3& b, sglm::vec3& c,
+         sglm::vec3& d, sglm::vec3& blockPosition);
     bool intersects(const sglm::ray& r, Intersection& isect) const;
 };
 

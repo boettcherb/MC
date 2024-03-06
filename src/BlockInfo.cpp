@@ -208,14 +208,18 @@ namespace Block {
         return size;
     }
 
-    sglm::vec3 getPosition(const Vertex& vertex) {
-        float x = (float) ((vertex.v1 >> 12) & 0xF);
+    sglm::vec3 getBlockPosition(const Vertex& vertex) {
+        float x = (float) (vertex.v1 >> 12);
         float y = (float) ((vertex.v1 >> 4) & 0x7F);
         float z = (float) (vertex.v1 & 0xF);
-        x += (float((vertex.v2 >> 6) & 0x3F)  - 16.0f) / 16.0f;
-        y += (float(vertex.v2 & 0x3F)         - 16.0f) / 16.0f;
-        z += (float((vertex.v3 >> 10) & 0x3F) - 16.0f) / 16.0f;
         return { x, y, z };
+    }
+
+    sglm::vec3 getVertexPosition(const Vertex& vertex) {
+        float x = (float((vertex.v2 >> 6) & 0x3F)  - 16.0f) / 16.0f;
+        float y = (float(vertex.v2 & 0x3F)         - 16.0f) / 16.0f;
+        float z = (float((vertex.v3 >> 10) & 0x3F) - 16.0f) / 16.0f;
+        return getBlockPosition(vertex) + sglm::vec3(x, y, z);
     };
 
     bool isTransparent(BlockType type) {

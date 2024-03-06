@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "Player.h"
 #include "Face.h"
+#include "BlockInfo.h"
 #include "Database.h"
 
 #include <new>
@@ -101,7 +102,10 @@ void World::checkViewRayCollisions() {
     }
     m_chunksMutex.unlock();
     if (foundIntersection) {
-        bestI.setData();
+        // fill in the data field of the intersection with the block outline's vertex data
+        bool dirHasBlock[6] = {};
+        Block::getBlockData(Block::BlockType::OUTLINE, bestI.x, bestI.y,
+                            bestI.z, bestI.data, dirHasBlock);
         m_player->setViewRayIsect(&bestI);
     } else {
         m_player->setViewRayIsect(nullptr);
