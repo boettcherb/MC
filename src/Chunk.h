@@ -41,7 +41,7 @@ public:
 
 private:
     void updateMesh(int meshIndex);
-    void generateTerrain();
+    void generateTerrain(); // in its own file: TerrainGen.cpp
     unsigned int getVertexData(VertexAttribType* data, int meshIndex) const;
 };
 
