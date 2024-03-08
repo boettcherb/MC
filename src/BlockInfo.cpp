@@ -6,8 +6,6 @@
 #include <cstring>
 #include <vector>
 
-
-// 
 // A vertex is represented using 3 16-bit integers:
 // 
 // v1: x pos: 1111000000000000
@@ -42,27 +40,33 @@
 namespace Block {
 
     enum class Tex {
-        GRASS_TOP, GRASS_SIDES, DIRT, STONE, OUTLINE, NUM_TEXTURES
+        GRASS_TOP, GRASS_SIDES, DIRT, STONE, GRASS_PLANT, OUTLINE, NUM_TEXTURES
         // LOG, LOG_END
     };
 
     enum class FaceType {
-        PLUS_X_NORMAL, MINUS_X_NORMAL, PLUS_Z_NORMAL, MINUS_Z_NORMAL, PLUS_Y_NORMAL, MINUS_Y_NORMAL,
+        PLUS_X_NORMAL, MINUS_X_NORMAL,
+        PLUS_Z_NORMAL, MINUS_Z_NORMAL,
+        PLUS_Y_NORMAL, MINUS_Y_NORMAL,
+        MXMZ_TO_PXPZ_PLANT, PXPZ_TO_MXMZ_PLANT,
+        MXPZ_TO_PXMZ_PLANT, PXMZ_TO_MXPZ_PLANT,
         NUM_FACE_TYPES
         // future: PLUS_X_FENCE, PLUS_X_SLAB, PLUS_X_STAIR
     };
 
     static constexpr int NUM_BLOCK_TYPES = (int) BlockType::NO_BLOCK;
+    static constexpr int NUM_FACE_TYPES = (int) FaceType::NUM_FACE_TYPES;
     static std::vector<Vertex> blockData[NUM_BLOCK_TYPES];
 
     // for each block type, store a direction for each face. This direction is
     // the direction that will determine whether we render this face (if there
     // is a solid block in that direction, don't render the face)
     static const std::vector<Direction> DIR[NUM_BLOCK_TYPES] = {
-        {}, // air
+        {},                                                    // air
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // grass
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // dirt
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // stone
+        {},                                                    // Grass Plant
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // outline
     };
 
@@ -73,11 +77,12 @@ namespace Block {
         // texture sheet (its bottom left corner).
         // Index into this array with the Tex enum.
         std::pair<int, int> textures[] = {
-            { 2, 6 },
-            { 0, 6 },
-            { 1, 6 },
-            { 3, 6 },
-            { 1, 0 },
+            { 2, 15 }, // Grass Top
+            { 0, 15 }, // Grass Sides
+            { 1, 15 }, // Dirt
+            { 3, 15 }, // Stone
+            { 0, 13 }, // Grass Plant
+            { 1, 0 },  // Block Outline
         };
         
         // for each face of each block, store a texture and a face type. The
@@ -93,45 +98,47 @@ namespace Block {
              { Tex::GRASS_TOP,   FaceType::PLUS_Y_NORMAL },
              { Tex::DIRT,        FaceType::MINUS_Y_NORMAL }},
             // dirt
-            {{Tex::DIRT, FaceType::PLUS_X_NORMAL },
-             {Tex::DIRT, FaceType::MINUS_X_NORMAL },
-             {Tex::DIRT, FaceType::PLUS_Z_NORMAL },
-             {Tex::DIRT, FaceType::MINUS_Z_NORMAL },
-             {Tex::DIRT, FaceType::PLUS_Y_NORMAL },
-             {Tex::DIRT, FaceType::MINUS_Y_NORMAL }},
+            {{ Tex::DIRT, FaceType::PLUS_X_NORMAL },
+             { Tex::DIRT, FaceType::MINUS_X_NORMAL },
+             { Tex::DIRT, FaceType::PLUS_Z_NORMAL },
+             { Tex::DIRT, FaceType::MINUS_Z_NORMAL },
+             { Tex::DIRT, FaceType::PLUS_Y_NORMAL },
+             { Tex::DIRT, FaceType::MINUS_Y_NORMAL }},
             // stone
-            {{Tex::STONE, FaceType::PLUS_X_NORMAL },
-             {Tex::STONE, FaceType::MINUS_X_NORMAL },
-             {Tex::STONE, FaceType::PLUS_Z_NORMAL },
-             {Tex::STONE, FaceType::MINUS_Z_NORMAL },
-             {Tex::STONE, FaceType::PLUS_Y_NORMAL },
-             {Tex::STONE, FaceType::MINUS_Y_NORMAL }},
+            {{ Tex::STONE, FaceType::PLUS_X_NORMAL },
+             { Tex::STONE, FaceType::MINUS_X_NORMAL },
+             { Tex::STONE, FaceType::PLUS_Z_NORMAL },
+             { Tex::STONE, FaceType::MINUS_Z_NORMAL },
+             { Tex::STONE, FaceType::PLUS_Y_NORMAL },
+             { Tex::STONE, FaceType::MINUS_Y_NORMAL }},
+            // grass plant
+            {{ Tex::GRASS_PLANT, FaceType::MXMZ_TO_PXPZ_PLANT },
+             { Tex::GRASS_PLANT, FaceType::PXPZ_TO_MXMZ_PLANT },
+             { Tex::GRASS_PLANT, FaceType::MXPZ_TO_PXMZ_PLANT },
+             { Tex::GRASS_PLANT, FaceType::PXMZ_TO_MXPZ_PLANT }},
             // outline
-            {{Tex::OUTLINE, FaceType::PLUS_X_NORMAL },
-             {Tex::OUTLINE, FaceType::MINUS_X_NORMAL },
-             {Tex::OUTLINE, FaceType::PLUS_Z_NORMAL },
-             {Tex::OUTLINE, FaceType::MINUS_Z_NORMAL },
-             {Tex::OUTLINE, FaceType::PLUS_Y_NORMAL },
-             {Tex::OUTLINE, FaceType::MINUS_Y_NORMAL }},
+            {{ Tex::OUTLINE, FaceType::PLUS_X_NORMAL },
+             { Tex::OUTLINE, FaceType::MINUS_X_NORMAL },
+             { Tex::OUTLINE, FaceType::PLUS_Z_NORMAL },
+             { Tex::OUTLINE, FaceType::MINUS_Z_NORMAL },
+             { Tex::OUTLINE, FaceType::PLUS_Y_NORMAL },
+             { Tex::OUTLINE, FaceType::MINUS_Y_NORMAL }},
         };
 
         // For each vertex, store the light value, the offsets for the x, y,
         // and z positions, and the offsets for the x and y texture coordinates.
         // Index into this array with the FaceType enum.
-        // 
-        // Each face has 6 vertices, each with 6 attributes
+        // Each face has 6 vertices, each with 6 attributes.
         // The first is a light value. For now, this is either 0 (-y face),
         // 1 (+z/-z face), 2 (+x/-x face) or 3 (+y face). In the future, this
-        // value will be from 0-16 depending on how close it is to a light source
-        // 
+        // value will be from 0-16 depending on how close it is to a light source.
         // The next 3 are the x, y, and z pixel offsets. These values are from
         // 0-48 and are the pixel offsets of the vertex. In some blocks, such as
         // crops and fences, the faces go outside the block. The larger range
         // allows for this. 16-32 is inside the block.
-        // 
         // The last 2 values are the x and y texture offsets. These are always
         // either 0 or 1 ((0,0) is bottom left of texture, (1,1) is top right).
-        VertexAttribType offs[][VERTICES_PER_FACE][6] = {
+        VertexAttribType offs[NUM_FACE_TYPES][VERTICES_PER_FACE][6] = {
             // +x (normal)
             {{2, 32, 16, 32, 0, 0}, {2, 32, 16, 16, 1, 0}, {2, 32, 32, 16, 1, 1},
              {2, 32, 32, 16, 1, 1}, {2, 32, 32, 32, 0, 1}, {2, 32, 16, 32, 0, 0}},
@@ -149,8 +156,20 @@ namespace Block {
              {3, 32, 32, 16, 1, 1}, {3, 16, 32, 16, 0, 1}, {3, 16, 32, 32, 0, 0}},
             // -y (normal)
             {{0, 16, 16, 16, 0, 0}, {0, 32, 16, 16, 1, 0}, {0, 32, 16, 32, 1, 1},
-             {0, 32, 16, 32, 1, 1}, {0, 16, 16, 32, 0, 1}, {0, 16, 16, 16, 0, 0}}
-            // future: data for plants, slabs, stairs, fences, torches, etc.
+             {0, 32, 16, 32, 1, 1}, {0, 16, 16, 32, 0, 1}, {0, 16, 16, 16, 0, 0}},
+            // MXMZ_TO_PXPZ_PLANT
+            {{3, 16, 16, 16, 0, 0}, {3, 32, 16, 32, 1, 0}, {3, 32, 32, 32, 1, 1},
+             {3, 32, 32, 32, 1, 1}, {3, 16, 32, 16, 0, 1}, {3, 16, 16, 16, 0, 0}},
+            // PXPZ_TO_MXMZ_PLANT
+            {{3, 32, 16, 32, 0, 0}, {3, 16, 16, 16, 1, 0}, {3, 16, 32, 16, 1, 1},
+             {3, 16, 32, 16, 1, 1}, {3, 32, 32, 32, 0, 1}, {3, 32, 16, 32, 0, 0}},
+            // MXPZ_TO_PXMZ_PLANT
+            {{3, 16, 16, 32, 0, 0}, {3, 32, 16, 16, 1, 0}, {3, 32, 32, 16, 1, 1},
+             {3, 32, 32, 16, 1, 1}, {3, 16, 32, 32, 0, 1}, {3, 16, 16, 32, 0, 0}},
+            // PXMZ_TO_MXPZ_PLANT
+            {{3, 32, 16, 16, 0, 0}, {3, 16, 16, 32, 1, 0}, {3, 16, 32, 32, 1, 1},
+             {3, 16, 32, 32, 1, 1}, {3, 32, 32, 16, 0, 1}, {3, 32, 16, 16, 0, 0}},
+            // future: data for slabs, stairs, fences, torches, etc.
         };
 
         std::vector<Vertex> data;
@@ -162,8 +181,7 @@ namespace Block {
                 vert.v2 = offs[(int) face][v][0] << 12; // light value
                 vert.v2 += offs[(int) face][v][1] << 6; // x pixel position
                 vert.v2 += offs[(int) face][v][2];      // y pixel position
-
-                vert.v3 = offs[(int) face][v][3] << 10;          // z pixel position
+                vert.v3 = offs[(int) face][v][3] << 10; // z pixel position
                 vert.v3 += (offs[(int) face][v][4] + (VertexAttribType) texX) << 5; // x texture
                 vert.v3 += offs[(int) face][v][5] + (VertexAttribType) texY;        // y texture
                 data.push_back(vert);
@@ -188,14 +206,16 @@ namespace Block {
         int size = 0;
         const std::vector<Direction>& d = DIR[(int) type];
         std::vector<Vertex>& curBlockData = blockData[(int) type];
+        int numFaces = (int) curBlockData.size() / VERTICES_PER_FACE;
 
-        for (int face = 0; face < (int) d.size(); ++face) {
+        for (int face = 0; face < numFaces; ++face) {
             // if there is a block in the face's direction, don't retrieve its
             // data (because it is hidden by the block)
-            assert(d[face] >= 0 && d[face] < Direction::NUM_DIRECTIONS);
-            if (dirHasBlock[d[face]])
-                continue;
-
+            if (d.size() > face) {
+                assert(d[face] >= 0 && d[face] < Direction::NUM_DIRECTIONS);
+                if (dirHasBlock[d[face]])
+                    continue;
+            }
             // No block, so retrieve the face's data
             for (int vert = 0; vert < VERTICES_PER_FACE; ++vert) {
                 int index = face * VERTICES_PER_FACE + vert;
@@ -223,7 +243,7 @@ namespace Block {
     };
 
     bool isTransparent(BlockType type) {
-        return type == BlockType::AIR;
+        return type == BlockType::AIR || type == BlockType::GRASS_PLANT;
     }
 
 }

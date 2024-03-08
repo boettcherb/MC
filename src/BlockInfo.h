@@ -11,6 +11,7 @@ namespace Block {
         GRASS,
         DIRT,
         STONE,
+        GRASS_PLANT,
         OUTLINE,
         NO_BLOCK,
         // LOG    (log ends are in the +y and -y directions)
