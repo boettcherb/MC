@@ -40,8 +40,9 @@
 namespace Block {
 
     enum class Tex {
-        GRASS_TOP, GRASS_SIDES, DIRT, STONE, GRASS_PLANT, OUTLINE, NUM_TEXTURES
-        // LOG, LOG_END
+        GRASS_TOP, GRASS_SIDES, DIRT, STONE, GRASS_PLANT,
+        OAK_LOG, OAK_LOG_END, OAK_LEAVES,
+        OUTLINE, NUM_TEXTURES
     };
 
     enum class FaceType {
@@ -62,12 +63,16 @@ namespace Block {
     // the direction that will determine whether we render this face (if there
     // is a solid block in that direction, don't render the face)
     static const std::vector<Direction> DIR[NUM_BLOCK_TYPES] = {
-        {},                                                    // air
-        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // grass
-        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // dirt
-        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // stone
+        {},                                                    // Air
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Grass
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Dirt
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Stone
         {},                                                    // Grass Plant
-        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // outline
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Log
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Log PX
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Log PZ
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Leaves
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Block Outline
     };
 
     static void setData(BlockType block) {
@@ -82,6 +87,9 @@ namespace Block {
             { 1, 15 }, // Dirt
             { 3, 15 }, // Stone
             { 0, 13 }, // Grass Plant
+            { 0, 14 }, // Oak Log
+            { 1, 14 }, // Oak Log End
+            { 2, 14 }, // Oak Leaves
             { 1, 0 },  // Block Outline
         };
         
@@ -116,6 +124,34 @@ namespace Block {
              { Tex::GRASS_PLANT, FaceType::PXPZ_TO_MXMZ_PLANT },
              { Tex::GRASS_PLANT, FaceType::MXPZ_TO_PXMZ_PLANT },
              { Tex::GRASS_PLANT, FaceType::PXMZ_TO_MXPZ_PLANT }},
+            // Oak Log
+            {{ Tex::OAK_LOG, FaceType::PLUS_X_NORMAL },
+             { Tex::OAK_LOG, FaceType::MINUS_X_NORMAL },
+             { Tex::OAK_LOG, FaceType::PLUS_Z_NORMAL },
+             { Tex::OAK_LOG, FaceType::MINUS_Z_NORMAL },
+             { Tex::OAK_LOG_END, FaceType::PLUS_Y_NORMAL },
+             { Tex::OAK_LOG_END, FaceType::MINUS_Y_NORMAL }},
+            // Oak Log PX
+            {{ Tex::OAK_LOG_END, FaceType::PLUS_X_NORMAL },
+             { Tex::OAK_LOG_END, FaceType::MINUS_X_NORMAL },
+             { Tex::OAK_LOG, FaceType::PLUS_Z_NORMAL },
+             { Tex::OAK_LOG, FaceType::MINUS_Z_NORMAL },
+             { Tex::OAK_LOG, FaceType::PLUS_Y_NORMAL },
+             { Tex::OAK_LOG, FaceType::MINUS_Y_NORMAL }},
+            // Oak Log PZ
+            {{ Tex::OAK_LOG, FaceType::PLUS_X_NORMAL },
+             { Tex::OAK_LOG, FaceType::MINUS_X_NORMAL },
+             { Tex::OAK_LOG_END, FaceType::PLUS_Z_NORMAL },
+             { Tex::OAK_LOG_END, FaceType::MINUS_Z_NORMAL },
+             { Tex::OAK_LOG, FaceType::PLUS_Y_NORMAL },
+             { Tex::OAK_LOG, FaceType::MINUS_Y_NORMAL }},
+            // Oak Leaves
+            {{ Tex::OAK_LEAVES, FaceType::PLUS_X_NORMAL },
+             { Tex::OAK_LEAVES, FaceType::MINUS_X_NORMAL },
+             { Tex::OAK_LEAVES, FaceType::PLUS_Z_NORMAL },
+             { Tex::OAK_LEAVES, FaceType::MINUS_Z_NORMAL },
+             { Tex::OAK_LEAVES, FaceType::PLUS_Y_NORMAL },
+             { Tex::OAK_LEAVES, FaceType::MINUS_Y_NORMAL }},
             // outline
             {{ Tex::OUTLINE, FaceType::PLUS_X_NORMAL },
              { Tex::OUTLINE, FaceType::MINUS_X_NORMAL },

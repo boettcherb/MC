@@ -12,6 +12,10 @@ namespace Block {
         DIRT,
         STONE,
         GRASS_PLANT,
+        OAK_LOG,
+        OAK_LOG_PX,
+        OAK_LOG_PZ,
+        OAK_LEAVES,
         OUTLINE,
         NO_BLOCK,
         // LOG    (log ends are in the +y and -y directions)

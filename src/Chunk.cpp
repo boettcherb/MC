@@ -11,7 +11,7 @@ Chunk::Chunk(int x, int z, const void* blockData) : m_posX{ x }, m_posZ{ z } {
     m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
     m_numNeighbors = 0;
     if (blockData == nullptr) {
-        generateTerrain();
+        generateTerrain(1337);
         m_updated = true;
     } else {
         memcpy(m_blockArray, blockData, BLOCKS_PER_CHUNK);
@@ -57,9 +57,10 @@ const void* Chunk::getBlockData() const {
 }
 
 void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
-    assert(x >= 0 && x < CHUNK_WIDTH);
-    assert(y >= 0 && y < CHUNK_HEIGHT);
-    assert(z >= 0 && z < CHUNK_WIDTH);
+    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_WIDTH || y >= CHUNK_HEIGHT || z >= CHUNK_WIDTH) return;
+    // assert(x >= 0 && x < CHUNK_WIDTH);
+    // assert(y >= 0 && y < CHUNK_HEIGHT);
+    // assert(z >= 0 && z < CHUNK_WIDTH);
     m_blockArray[x][y][z] = block;
     if (update_mesh) {
         int updateIndex = y / SUBCHUNK_HEIGHT;
@@ -118,6 +119,7 @@ int Chunk::render(Shader* shader, const sglm::frustum& frustum) {
     return subChunksRendered;
 }
 
+// called (basically) every frame by World::update()
 bool Chunk::update() {
     bool updated = false;
     if (!m_rendered && m_numNeighbors == 4) {

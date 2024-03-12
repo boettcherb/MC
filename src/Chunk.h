@@ -7,9 +7,14 @@
 #include "Mesh.h"
 #include "Face.h"
 
+#include <vector>
+#include <tuple>
+
 // Each chunk is a 16x128x16 section of the world. All the blocks of a chunk
 // are generated, loaded, and stored together. Each chunk is divided into 8
 // 16x16x16 meshes.
+
+typedef std::vector<std::tuple<int, int, int, Block::BlockType>> BlockList;
 
 class Chunk {
     const int m_posX, m_posZ;
@@ -19,6 +24,13 @@ class Chunk {
     int m_numNeighbors;
     bool m_updated;
     bool m_rendered; // true if meshes have been generated
+
+    // stores blocks that were generated in the terrain generator but fall
+    // outside this chunk. For example, if a tree is generated on the chunk
+    // boundary, some of its leaves may be in a neighboring chunk. That
+    // neighboring chunk may not be loaded yet, so store those blocks here
+    // until the neighbor is loaded.
+    BlockList m_outsideBlocks;
 
 public:
     Chunk(int x, int z, const void* blockData);
@@ -39,10 +51,14 @@ public:
     const void* getBlockData() const;
     bool wasUpdated() const;
 
+    static void initNoise(); // in TerrainGen.cpp
+
 private:
     void updateMesh(int meshIndex);
-    void generateTerrain(); // in its own file: TerrainGen.cpp
     unsigned int getVertexData(VertexAttribType* data, int meshIndex) const;
+
+    void generateTerrain(int seed); // in TerrainGen.cpp
+
 };
 
 #endif

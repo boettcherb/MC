@@ -166,6 +166,7 @@ int main() {
     window_size_callback(nullptr, scr_width, scr_height);
     database::initialize();
     Block::setBlockData();
+    Chunk::initNoise();
 
     // initialize imgui
     ImGui::CreateContext();
