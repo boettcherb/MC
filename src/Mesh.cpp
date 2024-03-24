@@ -22,6 +22,7 @@ void Mesh::generate(unsigned int size, const void* data, bool setFaceData,
     if (m_generated) {
         erase();
     }
+
     if (size == 0) {
         return;
     }
@@ -90,12 +91,14 @@ unsigned int Mesh::getVertexCount() const {
     return m_vertexCount;
 }
 
-void Mesh::render(const Shader* shader) const {
+bool Mesh::render(const Shader* shader) const {
     if (m_generated) {
         shader->bind();
         glBindVertexArray(m_vertexArrayID);
         glDrawArrays(GL_TRIANGLES, 0, m_vertexCount);
+        return true;
     }
+    return false;
 }
 
 bool Mesh::intersects(const sglm::ray& ray, Face::Intersection& isect) {

@@ -20,22 +20,6 @@ Chunk::Chunk(int x, int z, const void* blockData) : m_posX{ x }, m_posZ{ z } {
     m_rendered = false;
 }
 
-void Chunk::updateMesh(int meshIndex) {
-    assert(meshIndex >= 0 && meshIndex < NUM_SUBCHUNKS);
-    m_mesh[meshIndex].erase();
-    // lim is the maximum possible number of attributes that can be rendered per
-    // subchunk (3 attribs per vertex, 6 vertices per face, 6 faces per block,
-    // 4096 blocks per subchunk). This is an estimate because some blocks do not
-    // have 6 faces (ex: plants only have 4). Most subchunks will not be
-    // anywhere near this number, so divide by 8 to save memory.
-    constexpr unsigned int lim = ATTRIBS_PER_FACE * 6 * BLOCKS_PER_SUBCHUNK / 8;
-    VertexAttribType* data = new VertexAttribType[lim];
-    unsigned int size = getVertexData(data, meshIndex);
-    assert(size <= lim * 4);
-    m_mesh[meshIndex].generate(size, data, true, m_posX, m_posZ);
-    delete[] data;
-}
-
 Chunk::~Chunk() {
     for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
         m_mesh[i].erase();
@@ -57,10 +41,9 @@ const void* Chunk::getBlockData() const {
 }
 
 void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
-    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_WIDTH || y >= CHUNK_HEIGHT || z >= CHUNK_WIDTH) return;
-    // assert(x >= 0 && x < CHUNK_WIDTH);
-    // assert(y >= 0 && y < CHUNK_HEIGHT);
-    // assert(z >= 0 && z < CHUNK_WIDTH);
+    assert(x >= 0 && x < CHUNK_WIDTH);
+    assert(y >= 0 && y < CHUNK_HEIGHT);
+    assert(z >= 0 && z < CHUNK_WIDTH);
     m_blockArray[x][y][z] = block;
     if (update_mesh) {
         int updateIndex = y / SUBCHUNK_HEIGHT;
@@ -112,8 +95,7 @@ int Chunk::render(Shader* shader, const sglm::frustum& frustum) {
         float cz2 = cz + CHUNK_WIDTH / 2.0f;
         float cy2 = i * SUBCHUNK_HEIGHT + SUBCHUNK_HEIGHT / 2.0f;
         if (frustum.contains({ cx2, cy2, cz2 }, SUB_CHUNK_RADIUS)) {
-            m_mesh[i].render(shader);
-            ++subChunksRendered;
+            subChunksRendered += m_mesh[i].render(shader);
         }
     }
     return subChunksRendered;
@@ -138,6 +120,22 @@ bool Chunk::update() {
         m_rendered = false;
     }
     return updated;
+}
+
+void Chunk::updateMesh(int meshIndex) {
+    assert(meshIndex >= 0 && meshIndex < NUM_SUBCHUNKS);
+    m_mesh[meshIndex].erase();
+    // lim is the maximum possible number of attributes that can be rendered per
+    // subchunk (3 attribs per vertex, 6 vertices per face, 6 faces per block,
+    // 4096 blocks per subchunk). This is an estimate because some blocks do not
+    // have 6 faces (ex: plants only have 4). Most subchunks will not be
+    // anywhere near this number, so divide by 8 to save memory.
+    constexpr unsigned int lim = ATTRIBS_PER_FACE * 6 * BLOCKS_PER_SUBCHUNK / 8;
+    VertexAttribType* data = new VertexAttribType[lim];
+    unsigned int size = getVertexData(data, meshIndex);
+    assert(size <= lim * 4);
+    m_mesh[meshIndex].generate(size, data, true, m_posX, m_posZ);
+    delete[] data;
 }
 
 void Chunk::addNeighbor(Chunk* chunk, Direction direction) {

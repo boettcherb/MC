@@ -21,7 +21,7 @@ public:
     bool generated() const;
     void erase();
     unsigned int getVertexCount() const;
-    void render(const Shader* shader) const;
+    bool render(const Shader* shader) const;
     bool intersects(const sglm::ray& ray, Face::Intersection& isect);
 
 private:

@@ -15,7 +15,8 @@ static FastNoiseLite biome; // cellular noise that determines the biome
 // create a uniform int distribution that produces ints from 0 to 99 inclusive
 // mt is the engine which generates the random numbers
 static std::mt19937 mt;
-static std::uniform_int_distribution<std::mt19937::result_type> r(0, 99);
+static std::uniform_int_distribution<std::mt19937::result_type> bool_val(0, 1);
+static std::uniform_int_distribution<std::mt19937::result_type> forest_tree(1, 256);
 static std::uniform_int_distribution<std::mt19937::result_type> tree_height(4, 8);
 
 
@@ -39,51 +40,48 @@ static int getHeight(float x, float z) {
     return (int) ((h + 1.0) / 2.0 * (max - min) + min);
 }
 
-static Biome getBiome(float x, float z) {
-    biome.SetFrequency(0.01f);
-    biome.DomainWarp(x, z);
-    biome.SetFrequency(0.002f);
-    float n = biome.GetNoise(x, z);
-    float cutoffs[] = { -0.7f, -0.4f, -0.1f, 0.2f, 0.6f, 1.0f };
-    for (int i = 0; i < sizeof(cutoffs) / sizeof(float); ++i) {
-        if (n < cutoffs[i]) {
-            return static_cast<Biome>(i);
-        }
-    }
-    throw "Invalid biome";
-}
+// static Biome getBiome(float x, float z) {
+//     biome.SetFrequency(0.01f);
+//     biome.DomainWarp(x, z);
+//     biome.SetFrequency(0.002f);
+//     float n = biome.GetNoise(x, z);
+//     float cutoffs[] = { -0.7f, -0.4f, -0.1f, 0.2f, 0.6f, 1.0f };
+//     for (int i = 0; i < sizeof(cutoffs) / sizeof(float); ++i) {
+//         if (n < cutoffs[i]) {
+//             return static_cast<Biome>(i);
+//         }
+//     }
+//     throw "Invalid biome";
+// }
 
-static void addTree(int x, int y, int z, BlockList& blocks) {
-    int height = tree_height(mt);
-    assert(height >= 4 && height <= 8);
-
-    for (int i = -1; i < height; ++i) {
-        blocks.emplace_back(x, y + i, z, Block::BlockType::OAK_LOG);
-    }
-
-    Block::BlockType LEAF = Block::BlockType::OAK_LEAVES;
-    for (int i = -2; i <= 2; ++i) {
-        for (int j = -2; j <= 2; ++j) {
-            if (i == 0 && j == 0) {
-                blocks.emplace_back(x, y + height, z, LEAF);
-                continue;
-            }
-            blocks.emplace_back(x + i, y + height - 3, z + j, LEAF);
-            blocks.emplace_back(x + i, y + height - 2, z + j, LEAF);
-            if (std::abs(i) < 2 && std::abs(j) < 2) {
-                blocks.emplace_back(x + i, y + height - 1, z + j, LEAF);
-                if (std::abs(i + j) == 1) {
-                    blocks.emplace_back(x + i, y + height, z + j, LEAF);
-                }
-            }
-        }
-    }
-}
+// static void addTree(int x, int y, int z, BlockList& blocks) {
+//     int height = tree_height(mt);
+//     assert(height >= 4 && height <= 8);
+// 
+//     for (int i = -1; i < height; ++i) {
+//         blocks.emplace_back(x, y + i, z, Block::BlockType::OAK_LOG);
+//     }
+// 
+//     Block::BlockType LEAF = Block::BlockType::OAK_LEAVES;
+//     for (int i = -2; i <= 2; ++i) {
+//         for (int j = -2; j <= 2; ++j) {
+//             if (i == 0 && j == 0) {
+//                 blocks.emplace_back(x, y + height, z, LEAF);
+//                 continue;
+//             }
+//             blocks.emplace_back(x + i, y + height - 3, z + j, LEAF);
+//             blocks.emplace_back(x + i, y + height - 2, z + j, LEAF);
+//             if (std::abs(i) < 2 && std::abs(j) < 2) {
+//                 blocks.emplace_back(x + i, y + height - 1, z + j, LEAF);
+//                 if (std::abs(i + j) == 1) {
+//                     blocks.emplace_back(x + i, y + height, z + j, LEAF);
+//                 }
+//             }
+//         }
+//     }
+// }
 
 void Chunk::generateTerrain(int seed) {
-    BlockList blocks;
-    blocks.reserve(BLOCKS_PER_CHUNK);
-
     mt.seed(seed * m_posX * m_posZ);
     terrain_height.SetSeed(seed);
     biome.SetSeed(seed);
@@ -96,23 +94,12 @@ void Chunk::generateTerrain(int seed) {
             float nz = (float) z + CHUNK_WIDTH * m_posZ;
             int groundHeight = getHeight(nx, nz);
             for (int y = 0; y <= groundHeight - 4; ++y) {
-                blocks.emplace_back(x, y, z, Block::BlockType::STONE);
+                put(x, y, z, Block::BlockType::STONE);
             }
-            blocks.emplace_back(x, groundHeight - 3, z, Block::BlockType::DIRT);
-            blocks.emplace_back(x, groundHeight - 2, z, Block::BlockType::DIRT);
-            blocks.emplace_back(x, groundHeight - 1, z, Block::BlockType::DIRT);
-            blocks.emplace_back(x, groundHeight, z, Block::BlockType::GRASS);
-            Biome b = getBiome(nx, nz);
-            if (b == Biome::FOREST || b == Biome::PLAINS || b == Biome::OCEAN) {
-                blocks.emplace_back(x, groundHeight + 1, z, Block::BlockType::GRASS_PLANT);
-            } else if (x == 8 && z == 8) {
-                addTree(x, groundHeight + 1, z, blocks);
-            }
+            put(x, groundHeight - 3, z, Block::BlockType::DIRT);
+            put(x, groundHeight - 2, z, Block::BlockType::DIRT);
+            put(x, groundHeight - 1, z, Block::BlockType::DIRT);
+            put(x, groundHeight, z, Block::BlockType::GRASS);
         }
-    }
-
-    for (std::tuple<int, int, int, Block::BlockType> t : blocks) {
-        auto& [x, y, z, block] = t;
-        put(x, y, z, block, false);
     }
 }

@@ -255,8 +255,7 @@ namespace Block {
             // No block, so retrieve the face's data
             for (int vert = 0; vert < VERTICES_PER_FACE; ++vert) {
                 int index = face * VERTICES_PER_FACE + vert;
-                data[size] = curBlockData[index].v1;
-                data[size++] += posData;
+                data[size++] = curBlockData[index].v1 + posData;
                 data[size++] = curBlockData[index].v2;
                 data[size++] = curBlockData[index].v3;
             }

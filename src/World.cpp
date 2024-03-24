@@ -49,15 +49,6 @@ World::~World() {
 // Update a max of 5 chunks per frame. This will prevent lag spikes if there
 // are suddenly 40+ chunks to load
 void World::update(bool mineBlock) {
-    int numUpdated = 0;
-    m_chunksMutex.lock();
-    for (const auto& [_, chunk] : m_chunks) {
-        numUpdated += chunk->update();
-        if (numUpdated >= 5)
-            break;
-    }
-    m_chunksMutex.unlock();
-    
     checkViewRayCollisions();
 
     // mine block we are looking at
@@ -68,6 +59,15 @@ void World::update(bool mineBlock) {
         m_chunksMutex.unlock();
         chunk->put(isect.x, isect.y, isect.z, Block::BlockType::AIR, true);
     }
+
+    int numUpdated = 0;
+    m_chunksMutex.lock();
+    for (const auto& [_, chunk] : m_chunks) {
+        numUpdated += chunk->update();
+        if (numUpdated >= 5)
+            break;
+    }
+    m_chunksMutex.unlock();
 }
 
 // determine if the player is looking at a block (if yes, we

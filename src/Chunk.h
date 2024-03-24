@@ -14,30 +14,21 @@
 // are generated, loaded, and stored together. Each chunk is divided into 8
 // 16x16x16 meshes.
 
-typedef std::vector<std::tuple<int, int, int, Block::BlockType>> BlockList;
-
 class Chunk {
     const int m_posX, m_posZ;
     Block::BlockType m_blockArray[CHUNK_WIDTH][CHUNK_HEIGHT][CHUNK_WIDTH];
     Mesh m_mesh[NUM_SUBCHUNKS];
     Chunk* m_neighbors[4];
     int m_numNeighbors;
-    bool m_updated;
-    bool m_rendered; // true if meshes have been generated
-
-    // stores blocks that were generated in the terrain generator but fall
-    // outside this chunk. For example, if a tree is generated on the chunk
-    // boundary, some of its leaves may be in a neighboring chunk. That
-    // neighboring chunk may not be loaded yet, so store those blocks here
-    // until the neighbor is loaded.
-    BlockList m_outsideBlocks;
+    bool m_updated;  // true if any block has been updated since loading from db
+    bool m_rendered; // true if meshes have been generated and this chunk is being rendered to the screen
 
 public:
     Chunk(int x, int z, const void* blockData);
     ~Chunk();
 
     Block::BlockType get(int x, int y, int z) const;
-    void put(int x, int y, int z, Block::BlockType block, bool updateMesh);
+    void put(int x, int y, int z, Block::BlockType block, bool updateMesh = false);
 
     bool update();
     int render(Shader* shader, const sglm::frustum& frustum);
