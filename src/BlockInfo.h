@@ -18,6 +18,7 @@ namespace Block {
         OAK_LEAVES,
         OUTLINE,
         NO_BLOCK,
+        NUM_BLOCK_TYPES,
         // LOG    (log ends are in the +y and -y directions)
         // LOG_PX (log ends are in the +x and -x directions)
         // LOG_PZ (log ends are in the +z and -z directions)
