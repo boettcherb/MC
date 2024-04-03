@@ -81,12 +81,14 @@ static int getHeight(float x, float z) {
 //     }
 // }
 
-void Chunk::generateTerrain(int seed) {
+// fill data (a 1D array of BLOCKS_PER_CHUNK blocks) with
+// the type of each block in the chunk
+void Chunk::generateTerrain(Block::BlockType* data, int seed) {
     mt.seed(seed * m_posX * m_posZ);
     terrain_height.SetSeed(seed);
     biome.SetSeed(seed);
 
-    std::fill(&m_blockArray[0][0][0], &m_blockArray[0][0][0] + BLOCKS_PER_CHUNK, Block::BlockType::AIR);
+    std::fill(data, data + BLOCKS_PER_CHUNK, Block::BlockType::AIR);
 
     for (int x = 0; x < CHUNK_WIDTH; ++x) {
         for (int z = 0; z < CHUNK_WIDTH; ++z) {
@@ -94,12 +96,12 @@ void Chunk::generateTerrain(int seed) {
             float nz = (float) z + CHUNK_WIDTH * m_posZ;
             int groundHeight = getHeight(nx, nz);
             for (int y = 0; y <= groundHeight - 4; ++y) {
-                put(x, y, z, Block::BlockType::STONE);
+                data[index(x, y, z)] = Block::BlockType::STONE;
             }
-            put(x, groundHeight - 3, z, Block::BlockType::DIRT);
-            put(x, groundHeight - 2, z, Block::BlockType::DIRT);
-            put(x, groundHeight - 1, z, Block::BlockType::DIRT);
-            put(x, groundHeight, z, Block::BlockType::GRASS);
+            data[index(x, groundHeight - 3, z)] = Block::BlockType::DIRT;
+            data[index(x, groundHeight - 2, z)] = Block::BlockType::DIRT;
+            data[index(x, groundHeight - 1, z)] = Block::BlockType::DIRT;
+            data[index(x, groundHeight, z)] = Block::BlockType::GRASS;
         }
     }
 }

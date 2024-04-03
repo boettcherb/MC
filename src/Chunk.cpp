@@ -5,22 +5,35 @@
 #include "Face.h"
 #include <sglm/sglm.h>
 #include <new>
+#include <algorithm>
 #include <cassert>
 
-Chunk::Chunk(int x, int z, const void* blockData) : m_posX{ x }, m_posZ{ z } {
-    m_neighbors[0] = m_neighbors[1] = m_neighbors[2] = m_neighbors[3] = nullptr;
-    m_numNeighbors = 0;
+Chunk::Chunk(int x, int z, const Block::BlockType* blockData): m_posX{ x }, m_posZ{ z },
+m_blocks{ nullptr }, m_numNeighbors{ 0 }, m_updated{ false }, m_rendered{ false } {
+    m_neighbors.fill(nullptr);
     if (blockData == nullptr) {
-        generateTerrain(1337);
-        m_updated = true;
+        Block::BlockType* data = new Block::BlockType[BLOCKS_PER_CHUNK];
+        generateTerrain(data, 1337);
+        m_blocks = new BlockList(data, BLOCKS_PER_CHUNK);
+        delete[] data;
     } else {
-        memcpy(m_blockArray, blockData, BLOCKS_PER_CHUNK);
-        m_updated = false;
+        m_blocks = new BlockList(blockData, BLOCKS_PER_CHUNK);
     }
-    m_rendered = false;
+    for (int i = 0; i < CHUNK_WIDTH; ++i) {
+        for (int k = 0; k < CHUNK_WIDTH; ++k) {
+            m_highest_solid_block[i][k] = CHUNK_HEIGHT - 1;
+            for (int j = CHUNK_HEIGHT - 1; j >= 0; --j) {
+                if (!Block::isTransparent(m_blocks->get(i, j, k))) {
+                    m_highest_solid_block[i][k] = (unsigned char) j;
+                    break;
+                }
+            }
+        }
+    }
 }
 
 Chunk::~Chunk() {
+    delete m_blocks;
     for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
         m_mesh[i].erase();
     }
@@ -34,17 +47,21 @@ bool Chunk::wasUpdated() const {
     return m_updated;
 }
 
+// The caller is responsible for freeing the returned array.
 const void* Chunk::getBlockData() const {
-    void* data = new unsigned char[BLOCKS_PER_CHUNK];
-    memcpy(data, m_blockArray, BLOCKS_PER_CHUNK);
-    return data;
+    return m_blocks->get_all();
 }
 
-void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
+int Chunk::index(int x, int y, int z) {
     assert(x >= 0 && x < CHUNK_WIDTH);
     assert(y >= 0 && y < CHUNK_HEIGHT);
     assert(z >= 0 && z < CHUNK_WIDTH);
-    m_blockArray[x][y][z] = block;
+    assert(x * CHUNK_WIDTH * CHUNK_HEIGHT + z * CHUNK_HEIGHT + y < BLOCKS_PER_CHUNK);
+    return x * CHUNK_WIDTH * CHUNK_HEIGHT + z * CHUNK_HEIGHT + y;
+}
+
+void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
+    m_blocks->put(x, y, z, block);
     if (update_mesh) {
         int updateIndex = y / SUBCHUNK_HEIGHT;
         updateMesh(updateIndex);
@@ -58,25 +75,24 @@ void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
     m_updated = true;
 }
 
+// x, y, and z could be 1 outside the range because in Chunk::getVertexData()
+// we check each block's surrounding blocks to see if they are transparent.
 Block::BlockType Chunk::get(int x, int y, int z) const {
     assert(x >= -1 && x <= CHUNK_WIDTH);
     assert(y >= -1 && y <= CHUNK_HEIGHT);
     assert(z >= -1 && z <= CHUNK_WIDTH);
-    if (x >= 0 && y >= 0 && z >= 0 && x < CHUNK_WIDTH && y < CHUNK_HEIGHT && z < CHUNK_WIDTH) {
-        return m_blockArray[x][y][z];
+    if (y == -1 || y == CHUNK_HEIGHT) {
+        return Block::BlockType::NO_BLOCK;
     }
-    if (x > CHUNK_WIDTH - 1 && m_neighbors[PLUS_X] != nullptr) {
-        return m_neighbors[PLUS_X]->get(0, y, z);
+    if (x >= 0 && z >= 0 && x < CHUNK_WIDTH && z < CHUNK_WIDTH) {
+        return m_blocks->get(x, y, z);
     }
-    if (x < 0 && m_neighbors[MINUS_X] != nullptr) {
-        return m_neighbors[MINUS_X]->get(CHUNK_WIDTH - 1, y, z);
-    }
-    if (z > CHUNK_WIDTH - 1 && m_neighbors[PLUS_Z] != nullptr) {
-        return m_neighbors[PLUS_Z]->get(x, y, 0);
-    }
-    if (z < 0 && m_neighbors[MINUS_Z] != nullptr) {
-        return m_neighbors[MINUS_Z]->get(x, y, CHUNK_WIDTH - 1);
-    }
+    assert(m_numNeighbors == 4);
+    if (x < 0) return m_neighbors[MINUS_X]->get(CHUNK_WIDTH - 1, y, z);
+    if (z < 0) return m_neighbors[MINUS_Z]->get(x, y, CHUNK_WIDTH - 1);
+    if (x > CHUNK_WIDTH - 1) return m_neighbors[PLUS_X]->get(0, y, z);
+    if (z > CHUNK_WIDTH - 1) return m_neighbors[PLUS_Z]->get(x, y, 0);
+    assert(0);
     return Block::BlockType::NO_BLOCK;
 }
 
@@ -162,11 +178,17 @@ int Chunk::getNumNeighbors() const {
     return m_numNeighbors;
 }
 
+// update this function!
+// 1. Store a 16x16 array holding the highest non-air block in the chunk. Then, only
+//    check blocks below that block. Skip solid blocks because most should be solid.
+// 2. call blocks->get_all() at the start of the function and split up the for loops
+//    into inner blocks (prevents bounds checking) and outer blocks (we already know
+//    where the out of bounds blocks will be)
 unsigned int Chunk::getVertexData(VertexAttribType* data, int meshIndex) const {
     VertexAttribType* start = data; // record the current byte address
     for (int x = 0; x < CHUNK_WIDTH; ++x) {
-        for (int y = meshIndex * SUBCHUNK_HEIGHT; y < (meshIndex + 1) * SUBCHUNK_HEIGHT; ++y) {
-            for (int z = 0; z < CHUNK_WIDTH; ++z) {
+        for (int z = 0; z < CHUNK_WIDTH; ++z) {
+            for (int y = meshIndex * SUBCHUNK_HEIGHT; y < (meshIndex + 1) * SUBCHUNK_HEIGHT; ++y) {
                 Block::BlockType currentBlock = get(x, y, z);
                 assert(currentBlock != Block::BlockType::NO_BLOCK);
                 if (currentBlock == Block::BlockType::AIR)

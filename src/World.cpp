@@ -219,7 +219,6 @@ void World::LoadChunks() {
 }
 
 void World::addChunk(int x, int z, const void* data) {
-
     // if the chunk has already been loaded, don't do anything
     m_chunksMutex.lock();
     if (m_chunks.count({ x, z }) == 1) {
@@ -230,7 +229,8 @@ void World::addChunk(int x, int z, const void* data) {
 
     // create the new chunk and add it to m_chunks
     // unlock while generating terrain for the chunk
-    Chunk* newChunk = new Chunk(x, z, data);
+    const Block::BlockType* block_data = reinterpret_cast<const Block::BlockType*>(data);
+    Chunk* newChunk = new Chunk(x, z, block_data);
     m_chunksMutex.lock();
     m_chunks.emplace(std::make_pair(x, z), newChunk);
 
