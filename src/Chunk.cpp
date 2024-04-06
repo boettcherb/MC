@@ -9,33 +9,36 @@
 #include <cassert>
 
 Chunk::Chunk(int x, int z, const Block::BlockType* blockData): m_posX{ x }, m_posZ{ z },
-m_blocks{ nullptr }, m_numNeighbors{ 0 }, m_updated{ false }, m_rendered{ false } {
+    m_numNeighbors{0}, m_updated{false}, m_rendered{false} {
     m_neighbors.fill(nullptr);
     if (blockData == nullptr) {
         Block::BlockType* data = new Block::BlockType[BLOCKS_PER_CHUNK];
         generateTerrain(data, 1337);
-        m_blocks = new BlockList(data, BLOCKS_PER_CHUNK);
+        for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
+            m_subchunks[i] = new Subchunk(m_posX, i, m_posZ, data + i * BLOCKS_PER_SUBCHUNK);
+        }
         delete[] data;
     } else {
-        m_blocks = new BlockList(blockData, BLOCKS_PER_CHUNK);
-    }
-    for (int i = 0; i < CHUNK_WIDTH; ++i) {
-        for (int k = 0; k < CHUNK_WIDTH; ++k) {
-            m_highest_solid_block[i][k] = CHUNK_HEIGHT - 1;
-            for (int j = CHUNK_HEIGHT - 1; j >= 0; --j) {
-                if (!Block::isTransparent(m_blocks->get(i, j, k))) {
-                    m_highest_solid_block[i][k] = (unsigned char) j;
-                    break;
-                }
-            }
+        for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
+            m_subchunks[i] = new Subchunk(m_posX, i, m_posZ, blockData + i * BLOCKS_PER_SUBCHUNK);
         }
     }
+    // for (int i = 0; i < CHUNK_WIDTH; ++i) {
+    //     for (int k = 0; k < CHUNK_WIDTH; ++k) {
+    //         m_highest_solid_block[i][k] = CHUNK_HEIGHT - 1;
+    //         for (int j = CHUNK_HEIGHT - 1; j >= 0; --j) {
+    //             if (!Block::isTransparent(m_blocks->get(i, j, k))) {
+    //                 m_highest_solid_block[i][k] = (unsigned char) j;
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 Chunk::~Chunk() {
-    delete m_blocks;
     for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-        m_mesh[i].erase();
+        delete m_subchunks[i];
     }
     if (m_neighbors[PLUS_X] != nullptr) m_neighbors[PLUS_X]->removeNeighbor(MINUS_X);
     if (m_neighbors[MINUS_X] != nullptr) m_neighbors[MINUS_X]->removeNeighbor(PLUS_X);
@@ -49,28 +52,43 @@ bool Chunk::wasUpdated() const {
 
 // The caller is responsible for freeing the returned array.
 const void* Chunk::getBlockData() const {
-    return m_blocks->get_all();
+    Block::BlockType* data = new Block::BlockType[BLOCKS_PER_CHUNK];
+    for (int i = 0; i < 8; ++i) {
+        Block::BlockType* subchunk_data = m_subchunks[i]->m_blocks.get_all();
+        std::copy(subchunk_data, subchunk_data + BLOCKS_PER_SUBCHUNK, data + i * BLOCKS_PER_SUBCHUNK);
+        delete[] subchunk_data;
+    }
+    return data;
 }
 
-int Chunk::index(int x, int y, int z) {
+int Chunk::subchunk_index(int x, int y, int z) {
     assert(x >= 0 && x < CHUNK_WIDTH);
-    assert(y >= 0 && y < CHUNK_HEIGHT);
+    assert(y >= 0 && y < SUBCHUNK_HEIGHT);
     assert(z >= 0 && z < CHUNK_WIDTH);
-    assert(x * CHUNK_WIDTH * CHUNK_HEIGHT + z * CHUNK_HEIGHT + y < BLOCKS_PER_CHUNK);
-    return x * CHUNK_WIDTH * CHUNK_HEIGHT + z * CHUNK_HEIGHT + y;
+    assert(x * CHUNK_WIDTH * SUBCHUNK_HEIGHT + z * SUBCHUNK_HEIGHT + y < BLOCKS_PER_SUBCHUNK);
+    return x * CHUNK_WIDTH * SUBCHUNK_HEIGHT + z * SUBCHUNK_HEIGHT + y;
+}
+
+int Chunk::chunk_index(int x, int y, int z) {
+    int index = subchunk_index(x, y % SUBCHUNK_HEIGHT, z);
+    return index + BLOCKS_PER_SUBCHUNK * (y / SUBCHUNK_HEIGHT);
 }
 
 void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
-    m_blocks->put(x, y, z, block);
+    m_subchunks[y / SUBCHUNK_HEIGHT]->m_blocks.put(x, y % SUBCHUNK_HEIGHT, z, block);
     if (update_mesh) {
         int updateIndex = y / SUBCHUNK_HEIGHT;
-        updateMesh(updateIndex);
-        if (y != CHUNK_HEIGHT - 1 && y % SUBCHUNK_HEIGHT == 15) updateMesh(updateIndex + 1);
-        else if (y != 0 && y % SUBCHUNK_HEIGHT == 0) updateMesh(updateIndex - 1);
-        if (x == CHUNK_WIDTH - 1) m_neighbors[PLUS_X]->updateMesh(updateIndex);
-        else if (x == 0)          m_neighbors[MINUS_X]->updateMesh(updateIndex);
-        if (z == CHUNK_WIDTH - 1) m_neighbors[PLUS_Z]->updateMesh(updateIndex);
-        else if (z == 0)          m_neighbors[MINUS_Z]->updateMesh(updateIndex);
+        m_subchunks[updateIndex]->updateMesh(this);
+        if (y != CHUNK_HEIGHT - 1 && y % SUBCHUNK_HEIGHT == SUBCHUNK_HEIGHT - 1) {
+            m_subchunks[updateIndex + 1]->updateMesh(this);
+        }
+        else if (y != 0 && y % SUBCHUNK_HEIGHT == 0) {
+            m_subchunks[updateIndex - 1]->updateMesh(this);
+        }
+        if (x == CHUNK_WIDTH - 1) m_neighbors[PLUS_X]->m_subchunks[updateIndex]->updateMesh(m_neighbors[PLUS_X]);
+        else if (x == 0)          m_neighbors[MINUS_X]->m_subchunks[updateIndex]->updateMesh(m_neighbors[MINUS_X]);
+        if (z == CHUNK_WIDTH - 1) m_neighbors[PLUS_Z]->m_subchunks[updateIndex]->updateMesh(m_neighbors[PLUS_Z]);
+        else if (z == 0)          m_neighbors[MINUS_Z]->m_subchunks[updateIndex]->updateMesh(m_neighbors[MINUS_Z]);
     }
     m_updated = true;
 }
@@ -85,13 +103,13 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
         return Block::BlockType::NO_BLOCK;
     }
     if (x >= 0 && z >= 0 && x < CHUNK_WIDTH && z < CHUNK_WIDTH) {
-        return m_blocks->get(x, y, z);
+        return m_subchunks[y / SUBCHUNK_HEIGHT]->m_blocks.get(x, y % SUBCHUNK_HEIGHT, z);
     }
     assert(m_numNeighbors == 4);
     if (x < 0) return m_neighbors[MINUS_X]->get(CHUNK_WIDTH - 1, y, z);
     if (z < 0) return m_neighbors[MINUS_Z]->get(x, y, CHUNK_WIDTH - 1);
-    if (x > CHUNK_WIDTH - 1) return m_neighbors[PLUS_X]->get(0, y, z);
-    if (z > CHUNK_WIDTH - 1) return m_neighbors[PLUS_Z]->get(x, y, 0);
+    if (x >= CHUNK_WIDTH) return m_neighbors[PLUS_X]->get(0, y, z);
+    if (z >= CHUNK_WIDTH) return m_neighbors[PLUS_Z]->get(x, y, 0);
     assert(0);
     return Block::BlockType::NO_BLOCK;
 }
@@ -111,7 +129,7 @@ int Chunk::render(Shader* shader, const sglm::frustum& frustum) {
         float cz2 = cz + CHUNK_WIDTH / 2.0f;
         float cy2 = i * SUBCHUNK_HEIGHT + SUBCHUNK_HEIGHT / 2.0f;
         if (frustum.contains({ cx2, cy2, cz2 }, SUB_CHUNK_RADIUS)) {
-            subChunksRendered += m_mesh[i].render(shader);
+            subChunksRendered += m_subchunks[i]->m_mesh.render(shader);
         }
     }
     return subChunksRendered;
@@ -123,7 +141,7 @@ bool Chunk::update() {
     if (!m_rendered && m_numNeighbors == 4) {
         // render this chunk
         for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-            updateMesh(i);
+            m_subchunks[i]->updateMesh(this);
         }
         m_rendered = true;
         updated = true;
@@ -131,27 +149,11 @@ bool Chunk::update() {
     else if (m_rendered && m_numNeighbors != 4) {
         // unload this chunk
         for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-            m_mesh[i].erase();
+            m_subchunks[i]->m_mesh.erase();
         }
         m_rendered = false;
     }
     return updated;
-}
-
-void Chunk::updateMesh(int meshIndex) {
-    assert(meshIndex >= 0 && meshIndex < NUM_SUBCHUNKS);
-    m_mesh[meshIndex].erase();
-    // lim is the maximum possible number of attributes that can be rendered per
-    // subchunk (3 attribs per vertex, 6 vertices per face, 6 faces per block,
-    // 4096 blocks per subchunk). This is an estimate because some blocks do not
-    // have 6 faces (ex: plants only have 4). Most subchunks will not be
-    // anywhere near this number, so divide by 8 to save memory.
-    constexpr unsigned int lim = ATTRIBS_PER_FACE * 6 * BLOCKS_PER_SUBCHUNK / 8;
-    VertexAttribType* data = new VertexAttribType[lim];
-    unsigned int size = getVertexData(data, meshIndex);
-    assert(size <= lim * 4);
-    m_mesh[meshIndex].generate(size, data, true, m_posX, m_posZ);
-    delete[] data;
 }
 
 void Chunk::addNeighbor(Chunk* chunk, Direction direction) {
@@ -178,36 +180,9 @@ int Chunk::getNumNeighbors() const {
     return m_numNeighbors;
 }
 
-// update this function!
-// 1. Store a 16x16 array holding the highest non-air block in the chunk. Then, only
-//    check blocks below that block. Skip solid blocks because most should be solid.
-// 2. call blocks->get_all() at the start of the function and split up the for loops
-//    into inner blocks (prevents bounds checking) and outer blocks (we already know
-//    where the out of bounds blocks will be)
-unsigned int Chunk::getVertexData(VertexAttribType* data, int meshIndex) const {
-    VertexAttribType* start = data; // record the current byte address
-    for (int x = 0; x < CHUNK_WIDTH; ++x) {
-        for (int z = 0; z < CHUNK_WIDTH; ++z) {
-            for (int y = meshIndex * SUBCHUNK_HEIGHT; y < (meshIndex + 1) * SUBCHUNK_HEIGHT; ++y) {
-                Block::BlockType currentBlock = get(x, y, z);
-                assert(currentBlock != Block::BlockType::NO_BLOCK);
-                if (currentBlock == Block::BlockType::AIR)
-                    continue;
-                bool dirHasBlock[(int) NUM_DIRECTIONS] = {
-                    !Block::isTransparent(get(x + 1, y, z)),
-                    !Block::isTransparent(get(x - 1, y, z)),
-                    !Block::isTransparent(get(x, y, z + 1)),
-                    !Block::isTransparent(get(x, y, z - 1)),
-                    !Block::isTransparent(get(x, y + 1, z)),
-                    !Block::isTransparent(get(x, y - 1, z)),
-                };
-                data += Block::getBlockData(currentBlock, x, y, z, data, dirHasBlock);
-            }
-        }
-    }
-    // return the number of bytes that were initialized
-    return (unsigned int) ((data - start) * sizeof(VertexAttribType));
-}
+// int Chunk::getHighestBlock(int x, int z) const {
+//     return m_highest_solid_block[x][z];
+// }
 
 bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {
     auto [x, y, z] = ray.pos;
@@ -224,7 +199,7 @@ bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {
             continue;
         }
         Face::Intersection i;
-        if (m_mesh[sc_index].intersects(ray, i)) {
+        if (m_subchunks[sc_index]->m_mesh.intersects(ray, i)) {
             if (!foundIntersection || i.t < isect.t) {
                 foundIntersection = true;
                 isect = i;

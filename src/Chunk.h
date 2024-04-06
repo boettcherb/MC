@@ -22,10 +22,12 @@ class Chunk {
 
         std::vector<Block::BlockType> m_palette; // map from condensed id to block id
         std::array<int, (int) Block::BlockType::NUM_BLOCK_TYPES> m_index; // map from block id to condensed id
-        unsigned int* m_data;
-        uint64 m_bitmask;
-        int m_bits_per_block;
-        int m_size;
+        uint64 m_bitmask;     // has m_bits_per_block least-significant bits set to 1
+        uint64* m_data;       // stores the condensed block ids
+        int m_data_size;      // the number of uint64s in m_data
+        int m_bits_per_block; // number of bits used to represent each block
+        int m_blocks_per_ll;  // number of blocks in each uint64 in m_data
+        const int m_size;     // number of BlockTypes stored in this BlockList
 
     public:
         BlockList(const Block::BlockType* blocks, int size);
@@ -36,17 +38,38 @@ class Chunk {
         Block::BlockType* get_all() const;
 
     private:
-        std::pair<uint64, int> get_data(int block_index) const;
         void add_block(Block::BlockType block, bool rebuild);
         void build(const Block::BlockType* blocks);
         void fill_data(const Block::BlockType* blocks, int num_bits);
     };
 
+    // Implementation in Subchunk.cpp
+    struct Subchunk {
+        const int m_X, m_Y, m_Z;
+        int m_height_centered;
+
+        // TODO: fix this
+        // store the current size of the mesh. When the mesh needs
+        // to be regenerated, we can use this value to determine how
+        // large of an array to allocate for the new mesh
+        // int mm_mesh_size; // number of attributes
+
+        BlockList m_blocks;
+        Mesh m_mesh;
+
+        Subchunk(int x, int y, int z, const Block::BlockType* data);
+        void updateMesh(const Chunk* this_chunk);
+
+    private:
+        unsigned int getVertexData(const Chunk* this_chunk,
+                                   vertex_attrib_t* data) const;
+    };
+
     const int m_posX, m_posZ;
-    BlockList* m_blocks;
-    Mesh m_mesh[NUM_SUBCHUNKS];
+    // TODO: make this a std::array?
+    Subchunk* m_subchunks[NUM_SUBCHUNKS];
+    // unsigned char m_highest_solid_block[CHUNK_WIDTH][CHUNK_WIDTH];
     std::array<Chunk*, 4> m_neighbors;
-    unsigned char m_highest_solid_block[CHUNK_WIDTH][CHUNK_WIDTH];
     int m_numNeighbors;
     bool m_updated;  // true if any block has been updated since loading from db
     bool m_rendered; // true if meshes have been generated and this chunk is being rendered to the screen
@@ -59,20 +82,25 @@ public:
     void put(int x, int y, int z, Block::BlockType block, bool updateMesh = false);
     bool update();
     int render(Shader* shader, const sglm::frustum& frustum);
+
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
     std::pair<std::pair<int, int>, Chunk*> getNeighbor(int index) const;
     int getNumNeighbors() const;
+    // int getHighestBlock(int x, int z) const;
+
     bool intersects(const sglm::ray& ray, Face::Intersection& isect);
+    // TODO: combine these into 1 function by returning nullptr
+    // from getBlockData if not updated
     const void* getBlockData() const;
     bool wasUpdated() const;
+
     static void initNoise(); // in TerrainGen.cpp
 
 private:
-    void updateMesh(int meshIndex);
-    unsigned int getVertexData(VertexAttribType* data, int meshIndex) const;
     void generateTerrain(Block::BlockType* data, int seed); // in TerrainGen.cpp
-    static int index(int x, int y, int z);
+    static int chunk_index(int x, int y, int z);
+    static int subchunk_index(int x, int y, int z);
 };
 
 #endif
