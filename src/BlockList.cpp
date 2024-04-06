@@ -15,10 +15,9 @@
 static constexpr int NO_BLOCK = (int) Block::BlockType::NO_BLOCK;
 typedef unsigned long long uint64;
 
-Chunk::BlockList::BlockList(const Block::BlockType* blocks, int size) {
+Chunk::BlockList::BlockList(const Block::BlockType* blocks, int size) : m_size{ size } {
     assert(blocks != nullptr);
     m_index.fill(NO_BLOCK);
-    m_size = size;
     for (int i = 0; i < size; ++i) {
         add_block(blocks[i], false);
     }
@@ -33,51 +32,41 @@ Chunk::BlockList::~BlockList() {
 }
 
 Block::BlockType Chunk::BlockList::get(int x, int y, int z) const {
-    assert(m_data != nullptr);
-    auto [data, bit_index] = get_data(index(x, y, z));
-    data >>= (64 - m_bits_per_block - bit_index);
-    return m_palette[data & m_bitmask];
+    // int block_index = Chunk::subchunk_index(x, y, z);
+    int block_index = Chunk::chunk_index(x, y, z);
+    int data_index = block_index / m_blocks_per_ll;
+    int i = block_index % m_blocks_per_ll;
+    return m_palette[(m_data[data_index] >> (m_bits_per_block * i)) & m_bitmask];
 }
 
 void Chunk::BlockList::put(int x, int y, int z, Block::BlockType block) {
-    assert(m_data != nullptr);
     add_block(block, true);
-    auto [data, bit_index] = get_data(index(x, y, z));
-    int i = index(x, y, z) * m_bits_per_block / 32;
-    int shift = 64 - m_bits_per_block - bit_index;
-    data &= ~(m_bitmask << shift); // 0-out the current block
-    data |= static_cast<uint64>(m_index[(int) block]) << shift;
-    assert(m_index[(int) block] <= std::pow(2, m_bits_per_block));
-    m_data[i] = static_cast<unsigned int>(data >> 32);
-    m_data[i + 1] = static_cast<unsigned int>(data & 0x00000000FFFFFFFF);
+    // int block_index = Chunk::subchunk_index(x, y, z);
+    int block_index = Chunk::chunk_index(x, y, z);
+    int data_index = block_index / m_blocks_per_ll;
+    int i = block_index % m_blocks_per_ll;
+    int shift = m_bits_per_block * i;
+    m_data[data_index] &= ~(m_bitmask << shift);
+    m_data[data_index] |= ((uint64) m_index[(int) block]) << shift;
 }
 
 // Convert the block data back into a Block::BlockType array. The caller is
 // responsible for freeing the returned array.
 Block::BlockType* Chunk::BlockList::get_all() const {
-    assert(m_data != nullptr);
-    Block::BlockType* blockList = new Block::BlockType[BLOCKS_PER_CHUNK];
-    uint64 data = (static_cast<uint64>(m_data[0]) << 32) | m_data[1];
-    int cur_bit = 64;
-    int data_index = 2;
-    for (int i = 0; i < BLOCKS_PER_CHUNK; ++i) {
-        int shift = cur_bit - m_bits_per_block;
-        blockList[i] = m_palette[(data >> shift) & m_bitmask];
-        cur_bit -= m_bits_per_block;
-        if (cur_bit <= 32) {
-            cur_bit += 32;
-            data = (data << 32) | m_data[data_index++];
+    int block_index = 0;
+    Block::BlockType* blockList = new Block::BlockType[m_size];
+    for (int i = 0; i < m_data_size; ++i) {
+        uint64 cur = m_data[i];
+        for (int j = 0; j < m_blocks_per_ll; ++j) {
+            if (block_index >= m_size) {
+                assert(i == m_data_size - 1);
+                break;
+            }
+            blockList[block_index++] = m_palette[cur & m_bitmask];
+            cur >>= m_bits_per_block;
         }
     }
     return blockList;
-}
-
-std::pair<uint64, int> Chunk::BlockList::get_data(int block_index) const {
-    int index = block_index * m_bits_per_block / 32;
-    uint64 data = m_data[index];
-    data = (data << 32) | static_cast<uint64>(m_data[index + 1]);
-    int bit_index = block_index * m_bits_per_block - index * 32;
-    return { data, bit_index };
 }
 
 void Chunk::BlockList::add_block(Block::BlockType block, bool rebuild) {
@@ -94,6 +83,8 @@ void Chunk::BlockList::add_block(Block::BlockType block, bool rebuild) {
 void Chunk::BlockList::build(const Block::BlockType* blocks) {
     assert(m_palette.size() > 0);
     int num_bits = static_cast<int>(std::ceil(std::log2(m_palette.size())));
+    if (num_bits == 0)
+        num_bits = 1;
     assert(num_bits > 0 && num_bits <= 16);
     if (num_bits == m_bits_per_block) {
         return;
@@ -115,20 +106,26 @@ void Chunk::BlockList::fill_data(const Block::BlockType* blocks, int num_bits) {
     assert(std::pow(2, m_bits_per_block) >= m_palette.size());
     m_bitmask = static_cast<uint64>(std::pow(2, m_bits_per_block) - 1);
     delete[] m_data;
-    m_data = new unsigned int[m_bits_per_block * m_size / 32 + 2];
+
+    // fit as many blocks into a 64-bit integer as we can,
+    // without overflowing into the next one.
+    m_blocks_per_ll = 64 / num_bits;
+    m_data_size = m_size / m_blocks_per_ll + (m_size % m_blocks_per_ll != 0);
+    m_data = new uint64[m_data_size];
 
     // fill in m_data
-    int bits_set = 0;
-    int data_index = 0;
-    uint64 data = 0;
-    for (int i = 0; i < BLOCKS_PER_CHUNK; ++i) {
-        data = (data << m_bits_per_block) | m_index[(int) blocks[i]];
-        bits_set += m_bits_per_block;
-        if (bits_set >= 32) {
-            bits_set -= 32;
-            m_data[data_index++] = static_cast<unsigned int>((data >> bits_set) & 0x00000000FFFFFFFF);
+    int block_index = 0;
+    for (int i = 0; i < m_data_size; ++i) {
+        m_data[i] = 0;
+        int shift = 0;
+        for (int j = 0; j < m_blocks_per_ll; ++j) {
+            if (block_index >= m_size) {
+                assert(i == m_data_size - 1);
+                break;
+            }
+            uint64 curBlock = m_index[(int) blocks[block_index++]];
+            m_data[i] |= curBlock << shift;
+            shift += num_bits;
         }
     }
-    assert(bits_set < 32);
-    m_data[data_index++] = static_cast<unsigned int>((data << (32 - bits_set)) & 0x00000000FFFFFFFF);
 }
