@@ -5,6 +5,7 @@
 #include "BlockInfo.h"
 #include <glad/glad.h>
 #include <vector>
+#include <cassert>
 
 Mesh::Mesh() {
     m_vertexCount = 0;
@@ -45,7 +46,7 @@ void Mesh::generate(unsigned int size, const void* data, bool setFaceData,
 
     // set the face data (used for collisions)
     if (setFaceData) {
-        getFaces(reinterpret_cast<const VertexAttribType*>(data), chunkX, chunkZ);
+        getFaces(reinterpret_cast<const vertex_attrib_t*>(data), chunkX, chunkZ);
     }
 
     m_generated = true;
@@ -65,7 +66,8 @@ void Mesh::erase() {
     }
 }
 
-void Mesh::getFaces(const VertexAttribType* data, int chunkX, int chunkZ) {
+void Mesh::getFaces(const vertex_attrib_t* data, int chunkX, int chunkZ) {
+    assert(m_faces.empty());
     m_faces.reserve(m_vertexCount / VERTICES_PER_FACE);
     for (unsigned int i = 0; i < m_vertexCount * ATTRIBS_PER_VERTEX; i += ATTRIBS_PER_FACE) {
         // each face has 6 vertices. However, the xyz coordinates of the 3rd

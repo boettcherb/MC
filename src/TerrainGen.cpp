@@ -96,12 +96,13 @@ void Chunk::generateTerrain(Block::BlockType* data, int seed) {
             float nz = (float) z + CHUNK_WIDTH * m_posZ;
             int groundHeight = getHeight(nx, nz);
             for (int y = 0; y <= groundHeight - 4; ++y) {
-                data[index(x, y, z)] = Block::BlockType::STONE;
+                data[Chunk::chunk_index(x, y, z)] = Block::BlockType::STONE;
             }
-            data[index(x, groundHeight - 3, z)] = Block::BlockType::DIRT;
-            data[index(x, groundHeight - 2, z)] = Block::BlockType::DIRT;
-            data[index(x, groundHeight - 1, z)] = Block::BlockType::DIRT;
-            data[index(x, groundHeight, z)] = Block::BlockType::GRASS;
+            data[Chunk::chunk_index(x, groundHeight - 3, z)] = Block::BlockType::DIRT;
+            data[Chunk::chunk_index(x, groundHeight - 2, z)] = Block::BlockType::DIRT;
+            data[Chunk::chunk_index(x, groundHeight - 1, z)] = Block::BlockType::DIRT;
+            data[Chunk::chunk_index(x, groundHeight, z)] = Block::BlockType::GRASS;
+            // data[Chunk::chunk_index(x, groundHeight + 1, z)] = Block::BlockType::GRASS_PLANT;
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Block {
 
     void setBlockData();
     int getBlockData(BlockType type, int x, int y, int z,
-                     VertexAttribType* data, bool dirHasBlock[NUM_DIRECTIONS]);
+                     vertex_attrib_t* data, bool dirHasBlock[NUM_DIRECTIONS]);
 
     sglm::vec3 getVertexPosition(const Vertex& vertex);
     sglm::vec3 getBlockPosition(const Vertex& vertex);

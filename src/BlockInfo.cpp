@@ -174,7 +174,7 @@ namespace Block {
         // allows for this. 16-32 is inside the block.
         // The last 2 values are the x and y texture offsets. These are always
         // either 0 or 1 ((0,0) is bottom left of texture, (1,1) is top right).
-        VertexAttribType offs[NUM_FACE_TYPES][VERTICES_PER_FACE][6] = {
+        vertex_attrib_t offs[NUM_FACE_TYPES][VERTICES_PER_FACE][6] = {
             // +x (normal)
             {{2, 32, 16, 32, 0, 0}, {2, 32, 16, 16, 1, 0}, {2, 32, 32, 16, 1, 1},
              {2, 32, 32, 16, 1, 1}, {2, 32, 32, 32, 0, 1}, {2, 32, 16, 32, 0, 0}},
@@ -218,8 +218,8 @@ namespace Block {
                 vert.v2 += offs[(int) face][v][1] << 6; // x pixel position
                 vert.v2 += offs[(int) face][v][2];      // y pixel position
                 vert.v3 = offs[(int) face][v][3] << 10; // z pixel position
-                vert.v3 += (offs[(int) face][v][4] + (VertexAttribType) texX) << 5; // x texture
-                vert.v3 += offs[(int) face][v][5] + (VertexAttribType) texY;        // y texture
+                vert.v3 += (offs[(int) face][v][4] + (vertex_attrib_t) texX) << 5; // x texture
+                vert.v3 += offs[(int) face][v][5] + (vertex_attrib_t) texY;        // y texture
                 data.push_back(vert);
             }
         }
@@ -232,12 +232,20 @@ namespace Block {
         }
     }
     
-    // Return the number of VertexAttribTypes set in data
+    // The block at (x, y, z) should be transparent. This function adds the faces of the
+    // six surrounding blocks into data, if they aren't air.
+    // int getSurroundingData(int x, int y, int z, vertex_attrib_t* data, const Block::BlockType surrounding[NUM_DIRECTIONS]) {
+    //     (void) x, y, z, data, surrounding;
+    //     return 0;
+    // }
+
+
+    // Return the number of VertexAttribTypes that have been added to data
     int getBlockData(BlockType type, int x, int y, int z,
-                     VertexAttribType* data, bool dirHasBlock[NUM_DIRECTIONS]) {
+                     vertex_attrib_t* data, bool dirHasBlock[NUM_DIRECTIONS]) {
 
         // position data: combine xyz coordinates into 16 bits
-        VertexAttribType posData = (VertexAttribType) ((x << 12) + (y << 4) + z);
+        vertex_attrib_t posData = (vertex_attrib_t) ((x << 12) + (y << 4) + z);
 
         int size = 0;
         const std::vector<Direction>& d = DIR[(int) type];

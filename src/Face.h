@@ -15,7 +15,7 @@ public:
         int cx, cz;  // coordinates of chunk the block is in
         float t;     // distance from ray start to intersection point
         sglm::vec3 A, B, C, D; // 4 corner positions of face
-        VertexAttribType data[ATTRIBS_PER_FACE * 6];
+        vertex_attrib_t data[ATTRIBS_PER_FACE * 6];
         
         bool operator==(const Intersection& other) const;
         void operator=(const Intersection& other);

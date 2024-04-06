@@ -30,14 +30,14 @@ inline const char* TEXTURE_SHEET = "resources/textures/texture_sheet.png";
 // each sub-chaunk as a sphere than calculate its actual bounding box.
 inline constexpr float SUB_CHUNK_RADIUS = 13.86f;
 
-typedef unsigned short VertexAttribType;
+typedef unsigned short vertex_attrib_t;
 struct Vertex {
-    VertexAttribType v1, v2, v3;
+    vertex_attrib_t v1, v2, v3;
 };
 inline constexpr int ATTRIBS_PER_VERTEX = 3;
 inline constexpr int VERTICES_PER_FACE = 6;
 inline constexpr int ATTRIBS_PER_FACE = ATTRIBS_PER_VERTEX * VERTICES_PER_FACE;
-inline constexpr int VERTEX_SIZE = sizeof(VertexAttribType) * ATTRIBS_PER_VERTEX;
+inline constexpr int VERTEX_SIZE = sizeof(vertex_attrib_t) * ATTRIBS_PER_VERTEX;
 
 // Each chunk is a 16x128x16 section of the world. Dividing the world into
 // chunks allows us to load only the portion of the world that is around the
