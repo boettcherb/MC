@@ -4,25 +4,35 @@
 
 #include <cassert>
 
-Chunk::Subchunk::Subchunk(int x, int y, int z, const Block::BlockType* data) : m_X{ x },
-    m_Y{ y }, m_Z{ z }, m_blocks { BlockList(data, BLOCKS_PER_SUBCHUNK) } {
-    m_height_centered = SUBCHUNK_HEIGHT * y + SUBCHUNK_HEIGHT / 2;
-    // mm_mesh_size = -1;
+Chunk::Subchunk::Subchunk(int y, const Block::BlockType* data) : m_Y{ y },
+    m_blocks { BlockList(data, BLOCKS_PER_SUBCHUNK) } {
+    m_mesh_size = -1;
 }
 
 void Chunk::Subchunk::updateMesh(const Chunk* this_chunk) {
     m_mesh.erase();
-    // TODO: fix this
-    // unsigned int lim = mm_mesh_size == -1 ?
-    //     BLOCKS_PER_SUBCHUNK * 6 * ATTRIBS_PER_FACE :
-    //     mm_mesh_size + 256;
-
-    constexpr unsigned int lim = BLOCKS_PER_SUBCHUNK * 6 * ATTRIBS_PER_FACE / 16;
-    vertex_attrib_t* data = new vertex_attrib_t[lim];
-    unsigned int size = getVertexData(this_chunk, data);
-    assert(size <= lim * sizeof(vertex_attrib_t));
-    m_mesh.generate(size, data, true, m_X, m_Z);
-    delete[] data;
+    unsigned int lim = m_mesh_size == -1 ?
+        40000 :
+        m_mesh_size + 1024;
+    if (lim != 40000) {
+        std::cout << "using stored mesh size, + 1024: lim: " << lim << std::endl;
+    }
+    vertex_attrib_t* data = nullptr;
+    while (true) {
+        try {
+            data = new vertex_attrib_t[lim];
+            unsigned int size = getVertexData(this_chunk, lim * sizeof(vertex_attrib_t), data);
+            assert(size <= lim * sizeof(vertex_attrib_t));
+            m_mesh.generate(size, data, true, this_chunk->m_posX, this_chunk->m_posZ);
+            m_mesh_size = size / sizeof(vertex_attrib_t);
+            delete[] data;
+            break;
+        } catch (const char* error_str) {
+            std::cout << "Error: " << error_str << ", lim: " << lim << std::endl;
+            lim *= 2;
+            delete[] data;
+        }
+    }
 }
 
 // update this function!
@@ -35,7 +45,8 @@ void Chunk::Subchunk::updateMesh(const Chunk* this_chunk) {
 // TODO: find edges separately to prevent bounds checking
 // TODO: restrict y based on highest_solid_block
 // TODO: make an index value here (before y for loop) to avoid calling subchunk_index every time
-unsigned int Chunk::Subchunk::getVertexData(const Chunk* this_chunk, vertex_attrib_t* data) const {
+unsigned int Chunk::Subchunk::getVertexData(const Chunk* this_chunk, int byte_lim,
+                                            vertex_attrib_t* data) const {
     vertex_attrib_t* start = data; // record the current byte address
     for (int x = 0; x < CHUNK_WIDTH; ++x) {
         for (int z = 0; z < CHUNK_WIDTH; ++z) {
@@ -53,6 +64,10 @@ unsigned int Chunk::Subchunk::getVertexData(const Chunk* this_chunk, vertex_attr
                     !Block::isTransparent(this_chunk->get(x, y - 1, z)),
                 };
                 data += Block::getBlockData(currentBlock, x, y, z, data, dirHasBlock);
+                // if we are almost about to go over the byte limit, don't risk it 
+                if ((int) ((data - start) * sizeof(vertex_attrib_t)) > byte_lim - 256) {
+                    throw "byte_lim too small";
+                }
             }
         }
     }

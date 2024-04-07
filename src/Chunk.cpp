@@ -15,12 +15,12 @@ Chunk::Chunk(int x, int z, const Block::BlockType* blockData): m_posX{ x }, m_po
         Block::BlockType* data = new Block::BlockType[BLOCKS_PER_CHUNK];
         generateTerrain(data, 1337);
         for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-            m_subchunks[i] = new Subchunk(m_posX, i, m_posZ, data + i * BLOCKS_PER_SUBCHUNK);
+            m_subchunks[i] = new Subchunk(i, data + i * BLOCKS_PER_SUBCHUNK);
         }
         delete[] data;
     } else {
         for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-            m_subchunks[i] = new Subchunk(m_posX, i, m_posZ, blockData + i * BLOCKS_PER_SUBCHUNK);
+            m_subchunks[i] = new Subchunk(i, blockData + i * BLOCKS_PER_SUBCHUNK);
         }
     }
     // for (int i = 0; i < CHUNK_WIDTH; ++i) {

@@ -45,23 +45,16 @@ class Chunk {
 
     // Implementation in Subchunk.cpp
     struct Subchunk {
-        const int m_X, m_Y, m_Z;
-        int m_height_centered;
-
-        // TODO: fix this
-        // store the current size of the mesh. When the mesh needs
-        // to be regenerated, we can use this value to determine how
-        // large of an array to allocate for the new mesh
-        // int mm_mesh_size; // number of attributes
-
-        BlockList m_blocks;
+        const int m_Y;
+        int m_mesh_size; // number of attributes
         Mesh m_mesh;
+        BlockList m_blocks;
 
-        Subchunk(int x, int y, int z, const Block::BlockType* data);
+        Subchunk(int y, const Block::BlockType* data);
         void updateMesh(const Chunk* this_chunk);
 
     private:
-        unsigned int getVertexData(const Chunk* this_chunk,
+        unsigned int getVertexData(const Chunk* this_chunk, int byte_lim,
                                    vertex_attrib_t* data) const;
     };
 
