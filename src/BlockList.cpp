@@ -40,6 +40,7 @@ Block::BlockType Chunk::BlockList::get(int x, int y, int z) const {
 }
 
 void Chunk::BlockList::put(int x, int y, int z, Block::BlockType block) {
+    assert(Block::isReal(block));
     add_block(block, true);
     // int block_index = Chunk::subchunk_index(x, y, z);
     int block_index = Chunk::chunk_index(x, y, z);
@@ -70,6 +71,7 @@ Block::BlockType* Chunk::BlockList::get_all() const {
 }
 
 void Chunk::BlockList::add_block(Block::BlockType block, bool rebuild) {
+    assert(Block::isReal(block));
     int b = (int) block;
     if (m_index[b] == NO_BLOCK) {
         m_index[b] = (int) m_palette.size();

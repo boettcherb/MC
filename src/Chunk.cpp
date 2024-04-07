@@ -76,6 +76,7 @@ int Chunk::chunk_index(int x, int y, int z) {
 }
 
 void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
+    assert(Block::isReal(block));
     m_subchunks[y / SUBCHUNK_HEIGHT]->m_blocks.put(x, y % SUBCHUNK_HEIGHT, z, block);
     if (update_mesh) {
         int updateIndex = y / SUBCHUNK_HEIGHT;
@@ -100,19 +101,19 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
     assert(x >= -1 && x <= CHUNK_WIDTH);
     assert(y >= -1 && y <= CHUNK_HEIGHT);
     assert(z >= -1 && z <= CHUNK_WIDTH);
-    if (y == -1 || y == CHUNK_HEIGHT) {
+    if (y == -1 || y == CHUNK_HEIGHT)
         return Block::BlockType::NO_BLOCK;
-    }
-    if (x >= 0 && z >= 0 && x < CHUNK_WIDTH && z < CHUNK_WIDTH) {
+    if (x >= 0 && z >= 0 && x < CHUNK_WIDTH && z < CHUNK_WIDTH)
         return m_subchunks[y / SUBCHUNK_HEIGHT]->m_blocks.get(x, y % SUBCHUNK_HEIGHT, z);
-    }
     assert(m_numNeighbors == 4);
-    if (x < 0) return m_neighbors[MINUS_X]->get(CHUNK_WIDTH - 1, y, z);
-    if (z < 0) return m_neighbors[MINUS_Z]->get(x, y, CHUNK_WIDTH - 1);
-    if (x >= CHUNK_WIDTH) return m_neighbors[PLUS_X]->get(0, y, z);
-    if (z >= CHUNK_WIDTH) return m_neighbors[PLUS_Z]->get(x, y, 0);
-    assert(0);
-    return Block::BlockType::NO_BLOCK;
+    if (x < 0)
+        return m_neighbors[MINUS_X]->get(CHUNK_WIDTH - 1, y, z);
+    else if (z < 0)
+        return m_neighbors[MINUS_Z]->get(x, y, CHUNK_WIDTH - 1);
+    else if (x >= CHUNK_WIDTH)
+        return m_neighbors[PLUS_X]->get(0, y, z);
+    else
+        return m_neighbors[PLUS_Z]->get(x, y, 0);
 }
 
 // the view and projection matrices must be set before this function is called.

@@ -103,9 +103,11 @@ void World::checkViewRayCollisions() {
     m_chunksMutex.unlock();
     if (foundIntersection) {
         // fill in the data field of the intersection with the block outline's vertex data
-        bool dirHasBlock[6] = {};
+        // for simplicity, set the surrounding blocks to AIR so the entire blockoutline renders
+        std::array<Block::BlockType, NUM_DIRECTIONS> surrounding;
+        surrounding.fill(Block::BlockType::AIR);
         Block::getBlockData(Block::BlockType::OUTLINE, bestI.x, bestI.y,
-                            bestI.z, bestI.data, dirHasBlock);
+                            bestI.z, bestI.data, surrounding);
         m_player->setViewRayIsect(&bestI);
     } else {
         m_player->setViewRayIsect(nullptr);

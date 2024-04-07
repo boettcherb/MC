@@ -3,6 +3,7 @@
 
 #include "Constants.h"
 #include <sglm/sglm.h>
+#include <array>
 
 namespace Block {
 
@@ -17,8 +18,8 @@ namespace Block {
         OAK_LOG_PZ,
         OAK_LEAVES,
         OUTLINE,
-        NO_BLOCK,
         NUM_BLOCK_TYPES,
+        NO_BLOCK,
         // LOG    (log ends are in the +y and -y directions)
         // LOG_PX (log ends are in the +x and -x directions)
         // LOG_PZ (log ends are in the +z and -z directions)
@@ -29,12 +30,16 @@ namespace Block {
     };
 
     void initBlockData();
-    int getBlockData(BlockType type, int x, int y, int z,
-                     vertex_attrib_t* data, bool dirHasBlock[NUM_DIRECTIONS]);
+    int getBlockData(BlockType type, int x, int y, int z, vertex_attrib_t* data,
+                     const std::array<Block::BlockType, NUM_DIRECTIONS>& surrounding);
+    // int getSurroundingData(BlockType type, int x, int y, int z, vertex_attrib_t* data,
+    //                        const std::array<Block::BlockType, NUM_DIRECTIONS>& surrounding);
 
     sglm::vec3 getVertexPosition(const Vertex& vertex);
     sglm::vec3 getBlockPosition(const Vertex& vertex);
-    bool isTransparent(BlockType type);
+    bool isReal(BlockType type);
+    bool isNormal(BlockType type);
+    bool isSolid(BlockType type);
 
 }
 

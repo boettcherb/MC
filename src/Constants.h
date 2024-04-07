@@ -6,7 +6,7 @@
 #endif
 
 enum Direction : unsigned char {
-    PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y, NUM_DIRECTIONS
+    PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y, NUM_DIRECTIONS, NO_DIR
 };
 
 enum class Movement {

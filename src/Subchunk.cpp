@@ -2,6 +2,7 @@
 #include "BlockInfo.h"
 #include "Constants.h"
 
+#include <iostream>
 #include <cassert>
 
 Chunk::Subchunk::Subchunk(int y, const Block::BlockType* data) : m_Y{ y },
@@ -14,9 +15,6 @@ void Chunk::Subchunk::updateMesh(const Chunk* this_chunk) {
     unsigned int lim = m_mesh_size == -1 ?
         40000 :
         m_mesh_size + 1024;
-    if (lim != 40000) {
-        std::cout << "using stored mesh size, + 1024: lim: " << lim << std::endl;
-    }
     vertex_attrib_t* data = nullptr;
     while (true) {
         try {
@@ -28,7 +26,10 @@ void Chunk::Subchunk::updateMesh(const Chunk* this_chunk) {
             delete[] data;
             break;
         } catch (const char* error_str) {
-            std::cout << "Error: " << error_str << ", lim: " << lim << std::endl;
+            std::cout << "-----------" << std::endl;
+            std::cout << "Error: " << error_str << std::endl;
+            std::cout << "lim: " << lim << ", m_mesh_size: " << m_mesh_size << std::endl;
+            std::cout << "-----------" << std::endl;
             lim *= 2;
             delete[] data;
         }
@@ -55,15 +56,16 @@ unsigned int Chunk::Subchunk::getVertexData(const Chunk* this_chunk, int byte_li
                 assert(currentBlock != Block::BlockType::NO_BLOCK);
                 if (currentBlock == Block::BlockType::AIR)
                     continue;
-                bool dirHasBlock[(int) NUM_DIRECTIONS] = {
-                    !Block::isTransparent(this_chunk->get(x + 1, y, z)),
-                    !Block::isTransparent(this_chunk->get(x - 1, y, z)),
-                    !Block::isTransparent(this_chunk->get(x, y, z + 1)),
-                    !Block::isTransparent(this_chunk->get(x, y, z - 1)),
-                    !Block::isTransparent(this_chunk->get(x, y + 1, z)),
-                    !Block::isTransparent(this_chunk->get(x, y - 1, z)),
+                std::array<Block::BlockType, NUM_DIRECTIONS> surrounding = {
+                    this_chunk->get(x + 1, y, z),
+                    this_chunk->get(x - 1, y, z),
+                    this_chunk->get(x, y, z + 1),
+                    this_chunk->get(x, y, z - 1),
+                    this_chunk->get(x, y + 1, z),
+                    this_chunk->get(x, y - 1, z),
                 };
-                data += Block::getBlockData(currentBlock, x, y, z, data, dirHasBlock);
+                data += Block::getBlockData(currentBlock, x, y, z, data, surrounding);
+
                 // if we are almost about to go over the byte limit, don't risk it 
                 if ((int) ((data - start) * sizeof(vertex_attrib_t)) > byte_lim - 256) {
                     throw "byte_lim too small";

@@ -1,10 +1,13 @@
 #include "BlockInfo.h"
 #include "Constants.h"
 #include <sglm/sglm.h>
+
+#include <iostream>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <array>
 
 // A vertex is represented using 3 16-bit integers:
 // 
@@ -55,27 +58,36 @@ namespace Block {
         // future: PLUS_X_FENCE, PLUS_X_SLAB, PLUS_X_STAIR
     };
 
-    static constexpr int NUM_BLOCK_TYPES = (int) BlockType::NO_BLOCK;
+    static constexpr int NUM_BLOCK_TYPES = (int) BlockType::NUM_BLOCK_TYPES;
     static constexpr int NUM_FACE_TYPES = (int) FaceType::NUM_FACE_TYPES;
     static std::vector<Vertex> blockData[NUM_BLOCK_TYPES];
 
     // for each block type, store a direction for each face. This direction is
-    // the direction that will determine whether we render this face (if there
-    // is a solid block in that direction, don't render the face)
+    // the direction that will determine whether we render this face. If there
+    // is a solid block in that direction, don't render the face. If NO_DIR
+    // is specified, always render the face
     static const std::vector<Direction> DIR[NUM_BLOCK_TYPES] = {
         {},                                                    // Air
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Grass
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Dirt
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Stone
-        {},                                                    // Grass Plant
+        { NO_DIR, NO_DIR, NO_DIR, NO_DIR },                    // Grass Plant
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Log
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Log PX
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Log PZ
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Leaves
-        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Block Outline
+        { NO_DIR, NO_DIR, NO_DIR, NO_DIR, NO_DIR, NO_DIR },    // Block Outline
+        // examples for future blocks:
+        // 1. OAK_SLAB_BOTTOM
+        //      NO_DIR, NO_DIR, NO_DIR, NO_DIR, NO_DIR, MINUS_Y }
+        // 2. OAK_STAIR_BPX (bottom with the stair portion in the PLUS_X direction)
+        //      Faces: bottom,  back,    top_back, top_front, left_bottom, left_top,   right_bottom, right_top,  front_bottom, front_top
+        //        DIR: MINUS_Y, MINUS_X, PLUS_Y,   NO_DIR,    P_Z or M_Z,  P_Z or M_Z, P_Z or M_Z,   P_Z or M_Z, PLUS_X,       NO_DIR
+
     };
 
     static void setData(BlockType block) {
+        assert(isReal(block) || block == BlockType::OUTLINE);
         // Store the locations of each texture as a point. This point (x and y
         // range from 0 to 16) corresponds to the texture's location on the
         // texture sheet (its bottom left corner).
@@ -226,40 +238,41 @@ namespace Block {
     }
 
     void initBlockData() {
-        for (int blockType = 1; blockType <= (int) BlockType::OUTLINE; ++blockType) {
+        for (int blockType = 0; blockType < NUM_BLOCK_TYPES; ++blockType) {
             setData(static_cast<BlockType>(blockType));
         }
     }
     
     // The block at (x, y, z) should be transparent. This function adds the faces of the
     // six surrounding blocks into data, if they aren't air.
-    // int getSurroundingData(int x, int y, int z, vertex_attrib_t* data, const Block::BlockType surrounding[NUM_DIRECTIONS]) {
+    // int getSurroundingData(int x, int y, int z, vertex_attrib_t* data, const BlockType surrounding[NUM_DIRECTIONS]) {
     //     (void) x, y, z, data, surrounding;
     //     return 0;
     // }
 
 
     // Return the number of VertexAttribTypes that have been added to data
-    int getBlockData(BlockType type, int x, int y, int z,
-                     vertex_attrib_t* data, bool dirHasBlock[NUM_DIRECTIONS]) {
+    int getBlockData(BlockType type, int x, int y, int z, vertex_attrib_t* data,
+                     const std::array<BlockType, NUM_DIRECTIONS>& surrounding) {
+
+        assert(isReal(type) || type == BlockType::OUTLINE);
 
         // position data: combine xyz coordinates into 16 bits
         vertex_attrib_t posData = (vertex_attrib_t) ((x << 12) + (y << 4) + z);
 
         int size = 0;
-        const std::vector<Direction>& d = DIR[(int) type];
         std::vector<Vertex>& curBlockData = blockData[(int) type];
         int numFaces = (int) curBlockData.size() / VERTICES_PER_FACE;
+        const std::vector<Direction>& d = DIR[(int) type];
+        assert(numFaces == d.size());
 
         for (int face = 0; face < numFaces; ++face) {
-            // if there is a block in the face's direction, don't retrieve its
-            // data (because it is hidden by the block)
-            if (d.size() > face) {
-                assert(d[face] >= 0 && d[face] < Direction::NUM_DIRECTIONS);
-                if (dirHasBlock[d[face]])
-                    continue;
+            // If no direction (NO_DIR) is specified for this face, render the face.
+            // If there is a solid block in the direction, don't render the face.
+            if (d[face] != NO_DIR && isSolid(surrounding[d[face]])) {
+                continue;
             }
-            // No block, so retrieve the face's data
+            // retrieve the face's data
             for (int vert = 0; vert < VERTICES_PER_FACE; ++vert) {
                 int index = face * VERTICES_PER_FACE + vert;
                 data[size++] = curBlockData[index].v1 + posData;
@@ -283,9 +296,71 @@ namespace Block {
         float z = (float((vertex.v3 >> 10) & 0x3F) - 16.0f) / 16.0f;
         return getBlockPosition(vertex) + sglm::vec3(x, y, z);
     };
-
-    bool isTransparent(BlockType type) {
-        return type == BlockType::AIR || type == BlockType::GRASS_PLANT;
+    
+    // A block is real if it can appear in the world
+    bool isReal(BlockType type) {
+        switch (type) {
+            case BlockType::AIR:
+            case BlockType::GRASS:
+            case BlockType::DIRT:
+            case BlockType::STONE:
+            case BlockType::GRASS_PLANT:
+            case BlockType::OAK_LOG:
+            case BlockType::OAK_LOG_PX:
+            case BlockType::OAK_LOG_PZ:
+            case BlockType::OAK_LEAVES:
+                return true;
+            case BlockType::OUTLINE:
+            case BlockType::NO_BLOCK:
+            case BlockType::NUM_BLOCK_TYPES:
+                return false;
+            default:
+                std::cout << "Error: isReal(): blocktype not handled: " << ((int) type) << std::endl;
+                throw type;
+        }
     }
 
+    // A block is normal if it has 6 faces with integer coordinates.
+    // Non-normal blocks include plants, flowers, crops, slabs, stairs,
+    // torches, chests, fences, signs, etc.
+    bool isNormal(BlockType type) {
+        switch (type) {
+            case BlockType::AIR:
+            case BlockType::GRASS_PLANT:
+                return false;
+            case BlockType::GRASS:
+            case BlockType::DIRT:
+            case BlockType::STONE:
+            case BlockType::OAK_LOG:
+            case BlockType::OAK_LOG_PX:
+            case BlockType::OAK_LOG_PZ:
+            case BlockType::OAK_LEAVES:
+                return true;
+            default:
+                std::cout << "Error: isNormal(): blocktype not handled: " << ((int) type) << std::endl;
+                throw type;
+        }
+    }
+
+    // A block is solid if it is normal and not transparent
+    bool isSolid(BlockType type) {
+        switch (type) {
+            case BlockType::GRASS:
+            case BlockType::DIRT:
+            case BlockType::STONE:
+            case BlockType::OAK_LOG:
+            case BlockType::OAK_LOG_PX:
+            case BlockType::OAK_LOG_PZ:
+            case BlockType::OAK_LEAVES:
+                return true;
+            case BlockType::AIR:
+            case BlockType::GRASS_PLANT:
+            // treat NO_BLOCK as non-solid so that the top and bottom of the world are rendered
+            case BlockType::NO_BLOCK:
+                return false;
+            default:
+                std::cout << "Error: isSolid(): blocktype not handled: " << ((int) type) << std::endl;
+                throw type;
+        }
+    }
 }
