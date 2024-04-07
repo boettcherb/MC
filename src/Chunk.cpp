@@ -14,13 +14,14 @@ Chunk::Chunk(int x, int z, const Block::BlockType* blockData): m_posX{ x }, m_po
     if (blockData == nullptr) {
         Block::BlockType* data = new Block::BlockType[BLOCKS_PER_CHUNK];
         generateTerrain(data, 1337);
-        for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-            m_subchunks[i] = new Subchunk(i, data + i * BLOCKS_PER_SUBCHUNK);
+        for (int y = 0; y < NUM_SUBCHUNKS; ++y) {
+            m_subchunks[y] = new Subchunk(y, data + y * BLOCKS_PER_SUBCHUNK);
         }
         delete[] data;
-    } else {
-        for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-            m_subchunks[i] = new Subchunk(i, blockData + i * BLOCKS_PER_SUBCHUNK);
+    }
+    else {
+        for (int y = 0; y < NUM_SUBCHUNKS; ++y) {
+            m_subchunks[y] = new Subchunk(y, blockData + y * BLOCKS_PER_SUBCHUNK);
         }
     }
     // for (int i = 0; i < CHUNK_WIDTH; ++i) {
@@ -37,8 +38,8 @@ Chunk::Chunk(int x, int z, const Block::BlockType* blockData): m_posX{ x }, m_po
 }
 
 Chunk::~Chunk() {
-    for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-        delete m_subchunks[i];
+    for (Subchunk* subchunk : m_subchunks) {
+        delete subchunk;
     }
     if (m_neighbors[PLUS_X] != nullptr) m_neighbors[PLUS_X]->removeNeighbor(MINUS_X);
     if (m_neighbors[MINUS_X] != nullptr) m_neighbors[MINUS_X]->removeNeighbor(PLUS_X);
@@ -53,9 +54,9 @@ bool Chunk::wasUpdated() const {
 // The caller is responsible for freeing the returned array.
 const void* Chunk::getBlockData() const {
     Block::BlockType* data = new Block::BlockType[BLOCKS_PER_CHUNK];
-    for (int i = 0; i < 8; ++i) {
-        Block::BlockType* subchunk_data = m_subchunks[i]->m_blocks.get_all();
-        std::copy(subchunk_data, subchunk_data + BLOCKS_PER_SUBCHUNK, data + i * BLOCKS_PER_SUBCHUNK);
+    for (int y = 0; y < NUM_SUBCHUNKS; ++y) {
+        Block::BlockType* subchunk_data = m_subchunks[y]->m_blocks.get_all();
+        std::copy(subchunk_data, subchunk_data + BLOCKS_PER_SUBCHUNK, data + y * BLOCKS_PER_SUBCHUNK);
         delete[] subchunk_data;
     }
     return data;
@@ -140,16 +141,16 @@ bool Chunk::update() {
     bool updated = false;
     if (!m_rendered && m_numNeighbors == 4) {
         // render this chunk
-        for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-            m_subchunks[i]->updateMesh(this);
+        for (Subchunk* subchunk : m_subchunks) {
+            subchunk->updateMesh(this);
         }
         m_rendered = true;
         updated = true;
     }
     else if (m_rendered && m_numNeighbors != 4) {
         // unload this chunk
-        for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
-            m_subchunks[i]->m_mesh.erase();
+        for (Subchunk* subchunk : m_subchunks) {
+            subchunk->m_mesh.erase();
         }
         m_rendered = false;
     }

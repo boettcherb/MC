@@ -59,10 +59,9 @@ class Chunk {
     };
 
     const int m_posX, m_posZ;
-    // TODO: make this a std::array?
-    Subchunk* m_subchunks[NUM_SUBCHUNKS];
-    // unsigned char m_highest_solid_block[CHUNK_WIDTH][CHUNK_WIDTH];
+    std::array<Subchunk*, NUM_SUBCHUNKS> m_subchunks;
     std::array<Chunk*, 4> m_neighbors;
+    // unsigned char m_highest_solid_block[CHUNK_WIDTH][CHUNK_WIDTH];
     int m_numNeighbors;
     bool m_updated;  // true if any block has been updated since loading from db
     bool m_rendered; // true if meshes have been generated and this chunk is being rendered to the screen
@@ -75,19 +74,13 @@ public:
     void put(int x, int y, int z, Block::BlockType block, bool updateMesh = false);
     bool update();
     int render(Shader* shader, const sglm::frustum& frustum);
-
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
     std::pair<std::pair<int, int>, Chunk*> getNeighbor(int index) const;
     int getNumNeighbors() const;
-    // int getHighestBlock(int x, int z) const;
-
     bool intersects(const sglm::ray& ray, Face::Intersection& isect);
-    // TODO: combine these into 1 function by returning nullptr
-    // from getBlockData if not updated
     const void* getBlockData() const;
     bool wasUpdated() const;
-
     static void initNoise(); // in TerrainGen.cpp
 
 private:
