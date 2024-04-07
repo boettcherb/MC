@@ -76,7 +76,6 @@ namespace Block {
     };
 
     static void setData(BlockType block) {
-
         // Store the locations of each texture as a point. This point (x and y
         // range from 0 to 16) corresponds to the texture's location on the
         // texture sheet (its bottom left corner).
@@ -226,7 +225,7 @@ namespace Block {
         blockData[(int) block] = data;
     }
 
-    void setBlockData() {
+    void initBlockData() {
         for (int blockType = 1; blockType <= (int) BlockType::OUTLINE; ++blockType) {
             setData(static_cast<BlockType>(blockType));
         }

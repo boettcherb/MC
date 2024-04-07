@@ -165,7 +165,7 @@ int main() {
     initialize_HUD();
     window_size_callback(nullptr, scr_width, scr_height);
     database::initialize();
-    Block::setBlockData();
+    Block::initBlockData();
     Chunk::initNoise();
 
     // initialize imgui

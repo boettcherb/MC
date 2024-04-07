@@ -28,7 +28,7 @@ namespace Block {
         // ...
     };
 
-    void setBlockData();
+    void initBlockData();
     int getBlockData(BlockType type, int x, int y, int z,
                      vertex_attrib_t* data, bool dirHasBlock[NUM_DIRECTIONS]);
 
