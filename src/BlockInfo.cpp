@@ -242,16 +242,8 @@ namespace Block {
             setData(static_cast<BlockType>(blockType));
         }
     }
-    
-    // The block at (x, y, z) should be transparent. This function adds the faces of the
-    // six surrounding blocks into data, if they aren't air.
-    // int getSurroundingData(int x, int y, int z, vertex_attrib_t* data, const BlockType surrounding[NUM_DIRECTIONS]) {
-    //     (void) x, y, z, data, surrounding;
-    //     return 0;
-    // }
 
-
-    // Return the number of VertexAttribTypes that have been added to data
+    // Return the number of vertex_attrib_t that have been added to data
     int getBlockData(BlockType type, int x, int y, int z, vertex_attrib_t* data,
                      const std::array<BlockType, NUM_DIRECTIONS>& surrounding) {
 
@@ -352,9 +344,11 @@ namespace Block {
             case BlockType::OAK_LOG_PX:
             case BlockType::OAK_LOG_PZ:
             case BlockType::OAK_LEAVES:
+                assert(isNormal(type));
                 return true;
             case BlockType::AIR:
             case BlockType::GRASS_PLANT:
+                assert(!isNormal(type));
             // treat NO_BLOCK as non-solid so that the top and bottom of the world are rendered
             case BlockType::NO_BLOCK:
                 return false;

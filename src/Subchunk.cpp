@@ -36,40 +36,55 @@ void Chunk::Subchunk::updateMesh(const Chunk* this_chunk) {
     }
 }
 
-// update this function!
-// 1. Store a 16x16 array holding the highest non-air block in the chunk. Then, only
-//    check blocks below that block. Skip solid blocks because most should be solid.
-// 2. call blocks->get_all() at the start of the function and split up the for loops
-//    into inner blocks (prevents bounds checking) and outer blocks (we already know
-//    where the out of bounds blocks will be)
+static inline bool inbounds(int x, int y, int z) {
+    return x > 0 && y > 0 && z > 0 && x < CHUNK_WIDTH - 1 && y < SUBCHUNK_HEIGHT - 1 && z < CHUNK_WIDTH - 1;
+}
 
-// TODO: find edges separately to prevent bounds checking
-// TODO: restrict y based on highest_solid_block
-// TODO: make an index value here (before y for loop) to avoid calling subchunk_index every time
 unsigned int Chunk::Subchunk::getVertexData(const Chunk* this_chunk, int byte_lim,
                                             vertex_attrib_t* data) const {
     vertex_attrib_t* start = data; // record the current byte address
+    Block::BlockType* blocks = m_blocks.get_all();
+    int y_offs = m_Y * SUBCHUNK_HEIGHT;
+
     for (int x = 0; x < CHUNK_WIDTH; ++x) {
         for (int z = 0; z < CHUNK_WIDTH; ++z) {
-            for (int y = m_Y * SUBCHUNK_HEIGHT; y < (m_Y + 1) * SUBCHUNK_HEIGHT; ++y) {
-                Block::BlockType currentBlock = this_chunk->get(x, y, z);
-                assert(currentBlock != Block::BlockType::NO_BLOCK);
-                if (currentBlock == Block::BlockType::AIR)
+            int y_max = std::min(y_offs + SUBCHUNK_HEIGHT - 1, (int) this_chunk->m_highest_block[x][z]);
+            y_max -= y_offs;
+            int index = Chunk::subchunk_index(x, 0, z);
+            for (int y = 0; y <= y_max; ++y) {
+                Block::BlockType block = blocks[index];
+                assert(Block::isReal(block));
+                if (block == Block::BlockType::AIR) {
+                    ++index;
                     continue;
-                std::array<Block::BlockType, NUM_DIRECTIONS> surrounding = {
-                    this_chunk->get(x + 1, y, z),
-                    this_chunk->get(x - 1, y, z),
-                    this_chunk->get(x, y, z + 1),
-                    this_chunk->get(x, y, z - 1),
-                    this_chunk->get(x, y + 1, z),
-                    this_chunk->get(x, y - 1, z),
-                };
-                data += Block::getBlockData(currentBlock, x, y, z, data, surrounding);
-
+                }
+                if (inbounds(x, y, z)) {
+                    std::array<Block::BlockType, NUM_DIRECTIONS> surrounding = {
+                        blocks[index + CHUNK_WIDTH * SUBCHUNK_HEIGHT],
+                        blocks[index - CHUNK_WIDTH * SUBCHUNK_HEIGHT],
+                        blocks[index + SUBCHUNK_HEIGHT],
+                        blocks[index - SUBCHUNK_HEIGHT],
+                        blocks[index + 1],
+                        blocks[index - 1],
+                    };
+                    data += Block::getBlockData(block, x, y + y_offs, z, data, surrounding);
+                }
+                else {
+                    std::array<Block::BlockType, NUM_DIRECTIONS> surrounding = {
+                        this_chunk->get(x + 1, y + y_offs, z),
+                        this_chunk->get(x - 1, y + y_offs, z),
+                        this_chunk->get(x, y + y_offs, z + 1),
+                        this_chunk->get(x, y + y_offs, z - 1),
+                        this_chunk->get(x, y + y_offs + 1, z),
+                        this_chunk->get(x, y + y_offs - 1, z),
+                    };
+                    data += Block::getBlockData(block, x, y + y_offs, z, data, surrounding);
+                }
                 // if we are almost about to go over the byte limit, don't risk it 
-                if ((int) ((data - start) * sizeof(vertex_attrib_t)) > byte_lim - 256) {
+                if ((int) ((data - start) * sizeof(vertex_attrib_t)) > byte_lim - 512) {
                     throw "byte_lim too small";
                 }
+                ++index;
             }
         }
     }

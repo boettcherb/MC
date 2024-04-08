@@ -24,17 +24,17 @@ Chunk::Chunk(int x, int z, const Block::BlockType* blockData): m_posX{ x }, m_po
             m_subchunks[y] = new Subchunk(y, blockData + y * BLOCKS_PER_SUBCHUNK);
         }
     }
-    // for (int i = 0; i < CHUNK_WIDTH; ++i) {
-    //     for (int k = 0; k < CHUNK_WIDTH; ++k) {
-    //         m_highest_solid_block[i][k] = CHUNK_HEIGHT - 1;
-    //         for (int j = CHUNK_HEIGHT - 1; j >= 0; --j) {
-    //             if (!Block::isTransparent(m_blocks->get(i, j, k))) {
-    //                 m_highest_solid_block[i][k] = (unsigned char) j;
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
+    for (int i = 0; i < CHUNK_WIDTH; ++i) {
+        for (int k = 0; k < CHUNK_WIDTH; ++k) {
+            m_highest_block[i][k] = CHUNK_HEIGHT - 1;
+            for (int j = CHUNK_HEIGHT - 1; j >= 0; --j) {
+                if (get(i, j, k) == Block::BlockType::AIR) {
+                    m_highest_block[i][k] = (unsigned char) j;
+                    break;
+                }
+            }
+        }
+    }
 }
 
 Chunk::~Chunk() {
@@ -79,6 +79,9 @@ void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
     assert(Block::isReal(block));
     m_subchunks[y / SUBCHUNK_HEIGHT]->m_blocks.put(x, y % SUBCHUNK_HEIGHT, z, block);
     if (update_mesh) {
+        if (block != Block::BlockType::AIR) {
+            m_highest_block[x][z] = std::max(m_highest_block[x][z], (unsigned char) y);
+        }
         int updateIndex = y / SUBCHUNK_HEIGHT;
         m_subchunks[updateIndex]->updateMesh(this);
         if (y != CHUNK_HEIGHT - 1 && y % SUBCHUNK_HEIGHT == SUBCHUNK_HEIGHT - 1) {

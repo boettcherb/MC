@@ -31,9 +31,7 @@ namespace Block {
 
     void initBlockData();
     int getBlockData(BlockType type, int x, int y, int z, vertex_attrib_t* data,
-                     const std::array<Block::BlockType, NUM_DIRECTIONS>& surrounding);
-    // int getSurroundingData(BlockType type, int x, int y, int z, vertex_attrib_t* data,
-    //                        const std::array<Block::BlockType, NUM_DIRECTIONS>& surrounding);
+                     const std::array<BlockType, NUM_DIRECTIONS>& surrounding);
 
     sglm::vec3 getVertexPosition(const Vertex& vertex);
     sglm::vec3 getBlockPosition(const Vertex& vertex);

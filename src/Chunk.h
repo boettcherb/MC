@@ -61,7 +61,8 @@ class Chunk {
     const int m_posX, m_posZ;
     std::array<Subchunk*, NUM_SUBCHUNKS> m_subchunks;
     std::array<Chunk*, 4> m_neighbors;
-    // unsigned char m_highest_solid_block[CHUNK_WIDTH][CHUNK_WIDTH];
+    unsigned char m_highest_block[CHUNK_WIDTH][CHUNK_WIDTH];
+
     int m_numNeighbors;
     bool m_updated;  // true if any block has been updated since loading from db
     bool m_rendered; // true if meshes have been generated and this chunk is being rendered to the screen
