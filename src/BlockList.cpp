@@ -32,8 +32,7 @@ Chunk::BlockList::~BlockList() {
 }
 
 Block::BlockType Chunk::BlockList::get(int x, int y, int z) const {
-    // int block_index = Chunk::subchunk_index(x, y, z);
-    int block_index = Chunk::chunk_index(x, y, z);
+    int block_index = Chunk::subchunk_index(x, y, z);
     int data_index = block_index / m_blocks_per_ll;
     int i = block_index % m_blocks_per_ll;
     return m_palette[(m_data[data_index] >> (m_bits_per_block * i)) & m_bitmask];
@@ -42,8 +41,7 @@ Block::BlockType Chunk::BlockList::get(int x, int y, int z) const {
 void Chunk::BlockList::put(int x, int y, int z, Block::BlockType block) {
     assert(Block::isReal(block));
     add_block(block, true);
-    // int block_index = Chunk::subchunk_index(x, y, z);
-    int block_index = Chunk::chunk_index(x, y, z);
+    int block_index = Chunk::subchunk_index(x, y, z);
     int data_index = block_index / m_blocks_per_ll;
     int i = block_index % m_blocks_per_ll;
     int shift = m_bits_per_block * i;
