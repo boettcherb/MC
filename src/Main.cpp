@@ -126,7 +126,7 @@ int main() {
     //auto [scr_width, scr_height] = get_screen_size();
     //GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, WINDOW_TITLE,
     //                                      glfwGetPrimaryMonitor(), nullptr);
-    int scr_width = 800, scr_height = 600;
+    int scr_width = 1000, scr_height = 750;
     get_screen_size();
     GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, WINDOW_TITLE,
                                           nullptr, nullptr);
