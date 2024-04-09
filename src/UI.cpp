@@ -12,7 +12,7 @@
 void initialize_HUD();
 void resize_HUD(int width, int height);
 void render_HUD(Shader* shader);
-void render_imgui_window(ImGuiIO& io, Shader& shader, const Player& player);
+void render_imgui_window(ImGuiIO& io, const Player& player);
 
 static int screen_width;
 static int screen_height;

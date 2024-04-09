@@ -166,7 +166,7 @@ void World::LoadChunks() {
             if (dist_sq > Player::getLoadRadius() * Player::getLoadRadius())
                 continue;
             bool contains = false;
-            sglm::vec3 pos = { x * 16 + diff, 0.0f, z * 16 + diff };
+            sglm::vec3 pos = { x * CHUNK_WIDTH + diff, 0.0f, z * CHUNK_WIDTH + diff };
             for (int subchunk = 0; subchunk < NUM_SUBCHUNKS; ++subchunk) {
                 pos.y = subchunk * SUBCHUNK_HEIGHT + diff;
                 if (m_player->getFrustum().contains(pos, SUB_CHUNK_RADIUS)) {
