@@ -37,7 +37,8 @@ void Chunk::Subchunk::updateMesh(const Chunk* this_chunk) {
 }
 
 static inline bool inbounds(int x, int y, int z) {
-    return x > 0 && y > 0 && z > 0 && x < CHUNK_WIDTH - 1 && y < SUBCHUNK_HEIGHT - 1 && z < CHUNK_WIDTH - 1;
+    return x > 0 && y > 0 && z > 0 && x < CHUNK_WIDTH - 1 &&
+        y < SUBCHUNK_HEIGHT - 1 && z < CHUNK_WIDTH - 1;
 }
 
 unsigned int Chunk::Subchunk::getVertexData(const Chunk* this_chunk, int byte_lim,
@@ -48,10 +49,11 @@ unsigned int Chunk::Subchunk::getVertexData(const Chunk* this_chunk, int byte_li
 
     for (int x = 0; x < CHUNK_WIDTH; ++x) {
         for (int z = 0; z < CHUNK_WIDTH; ++z) {
-            int y_max = std::min(y_offs + SUBCHUNK_HEIGHT - 1, (int) this_chunk->m_highest_block[x][z]);
-            y_max -= y_offs;
+            // int y_max = std::min(y_offs + SUBCHUNK_HEIGHT - 1, (int) this_chunk->m_highest_block[x][z]);
+            // y_max -= y_offs;
             int index = Chunk::subchunk_index(x, 0, z);
-            for (int y = 0; y <= y_max; ++y) {
+            // for (int y = 0; y <= y_max; ++y) {
+            for (int y = 0; y < SUBCHUNK_HEIGHT; ++y) {
                 Block::BlockType block = blocks[index];
                 assert(Block::isReal(block));
                 if (block == Block::BlockType::AIR) {
@@ -67,18 +69,18 @@ unsigned int Chunk::Subchunk::getVertexData(const Chunk* this_chunk, int byte_li
                         blocks[index + 1],
                         blocks[index - 1],
                     };
-                    data += Block::getBlockData(block, x, y + y_offs, z, data, surrounding);
+                    data += Block::getBlockData(block, x, y, z, data, surrounding);
                 }
                 else {
                     std::array<Block::BlockType, NUM_DIRECTIONS> surrounding = {
-                        this_chunk->get(x + 1, y + y_offs, z),
-                        this_chunk->get(x - 1, y + y_offs, z),
-                        this_chunk->get(x, y + y_offs, z + 1),
-                        this_chunk->get(x, y + y_offs, z - 1),
-                        this_chunk->get(x, y + y_offs + 1, z),
-                        this_chunk->get(x, y + y_offs - 1, z),
+                        this_chunk->get(x + 1, y + y_offs,     z    ),
+                        this_chunk->get(x - 1, y + y_offs,     z    ),
+                        this_chunk->get(x,     y + y_offs,     z + 1),
+                        this_chunk->get(x,     y + y_offs,     z - 1),
+                        this_chunk->get(x,     y + y_offs + 1, z    ),
+                        this_chunk->get(x,     y + y_offs - 1, z    ),
                     };
-                    data += Block::getBlockData(block, x, y + y_offs, z, data, surrounding);
+                    data += Block::getBlockData(block, x, y, z, data, surrounding);
                 }
                 // if we are almost about to go over the byte limit, don't risk it 
                 if ((int) ((data - start) * sizeof(vertex_attrib_t)) > byte_lim - 512) {
@@ -88,6 +90,7 @@ unsigned int Chunk::Subchunk::getVertexData(const Chunk* this_chunk, int byte_li
             }
         }
     }
+    delete[] blocks;
     // return the number of bytes that were initialized
     return (unsigned int) ((data - start) * sizeof(vertex_attrib_t));
 }

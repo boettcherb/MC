@@ -18,7 +18,7 @@ void main() {
     uint v3 = a_data.z;
 
     float xPos = float((v1 >> 12u) & 0xFu);
-    float yPos = float((v1 >> 4u) & 0x7Fu);
+    float yPos = float((v1 >> 4u) & 0xFu);
     float zPos = float(v1 & 0xFu);
     xPos += (float((v2 >> 6u) & 0x3Fu)  - 16.0) / 16.0;
     yPos += (float(v2 & 0x3Fu)          - 16.0) / 16.0;

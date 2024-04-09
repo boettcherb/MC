@@ -12,7 +12,7 @@
 // A vertex is represented using 3 16-bit integers:
 // 
 // v1: x pos: 1111000000000000
-//     y pos: 0000011111110000
+//     y pos: 0000000011110000
 //     z pos: 0000000000001111
 // 
 // v2: light: 1111000000000000
@@ -246,6 +246,9 @@ namespace Block {
     // Return the number of vertex_attrib_t that have been added to data
     int getBlockData(BlockType type, int x, int y, int z, vertex_attrib_t* data,
                      const std::array<BlockType, NUM_DIRECTIONS>& surrounding) {
+        assert(x >= 0 && y >= 0 && z >= 0);
+        assert(x < CHUNK_WIDTH && z < CHUNK_WIDTH);
+        assert(y < SUBCHUNK_HEIGHT);
 
         assert(isReal(type) || type == BlockType::OUTLINE);
 
@@ -277,7 +280,7 @@ namespace Block {
 
     sglm::vec3 getBlockPosition(const Vertex& vertex) {
         float x = (float) (vertex.v1 >> 12);
-        float y = (float) ((vertex.v1 >> 4) & 0x7F);
+        float y = (float) ((vertex.v1 >> 4) & 0xF);
         float z = (float) (vertex.v1 & 0xF);
         return { x, y, z };
     }
