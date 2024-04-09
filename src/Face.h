@@ -12,7 +12,7 @@ class Face {
 public:
     struct Intersection {
         int x, y, z; // coordinates of block whose face has the intersection
-        int cx, cz;  // coordinates of chunk the block is in
+        int cx, cy, cz;  // coordinates of chunk the block is in
         float t;     // distance from ray start to intersection point
         sglm::vec3 A, B, C, D; // 4 corner positions of face
         vertex_attrib_t data[ATTRIBS_PER_FACE * 6];

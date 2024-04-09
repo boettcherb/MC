@@ -19,7 +19,7 @@ Mesh::~Mesh() {
 }
 
 void Mesh::generate(unsigned int size, const void* data, bool setFaceData,
-                    int chunkX, int chunkZ) {
+                    int cx, int cy, int cz) {
     if (m_generated) {
         erase();
     }
@@ -46,7 +46,7 @@ void Mesh::generate(unsigned int size, const void* data, bool setFaceData,
 
     // set the face data (used for collisions)
     if (setFaceData) {
-        getFaces(reinterpret_cast<const vertex_attrib_t*>(data), chunkX, chunkZ);
+        getFaces(reinterpret_cast<const vertex_attrib_t*>(data), cx, cy, cz);
     }
 
     m_generated = true;
@@ -66,7 +66,7 @@ void Mesh::erase() {
     }
 }
 
-void Mesh::getFaces(const vertex_attrib_t* data, int chunkX, int chunkZ) {
+void Mesh::getFaces(const vertex_attrib_t* data, int cx, int cy, int cz) {
     assert(m_faces.empty());
     m_faces.reserve(m_vertexCount / VERTICES_PER_FACE);
     for (unsigned int i = 0; i < m_vertexCount * ATTRIBS_PER_VERTEX; i += ATTRIBS_PER_FACE) {
@@ -79,7 +79,10 @@ void Mesh::getFaces(const vertex_attrib_t* data, int chunkX, int chunkZ) {
         std::memcpy(&v3, &data[i + 6], sizeof(Vertex));
         std::memcpy(&v4, &data[i + 12], sizeof(Vertex));
 
-        sglm::vec3 offset = { (float) chunkX * CHUNK_WIDTH, 0.0f, (float) chunkZ * CHUNK_WIDTH };
+        float x = (float) (cx * CHUNK_WIDTH);
+        float y = (float) (cy * SUBCHUNK_HEIGHT);
+        float z = (float) (cz * CHUNK_WIDTH);
+        sglm::vec3 offset = { x, y, z };
         sglm::vec3 A = Block::getVertexPosition(v1) + offset;
         sglm::vec3 B = Block::getVertexPosition(v2) + offset;
         sglm::vec3 C = Block::getVertexPosition(v3) + offset;

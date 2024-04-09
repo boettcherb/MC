@@ -21,7 +21,7 @@ void Chunk::Subchunk::updateMesh(const Chunk* this_chunk) {
             data = new vertex_attrib_t[lim];
             unsigned int size = getVertexData(this_chunk, lim * sizeof(vertex_attrib_t), data);
             assert(size <= lim * sizeof(vertex_attrib_t));
-            m_mesh.generate(size, data, true, this_chunk->m_posX, this_chunk->m_posZ);
+            m_mesh.generate(size, data, true, this_chunk->m_posX, m_Y, this_chunk->m_posZ);
             m_mesh_size = size / sizeof(vertex_attrib_t);
             delete[] data;
             break;

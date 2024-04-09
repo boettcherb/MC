@@ -57,7 +57,7 @@ void World::update(bool mineBlock) {
         m_chunksMutex.lock();
         Chunk* chunk = m_chunks.find({ isect.cx, isect.cz })->second;
         m_chunksMutex.unlock();
-        chunk->put(isect.x, isect.y, isect.z, Block::BlockType::AIR);
+        chunk->put(isect.x, isect.y + SUBCHUNK_HEIGHT * isect.cy, isect.z, Block::BlockType::AIR);
     }
 
     int numUpdated = 0;
@@ -96,6 +96,7 @@ void World::checkViewRayCollisions() {
                     bestI = i;
                     bestI.cx = x;
                     bestI.cz = z;
+                    // bestI.cy is set in Chunk::intersects
                 }
             }
         }
@@ -123,8 +124,9 @@ void World::renderAll() {
     if (m_player->hasViewRayIsect()) {
         const Face::Intersection& isect = m_player->getViewRayIsect();
         float x = (float) (isect.cx * CHUNK_WIDTH);
+        float y = (float) (isect.cy * SUBCHUNK_HEIGHT);
         float z = (float) (isect.cz * CHUNK_WIDTH);
-        m_shader->addUniformMat4f("u0_model", sglm::translate({ x, 0.0f, z }));
+        m_shader->addUniformMat4f("u0_model", sglm::translate({ x, y, z }));
         m_player->renderOutline(m_shader);
     }
     

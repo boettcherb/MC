@@ -185,16 +185,17 @@ bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {
     if (z + ray.length < cz || z - ray.length > cz + CHUNK_WIDTH)
         return false;
     bool foundIntersection = false;
-    for (int sc_index = 0; sc_index < NUM_SUBCHUNKS; ++sc_index) {
-        int sc_y = sc_index * SUBCHUNK_HEIGHT;
+    for (int subchunk = 0; subchunk < NUM_SUBCHUNKS; ++subchunk) {
+        int sc_y = subchunk * SUBCHUNK_HEIGHT;
         if (y + ray.length < sc_y || y - ray.length > sc_y + SUBCHUNK_HEIGHT) {
             continue;
         }
         Face::Intersection i;
-        if (m_subchunks[sc_index]->m_mesh.intersects(ray, i)) {
+        if (m_subchunks[subchunk]->m_mesh.intersects(ray, i)) {
             if (!foundIntersection || i.t < isect.t) {
                 foundIntersection = true;
                 isect = i;
+                isect.cy = subchunk;
             }
         }
     }
