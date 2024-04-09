@@ -57,7 +57,7 @@ void World::update(bool mineBlock) {
         m_chunksMutex.lock();
         Chunk* chunk = m_chunks.find({ isect.cx, isect.cz })->second;
         m_chunksMutex.unlock();
-        chunk->put(isect.x, isect.y, isect.z, Block::BlockType::AIR, true);
+        chunk->put(isect.x, isect.y, isect.z, Block::BlockType::AIR);
     }
 
     int numUpdated = 0;

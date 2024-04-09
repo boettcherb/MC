@@ -24,17 +24,6 @@ Chunk::Chunk(int x, int z, const Block::BlockType* blockData): m_posX{ x }, m_po
             m_subchunks[y] = new Subchunk(y, blockData + y * BLOCKS_PER_SUBCHUNK);
         }
     }
-    for (int i = 0; i < CHUNK_WIDTH; ++i) {
-        for (int k = 0; k < CHUNK_WIDTH; ++k) {
-            m_highest_block[i][k] = CHUNK_HEIGHT - 1;
-            for (int j = CHUNK_HEIGHT - 1; j >= 0; --j) {
-                if (get(i, j, k) == Block::BlockType::AIR) {
-                    m_highest_block[i][k] = (unsigned char) j;
-                    break;
-                }
-            }
-        }
-    }
 }
 
 Chunk::~Chunk() {
@@ -75,26 +64,27 @@ int Chunk::chunk_index(int x, int y, int z) {
     return index + BLOCKS_PER_SUBCHUNK * (y / SUBCHUNK_HEIGHT);
 }
 
-void Chunk::put(int x, int y, int z, Block::BlockType block, bool update_mesh) {
+void Chunk::put(int x, int y, int z, Block::BlockType block) {
     assert(Block::isReal(block));
-    m_subchunks[y / SUBCHUNK_HEIGHT]->m_blocks.put(x, y % SUBCHUNK_HEIGHT, z, block);
-    if (update_mesh) {
-        if (block != Block::BlockType::AIR) {
-            m_highest_block[x][z] = std::max(m_highest_block[x][z], (unsigned char) y);
-        }
-        int updateIndex = y / SUBCHUNK_HEIGHT;
-        m_subchunks[updateIndex]->updateMesh(this);
-        if (y != CHUNK_HEIGHT - 1 && y % SUBCHUNK_HEIGHT == SUBCHUNK_HEIGHT - 1) {
-            m_subchunks[updateIndex + 1]->updateMesh(this);
-        }
-        else if (y != 0 && y % SUBCHUNK_HEIGHT == 0) {
-            m_subchunks[updateIndex - 1]->updateMesh(this);
-        }
-        if (x == CHUNK_WIDTH - 1) m_neighbors[PLUS_X]->m_subchunks[updateIndex]->updateMesh(m_neighbors[PLUS_X]);
-        else if (x == 0)          m_neighbors[MINUS_X]->m_subchunks[updateIndex]->updateMesh(m_neighbors[MINUS_X]);
-        if (z == CHUNK_WIDTH - 1) m_neighbors[PLUS_Z]->m_subchunks[updateIndex]->updateMesh(m_neighbors[PLUS_Z]);
-        else if (z == 0)          m_neighbors[MINUS_Z]->m_subchunks[updateIndex]->updateMesh(m_neighbors[MINUS_Z]);
-    }
+    int subchunk = y / SUBCHUNK_HEIGHT;
+    m_subchunks[subchunk]->m_blocks.put(x, y % SUBCHUNK_HEIGHT, z, block);
+    m_subchunks[subchunk]->updateMesh(this);
+
+    // if we're updating a block on the border of the subchunk, we also
+    // have to update the neighboring subchunk
+    if (y != CHUNK_HEIGHT - 1 && y % SUBCHUNK_HEIGHT == SUBCHUNK_HEIGHT - 1)
+        m_subchunks[subchunk + 1]->updateMesh(this);
+    else if (y != 0 && y % SUBCHUNK_HEIGHT == 0)
+        m_subchunks[subchunk - 1]->updateMesh(this);
+    if (x == CHUNK_WIDTH - 1)
+        m_neighbors[PLUS_X]->m_subchunks[subchunk]->updateMesh(m_neighbors[PLUS_X]);
+    else if (x == 0)
+        m_neighbors[MINUS_X]->m_subchunks[subchunk]->updateMesh(m_neighbors[MINUS_X]);
+    if (z == CHUNK_WIDTH - 1)
+        m_neighbors[PLUS_Z]->m_subchunks[subchunk]->updateMesh(m_neighbors[PLUS_Z]);
+    else if (z == 0)
+        m_neighbors[MINUS_Z]->m_subchunks[subchunk]->updateMesh(m_neighbors[MINUS_Z]);
+
     m_updated = true;
 }
 

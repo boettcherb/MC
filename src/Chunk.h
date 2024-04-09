@@ -61,7 +61,6 @@ class Chunk {
     const int m_posX, m_posZ;
     std::array<Subchunk*, NUM_SUBCHUNKS> m_subchunks;
     std::array<Chunk*, 4> m_neighbors;
-    unsigned char m_highest_block[CHUNK_WIDTH][CHUNK_WIDTH];
 
     int m_numNeighbors;
     bool m_updated;  // true if any block has been updated since loading from db
@@ -72,7 +71,7 @@ public:
     ~Chunk();
 
     Block::BlockType get(int x, int y, int z) const;
-    void put(int x, int y, int z, Block::BlockType block, bool updateMesh = false);
+    void put(int x, int y, int z, Block::BlockType block);
     bool update();
     int render(Shader* shader, const sglm::frustum& frustum);
     void addNeighbor(Chunk* chunk, Direction direction);
