@@ -172,10 +172,6 @@ int Chunk::getNumNeighbors() const {
     return m_numNeighbors;
 }
 
-// int Chunk::getHighestBlock(int x, int z) const {
-//     return m_highest_solid_block[x][z];
-// }
-
 bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {
     auto [x, y, z] = ray.pos;
     int cx = m_posX * CHUNK_WIDTH;

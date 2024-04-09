@@ -11,8 +11,8 @@
 
 // A vertex is represented using 3 16-bit integers:
 // 
-// v1: x pos: 1111000000000000
-//     y pos: 0000000011110000
+// v1: x pos: 0111100000000000
+//     y pos: 0000000111100000
 //     z pos: 0000000000001111
 // 
 // v2: light: 1111000000000000
@@ -253,7 +253,7 @@ namespace Block {
         assert(isReal(type) || type == BlockType::OUTLINE);
 
         // position data: combine xyz coordinates into 16 bits
-        vertex_attrib_t posData = (vertex_attrib_t) ((x << 12) + (y << 4) + z);
+        vertex_attrib_t posData = (vertex_attrib_t) ((x << 11) + (y << 5) + z);
 
         int size = 0;
         std::vector<Vertex>& curBlockData = blockData[(int) type];
@@ -279,8 +279,8 @@ namespace Block {
     }
 
     sglm::vec3 getBlockPosition(const Vertex& vertex) {
-        float x = (float) (vertex.v1 >> 12);
-        float y = (float) ((vertex.v1 >> 4) & 0xF);
+        float x = (float) (vertex.v1 >> 11);
+        float y = (float) ((vertex.v1 >> 5) & 0xF);
         float z = (float) (vertex.v1 & 0xF);
         return { x, y, z };
     }
