@@ -12,6 +12,7 @@ enum class Biome {
 
 static FastNoiseLite terrain_height; // simplex noise that determines the ground height
 static FastNoiseLite biome; // cellular noise that determines the biome
+static FastNoiseLite noise3d;
 // create a uniform int distribution that produces ints from 0 to 99 inclusive
 // mt is the engine which generates the random numbers
 static std::mt19937 mt;
@@ -21,6 +22,9 @@ static std::uniform_int_distribution<std::mt19937::result_type> tree_height(4, 8
 
 
 void Chunk::initNoise() {
+    noise3d.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    noise3d.SetFrequency(0.03f);
+
     terrain_height.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
     terrain_height.SetFractalType(FastNoiseLite::FractalType_FBm);
     terrain_height.SetFrequency(0.003f);
@@ -34,11 +38,11 @@ void Chunk::initNoise() {
     biome.SetDomainWarpAmp(300.0f);
 }
 
-static int getHeight(float x, float z) {
-    float h = terrain_height.GetNoise(x, z);
-    float min = 30.0f, max = 80.0f;
-    return (int) ((h + 1.0) / 2.0 * (max - min) + min);
-}
+// static int getHeight(float x, float z) {
+//     float h = terrain_height.GetNoise(x, z);
+//     float min = 30.0f, max = 80.0f;
+//     return (int) ((h + 1.0) / 2.0 * (max - min) + min);
+// }
 
 // static Biome getBiome(float x, float z) {
 //     biome.SetFrequency(0.01f);
@@ -94,14 +98,20 @@ void Chunk::generateTerrain(Block::BlockType* data, int seed) {
         for (int z = 0; z < CHUNK_WIDTH; ++z) {
             float nx = (float) x + CHUNK_WIDTH * m_posX;
             float nz = (float) z + CHUNK_WIDTH * m_posZ;
-            int groundHeight = getHeight(nx, nz);
-            for (int y = 0; y <= groundHeight - 4; ++y) {
-                data[Chunk::chunk_index(x, y, z)] = Block::BlockType::STONE;
+            for (int y = 0; y < CHUNK_HEIGHT; ++y) {
+                float noiseVal = noise3d.GetNoise(nx, (float) y, nz);
+                if (noiseVal > 0.0) {
+                    data[Chunk::chunk_index(x, y, z)] = Block::BlockType::STONE;
+                }
             }
-            data[Chunk::chunk_index(x, groundHeight - 3, z)] = Block::BlockType::DIRT;
-            data[Chunk::chunk_index(x, groundHeight - 2, z)] = Block::BlockType::DIRT;
-            data[Chunk::chunk_index(x, groundHeight - 1, z)] = Block::BlockType::DIRT;
-            data[Chunk::chunk_index(x, groundHeight, z)] = Block::BlockType::GRASS;
+            // int groundHeight = getHeight(nx, nz);
+            // for (int y = 0; y <= groundHeight - 4; ++y) {
+            //     data[Chunk::chunk_index(x, y, z)] = Block::BlockType::STONE;
+            // }
+            // data[Chunk::chunk_index(x, groundHeight - 3, z)] = Block::BlockType::DIRT;
+            // data[Chunk::chunk_index(x, groundHeight - 2, z)] = Block::BlockType::DIRT;
+            // data[Chunk::chunk_index(x, groundHeight - 1, z)] = Block::BlockType::DIRT;
+            // data[Chunk::chunk_index(x, groundHeight, z)] = Block::BlockType::GRASS;
             // data[Chunk::chunk_index(x, groundHeight + 1, z)] = Block::BlockType::GRASS_PLANT;
         }
     }
