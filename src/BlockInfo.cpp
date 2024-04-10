@@ -280,8 +280,8 @@ namespace Block {
 
     sglm::vec3 getBlockPosition(const Vertex& vertex) {
         float x = (float) (vertex.v1 >> 11);
-        float y = (float) ((vertex.v1 >> 5) & 0xF);
-        float z = (float) (vertex.v1 & 0xF);
+        float y = (float) ((vertex.v1 >> 5) & 0x1F);
+        float z = (float) (vertex.v1 & 0x1F);
         return { x, y, z };
     }
 

@@ -13,7 +13,7 @@ Chunk::Subchunk::Subchunk(int y, const Block::BlockType* data) : m_Y{ y },
 void Chunk::Subchunk::updateMesh(const Chunk* this_chunk) {
     m_mesh.erase();
     unsigned int lim = m_mesh_size == -1 ?
-        40000 :
+        100000 :
         m_mesh_size + 1024;
     vertex_attrib_t* data = nullptr;
     while (true) {
