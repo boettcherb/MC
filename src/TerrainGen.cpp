@@ -1,4 +1,5 @@
 #include "Chunk.h"
+#include "Block.h"
 #include <FastNoiseLite/FastNoiseLite.h>
 
 #include <random>

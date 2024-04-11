@@ -4,7 +4,7 @@
 #include "Shader.h"
 #include "Player.h"
 #include "Face.h"
-#include "BlockInfo.h"
+#include "Block.h"
 #include "Database.h"
 
 #include <new>

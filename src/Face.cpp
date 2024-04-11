@@ -1,6 +1,6 @@
 #include "Face.h"
 #include "Constants.h"
-#include "BlockInfo.h"
+#include "Block.h"
 #include <sglm/sglm.h>
 #include <cstring>
 #include <cmath>

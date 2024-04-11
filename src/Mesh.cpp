@@ -2,7 +2,7 @@
 #include "Constants.h"
 #include "Shader.h"
 #include "Face.h"
-#include "BlockInfo.h"
+#include "Block.h"
 #include <glad/glad.h>
 #include <vector>
 #include <cassert>

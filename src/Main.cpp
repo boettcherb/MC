@@ -3,7 +3,6 @@
 #include "Player.h"
 #include "Texture.h"
 #include "World.h"
-#include "BlockInfo.h"
 #include "Database.h"
 
 #include <glad/glad.h>

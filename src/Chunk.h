@@ -1,7 +1,7 @@
 #ifndef CHUNK_H_INCLUDED
 #define CHUNK_H_INCLUDED
 
-#include "BlockInfo.h"
+#include "Block.h"
 #include "Constants.h"
 #include "Shader.h"
 #include "Mesh.h"

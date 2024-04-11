@@ -1,5 +1,5 @@
 #include "Chunk.h"
-#include "BlockInfo.h"
+#include "Block.h"
 #include "Constants.h"
 
 #include <iostream>

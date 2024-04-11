@@ -1,5 +1,5 @@
 #include "Chunk.h"
-#include "BlockInfo.h"
+#include "Block.h"
 #include "Shader.h"
 #include "Mesh.h"
 #include "Face.h"
