@@ -16,6 +16,14 @@
 
 class Chunk {
 
+    enum class Status {
+        EMPTY, // chunk object is created, but nothing has been generated/loaded yet
+        STRUCTURES, 
+        // structures originating in this chunk have been created
+        // has references to structures from all surrounding chunks (ready for terrain gen)
+
+    };
+
     // Implementation in BlockList.cpp
     class BlockList {
         typedef unsigned long long uint64;
@@ -49,6 +57,7 @@ class Chunk {
         int m_mesh_size; // number of attributes
         Mesh m_mesh;
         BlockList m_blocks;
+
 
         Subchunk(int y, const Block::BlockType* data);
         void updateMesh(const Chunk* this_chunk);

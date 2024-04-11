@@ -182,7 +182,7 @@ void World::LoadChunks() {
         }
 
         // create a copy of the chunks so I can loop through through all the
-        // chunks and add chunks at the same time.
+        // chunks and add/remove chunks at the same time.
         std::vector<std::pair<std::pair<int, int>, Chunk*>> chunks;
         chunks.reserve(m_chunks.size());
         for (const auto& [pos, chunk] : m_chunks) {
@@ -192,7 +192,7 @@ void World::LoadChunks() {
         for (const auto& [pos, chunk] : chunks) {
             int x = pos.first, z = pos.second;
             int dist_sq = (px - x) * (px - x) + (pz - z) * (pz - z);
-            if (dist_sq > Player::getLoadRadius() * Player::getLoadRadius()) {
+            if (dist_sq > Player::getUnloadRadius() * Player::getUnloadRadius()) {
                 removeChunk(x, z, chunk);
             }
         }
@@ -224,12 +224,9 @@ void World::LoadChunks() {
 
 void World::addChunk(int x, int z, const void* data) {
     // if the chunk has already been loaded, don't do anything
-    m_chunksMutex.lock();
     if (m_chunks.count({ x, z }) == 1) {
-        m_chunksMutex.unlock();
         return;
     }
-    m_chunksMutex.unlock();
 
     // create the new chunk and add it to m_chunks
     // unlock while generating terrain for the chunk
@@ -237,6 +234,7 @@ void World::addChunk(int x, int z, const void* data) {
     Chunk* newChunk = new Chunk(x, z, block_data);
     m_chunksMutex.lock();
     m_chunks.emplace(std::make_pair(x, z), newChunk);
+    m_chunksMutex.unlock();
 
     // add neighbors to the new chunk.
     auto px = m_chunks.find({ x + 1, z });
@@ -259,12 +257,11 @@ void World::addChunk(int x, int z, const void* data) {
         newChunk->addNeighbor(mz->second, MINUS_Z);
         mz->second->addNeighbor(newChunk, PLUS_Z);
     }
-    m_chunksMutex.unlock();
 }
 
 void World::removeChunk(int x, int z, Chunk* chunk) {
-    m_chunksMutex.lock();
     assert(m_chunks.count({ x, z }) == 1);
+    m_chunksMutex.lock();
     m_chunks.erase({ x, z });
     m_chunksMutex.unlock();
     if (chunk->wasUpdated()) {

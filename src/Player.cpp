@@ -28,7 +28,7 @@ int Player::getLoadRadius() {
 }
 
 int Player::getUnloadRadius() {
-    return Player::load_radius + 2;
+    return Player::load_radius + 1;
 }
 
 void Player::setLoadRadius(int radius) {

@@ -28,7 +28,7 @@ inline const char* TEXTURE_SHEET = "resources/textures/texture_sheet.png";
 // of its corners. This value is used during frustum culling to determine
 // whether a sub-chunk is within the view frustum. It is much easier to treat
 // each sub-chaunk as a sphere than calculate its actual bounding box.
-inline constexpr float SUB_CHUNK_RADIUS = 30  /*13.86f*/;
+inline constexpr float SUB_CHUNK_RADIUS = 30;
 
 typedef unsigned short vertex_attrib_t;
 struct Vertex {
