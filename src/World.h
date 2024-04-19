@@ -1,5 +1,5 @@
-#ifndef CHUNK_LOADER_H_INCLUDED
-#define CHUNK_LOADER_H_INCLUDED
+#ifndef WORLD_H_INCLUDED
+#define WORLD_H_INCLUDED
 
 #include "Chunk.h"
 #include "Shader.h"
