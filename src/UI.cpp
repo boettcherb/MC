@@ -66,7 +66,7 @@ void render_HUD(Shader* shader) {
 void render_imgui_window(ImGuiIO& io, const Player& player) {
     static bool show_demo_window = false;
     static ImVec4 color = ImVec4(0.2f, 0.3f, 0.8f, 1.0f);
-    static int render_distance = Player::getLoadRadius();
+    static int render_distance = Player::getRenderDist();
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -100,10 +100,10 @@ void render_imgui_window(ImGuiIO& io, const Player& player) {
     int prev_dist = render_distance;
     ImGui::SliderInt("render distance", &render_distance, 1, 32);
     if (prev_dist != render_distance) {
-        Player::setLoadRadius(render_distance);
+        Player::setRenderDist(render_distance);
     }
     // percentage of subchunks rendered
-    auto [rendered, total] = Player::chunks_rendered;
+    auto [rendered, total] = player.chunks_rendered;
     ImGui::Text("SubChunks rendered: %d, total: %d (%.2f%%)",
                 rendered, total, (float) rendered / total * 100.0f);
     // fov

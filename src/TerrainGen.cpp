@@ -88,8 +88,8 @@ static int getHeight(float x, float z) {
 
 // fill data (a 1D array of BLOCKS_PER_CHUNK blocks) with
 // the type of each block in the chunk
-void Chunk::generateTerrain(Block::BlockType* data, int seed) {
-    mt.seed(seed * m_posX * m_posZ);
+void Chunk::generateTerrain(Block::BlockType* data, int seed) const {
+    mt.seed(seed * m_X * m_Z);
     terrain_height.SetSeed(seed);
     biome.SetSeed(seed);
 
@@ -97,8 +97,8 @@ void Chunk::generateTerrain(Block::BlockType* data, int seed) {
 
     for (int x = 0; x < CHUNK_WIDTH; ++x) {
         for (int z = 0; z < CHUNK_WIDTH; ++z) {
-            float nx = (float) x + CHUNK_WIDTH * m_posX;
-            float nz = (float) z + CHUNK_WIDTH * m_posZ;
+            float nx = (float) x + CHUNK_WIDTH * m_X;
+            float nz = (float) z + CHUNK_WIDTH * m_Z;
             // for (int y = 0; y < CHUNK_HEIGHT; ++y) {
             //     float noiseVal = noise3d.GetNoise(nx, (float) y, nz);
             //     if (noiseVal > 0.0) {
@@ -117,4 +117,9 @@ void Chunk::generateTerrain(Block::BlockType* data, int seed) {
                 data[Chunk::chunk_index(x, groundHeight + 1, z)] = Block::BlockType::GRASS_PLANT;
         }
     }
+}
+
+void Chunk::generateStructures(int x, int z) {
+    (void) x, z;
+    m_status = Status::STRUCTURES;
 }

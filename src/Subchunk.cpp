@@ -5,23 +5,20 @@
 #include <iostream>
 #include <cassert>
 
-Chunk::Subchunk::Subchunk(int y, const Block::BlockType* data) : m_Y{ y },
-    m_blocks { BlockList(data, BLOCKS_PER_SUBCHUNK) } {
+Chunk::Subchunk::Subchunk(int y) : m_Y{ y } {
     m_mesh_size = -1;
 }
 
 void Chunk::Subchunk::updateMesh(const Chunk* this_chunk) {
     m_mesh.erase();
-    unsigned int lim = m_mesh_size == -1 ?
-        100000 :
-        m_mesh_size + 1024;
+    unsigned int lim = m_mesh_size == -1 ? 50000 : m_mesh_size + 1024;
     vertex_attrib_t* data = nullptr;
     while (true) {
         try {
             data = new vertex_attrib_t[lim];
             unsigned int size = getVertexData(this_chunk, lim * sizeof(vertex_attrib_t), data);
             assert(size <= lim * sizeof(vertex_attrib_t));
-            m_mesh.generate(size, data, true, this_chunk->m_posX, m_Y, this_chunk->m_posZ);
+            m_mesh.generate(size, data, true, this_chunk->m_X, m_Y, this_chunk->m_Z);
             m_mesh_size = size / sizeof(vertex_attrib_t);
             delete[] data;
             break;
@@ -43,6 +40,7 @@ static inline bool inbounds(int x, int y, int z) {
 
 unsigned int Chunk::Subchunk::getVertexData(const Chunk* this_chunk, int byte_lim,
                                             vertex_attrib_t* data) const {
+    assert(this_chunk->m_status >= Status::TERRAIN);
     vertex_attrib_t* start = data; // record the current byte address
     Block::BlockType* blocks = m_blocks.get_all();
     int y_offs = m_Y * SUBCHUNK_HEIGHT;

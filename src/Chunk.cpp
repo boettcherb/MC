@@ -8,21 +8,11 @@
 #include <algorithm>
 #include <cassert>
 
-Chunk::Chunk(int x, int z, const Block::BlockType* blockData): m_posX{ x }, m_posZ{ z },
-    m_numNeighbors{0}, m_updated{false}, m_rendered{false} {
+Chunk::Chunk(int x, int z) : m_X{ x }, m_Z{ z }, m_numNeighbors{ 0 },
+m_toDelete{ false }, m_updated{ false }, m_status{ Status::EMPTY } {
     m_neighbors.fill(nullptr);
-    if (blockData == nullptr) {
-        Block::BlockType* data = new Block::BlockType[BLOCKS_PER_CHUNK];
-        generateTerrain(data, 1337);
-        for (int y = 0; y < NUM_SUBCHUNKS; ++y) {
-            m_subchunks[y] = new Subchunk(y, data + y * BLOCKS_PER_SUBCHUNK);
-        }
-        delete[] data;
-    }
-    else {
-        for (int y = 0; y < NUM_SUBCHUNKS; ++y) {
-            m_subchunks[y] = new Subchunk(y, blockData + y * BLOCKS_PER_SUBCHUNK);
-        }
+    for (int y = 0; y < NUM_SUBCHUNKS; ++y) {
+        m_subchunks[y] = new Subchunk(y);
     }
 }
 
@@ -36,9 +26,11 @@ Chunk::~Chunk() {
     if (m_neighbors[MINUS_Z] != nullptr) m_neighbors[MINUS_Z]->removeNeighbor(PLUS_Z);
 }
 
-bool Chunk::wasUpdated() const {
-    return m_updated;
-}
+bool Chunk::wasUpdated() const { return m_updated; }
+void Chunk::updateHandled() { m_updated = false; }
+Chunk::Status Chunk::getStatus() const { return m_status; }
+void Chunk::setLoading() { m_status = Status::LOADING; }
+void Chunk::setToDelete() { m_toDelete = true; }
 
 // The caller is responsible for freeing the returned array.
 const void* Chunk::getBlockData() const {
@@ -51,20 +43,11 @@ const void* Chunk::getBlockData() const {
     return data;
 }
 
-int Chunk::subchunk_index(int x, int y, int z) {
-    assert(x >= 0 && x < CHUNK_WIDTH);
-    assert(y >= 0 && y < SUBCHUNK_HEIGHT);
-    assert(z >= 0 && z < CHUNK_WIDTH);
-    assert(x * CHUNK_WIDTH * SUBCHUNK_HEIGHT + z * SUBCHUNK_HEIGHT + y < BLOCKS_PER_SUBCHUNK);
-    return x * CHUNK_WIDTH * SUBCHUNK_HEIGHT + z * SUBCHUNK_HEIGHT + y;
-}
-
-int Chunk::chunk_index(int x, int y, int z) {
-    int index = subchunk_index(x, y % SUBCHUNK_HEIGHT, z);
-    return index + BLOCKS_PER_SUBCHUNK * (y / SUBCHUNK_HEIGHT);
-}
-
 void Chunk::put(int x, int y, int z, Block::BlockType block) {
+    assert(m_status >= Status::TERRAIN);
+    assert(x >= 0 && x < CHUNK_WIDTH);
+    assert(y >= 0 && y < CHUNK_HEIGHT);
+    assert(z >= 0 && z < CHUNK_WIDTH);
     assert(Block::isReal(block));
     int subchunk = y / SUBCHUNK_HEIGHT;
     m_subchunks[subchunk]->m_blocks.put(x, y % SUBCHUNK_HEIGHT, z, block);
@@ -76,6 +59,7 @@ void Chunk::put(int x, int y, int z, Block::BlockType block) {
         m_subchunks[subchunk + 1]->updateMesh(this);
     else if (y != 0 && y % SUBCHUNK_HEIGHT == 0)
         m_subchunks[subchunk - 1]->updateMesh(this);
+    assert(m_numNeighbors == 4);
     if (x == CHUNK_WIDTH - 1)
         m_neighbors[PLUS_X]->m_subchunks[subchunk]->updateMesh(m_neighbors[PLUS_X]);
     else if (x == 0)
@@ -91,6 +75,7 @@ void Chunk::put(int x, int y, int z, Block::BlockType block) {
 // x, y, and z could be 1 outside the range because in Chunk::getVertexData()
 // we check each block's surrounding blocks to see if they are transparent.
 Block::BlockType Chunk::get(int x, int y, int z) const {
+    assert(m_status >= Status::TERRAIN);
     assert(x >= -1 && x <= CHUNK_WIDTH);
     assert(y >= -1 && y <= CHUNK_HEIGHT);
     assert(z >= -1 && z <= CHUNK_WIDTH);
@@ -112,8 +97,8 @@ Block::BlockType Chunk::get(int x, int y, int z) const {
 // the view and projection matrices must be set before this function is called.
 int Chunk::render(Shader* shader, const sglm::frustum& frustum) {
     int subChunksRendered = 0;
-    float cx = (float) (m_posX * CHUNK_WIDTH);
-    float cz = (float) (m_posZ * CHUNK_WIDTH);
+    float cx = (float) (m_X * CHUNK_WIDTH);
+    float cz = (float) (m_Z * CHUNK_WIDTH);
     for (int i = 0; i < NUM_SUBCHUNKS; ++i) {
         float cy = (float) (i * SUBCHUNK_HEIGHT);
         float ox = CHUNK_WIDTH / 2.0f;
@@ -129,53 +114,84 @@ int Chunk::render(Shader* shader, const sglm::frustum& frustum) {
 
 // called (basically) every frame by World::update()
 bool Chunk::update() {
-    bool updated = false;
-    if (!m_rendered && m_numNeighbors == 4) {
+    bool rendered = false;
+    if (m_toDelete) {
+        deleteBlockData();
+        m_toDelete = false;
+    }
+    else if (m_status == Status::TERRAIN && m_numNeighbors == 4) {
         // render this chunk
         for (Subchunk* subchunk : m_subchunks) {
             subchunk->updateMesh(this);
         }
-        m_rendered = true;
-        updated = true;
+        m_status = Status::FULL;
+        rendered = true;
     }
-    else if (m_rendered && m_numNeighbors != 4) {
+    else if (m_status == Status::FULL && m_numNeighbors != 4) {
         // unload this chunk
         for (Subchunk* subchunk : m_subchunks) {
             subchunk->m_mesh.erase();
         }
-        m_rendered = false;
+        m_status = Status::TERRAIN;
     }
-    return updated;
+    return rendered;
+}
+
+void Chunk::addBlockData(const Block::BlockType* blockData) {
+    assert(m_status == Status::LOADING);
+    for (int y = 0; y < NUM_SUBCHUNKS; ++y) {
+        m_subchunks[y]->m_blocks.create(blockData + y * BLOCKS_PER_SUBCHUNK, BLOCKS_PER_SUBCHUNK);
+    }
+    for (int neighbor = 0; neighbor < 4; ++neighbor) {
+        Chunk* n = m_neighbors[neighbor];
+        assert(n->m_neighbors[neighbor + (neighbor % 2 ? -1 : 1)] == this);
+        ++n->m_numNeighbors;
+        assert(n->m_numNeighbors <= 4);
+    }
+    m_status = Status::TERRAIN;
+}
+
+void Chunk::deleteBlockData() {
+    assert(m_status == Status::TERRAIN || m_status == Status::FULL);
+    for (Subchunk* subchunk : m_subchunks) {
+        subchunk->m_blocks.deleteAll();
+        subchunk->m_mesh.erase();
+    }
+    for (int neighbor = 0; neighbor < 4; ++neighbor) {
+        Chunk* n = m_neighbors[neighbor];
+        if (n != nullptr) {
+            assert(n->m_neighbors[neighbor + (neighbor % 2 ? -1 : 1)] == this);
+            --n->m_numNeighbors;
+            assert(n->m_numNeighbors >= 0);
+        }
+    }
+    m_status = Status::STRUCTURES;
 }
 
 void Chunk::addNeighbor(Chunk* chunk, Direction direction) {
     assert(m_neighbors[direction] == nullptr);
     m_neighbors[direction] = chunk;
-    ++m_numNeighbors;
-    assert(m_numNeighbors >= 0 && m_numNeighbors <= 4);
+    assert(m_numNeighbors < 4);
+    assert(m_status < Status::FULL);
 }
 
 void Chunk::removeNeighbor(Direction direction) {
     assert(m_neighbors[direction] != nullptr);
+    assert(m_numNeighbors < 4);
+    assert(m_status < Status::FULL);
     m_neighbors[direction] = nullptr;
-    --m_numNeighbors;
-    assert(m_numNeighbors >= 0 && m_numNeighbors < 4);
 }
 
 std::pair<std::pair<int, int>, Chunk*> Chunk::getNeighbor(int index) const {
-    int x = m_posX + (index == PLUS_X) - (index == MINUS_X);
-    int z = m_posZ + (index == PLUS_Z) - (index == MINUS_Z);
+    int x = m_X + (index == PLUS_X) - (index == MINUS_X);
+    int z = m_Z + (index == PLUS_Z) - (index == MINUS_Z);
     return { { x, z }, m_neighbors[index] };
-}
-
-int Chunk::getNumNeighbors() const {
-    return m_numNeighbors;
 }
 
 bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {
     auto [x, y, z] = ray.pos;
-    int cx = m_posX * CHUNK_WIDTH;
-    int cz = m_posZ * CHUNK_WIDTH;
+    int cx = m_X * CHUNK_WIDTH;
+    int cz = m_Z * CHUNK_WIDTH;
     if (x + ray.length < cx || x - ray.length > cx + CHUNK_WIDTH)
         return false;
     if (z + ray.length < cz || z - ray.length > cz + CHUNK_WIDTH)
@@ -196,4 +212,17 @@ bool Chunk::intersects(const sglm::ray& ray, Face::Intersection& isect) {
         }
     }
     return foundIntersection;
+}
+
+int Chunk::subchunk_index(int x, int y, int z) {
+    assert(x >= 0 && x < CHUNK_WIDTH);
+    assert(y >= 0 && y < SUBCHUNK_HEIGHT);
+    assert(z >= 0 && z < CHUNK_WIDTH);
+    assert(x * CHUNK_WIDTH * SUBCHUNK_HEIGHT + z * SUBCHUNK_HEIGHT + y < BLOCKS_PER_SUBCHUNK);
+    return x * CHUNK_WIDTH * SUBCHUNK_HEIGHT + z * SUBCHUNK_HEIGHT + y;
+}
+
+int Chunk::chunk_index(int x, int y, int z) {
+    int index = subchunk_index(x, y % SUBCHUNK_HEIGHT, z);
+    return index + BLOCKS_PER_SUBCHUNK * (y / SUBCHUNK_HEIGHT);
 }

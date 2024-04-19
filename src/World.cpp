@@ -22,18 +22,8 @@
 #define SGLM_IMPLEMENTATION
 #include <sglm/sglm.h>
 
-World::World(Shader* shader, Player* player) {
-    // initially, load a 5x5 grid of chunks around the player
-    auto [cx, cz] = player->getPlayerChunk();
-    int spawnRadius = 2;
-    for (int x = cx - spawnRadius; x <= cx + spawnRadius; ++x) {
-        for (int z = cz - spawnRadius; z <= cz + spawnRadius; ++z) {
-            database::request_load(x, z);
-        }
-    }
-    m_shader = shader;
-    m_player = player;
-    m_chunkLoaderThreadShouldClose = false;
+World::World(Shader* shader, Player* player) : m_shader{ shader },
+m_player{ player }, m_chunkLoaderThreadShouldClose{ false } {
     m_chunkLoaderThread = std::thread(&World::LoadChunks, this);
 }
 
@@ -138,100 +128,140 @@ void World::renderAll() {
         total += NUM_SUBCHUNKS;
     }
     m_chunksMutex.unlock();
-    Player::chunks_rendered = { rendered, total };
+    m_player->chunks_rendered = { rendered, total };
+}
+
+static inline bool within_distance(int px, int pz, int cx, int cz, int dist) {
+    int dist_sq = (px - cx) * (px - cx) + (pz - cz) * (pz - cz);
+    return dist_sq <= dist * dist;
+}
+
+static void checkIfUpdated(Chunk* chunk, const std::pair<int, int>& pos) {
+    if (chunk->wasUpdated()) {
+        auto& [cx, cz] = pos;
+        database::request_store(cx, cz, BLOCKS_PER_CHUNK, chunk->getBlockData());
+        chunk->updateHandled();
+    }
 }
 
 void World::LoadChunks() {
     using namespace std::chrono_literals;
     while (!m_chunkLoaderThreadShouldClose) {
-
-        // Find all unloaded chunks that are adjacent to loaded chunks. Add
-        // these chunks to the 'candidates' set (no duplicates)
-        std::set<std::pair<int, int>> candidates;
-        for (const auto& [pos, chunk] : m_chunks) {
-            for (int i = 0; i < 4; ++i) {
-                auto [neighborPos, neighbor] = chunk->getNeighbor(i);
-                if (neighbor == nullptr) {
-                    candidates.insert(neighborPos);
-                }
-            }
-        }
-
-        // Out of all candidate chunks, find which ones are both within the
-        // player's render distance and within the player's view frustum.
-        // Load these chunks.
-        float diff = CHUNK_WIDTH / 2.0f;
+        bool updateMade = false;
         auto [px, pz] = m_player->getPlayerChunk();
-        sglm::frustum f = m_player->getFrustum();
-        for (const auto& [x, z] : candidates) {
-            int dist_sq = (x - px) * (x - px) + (z - pz) * (z - pz);
-            if (dist_sq > Player::getLoadRadius() * Player::getLoadRadius())
-                continue;
-            bool contains = false;
-            sglm::vec3 pos = { x * CHUNK_WIDTH + diff, 0.0f, z * CHUNK_WIDTH + diff };
-            for (int subchunk = 0; subchunk < NUM_SUBCHUNKS; ++subchunk) {
-                pos.y = subchunk * SUBCHUNK_HEIGHT + diff;
-                if (m_player->getFrustum().contains(pos, SUB_CHUNK_RADIUS)) {
-                    contains = true;
-                    break;
+
+        // Make sure that all chunks within Player::getLoadRadius() of the player are loaded
+        for (int x = px - Player::getLoadRadius(); x <= px + Player::getLoadRadius(); ++x) {
+            for (int z = pz - Player::getLoadRadius(); z <= pz + Player::getLoadRadius(); ++z) {
+                if (within_distance(px, pz, x, z, Player::getLoadRadius())) {
+                    if (m_chunks.find({ x, z }) == m_chunks.end()) {
+                        addChunk(x, z);
+                        updateMade = true;
+                    }
                 }
             }
-            if (contains) {
-                database::request_load(x, z);
-            }
         }
-
-        // create a copy of the chunks so I can loop through through all the
-        // chunks and add/remove chunks at the same time.
-        std::vector<std::pair<std::pair<int, int>, Chunk*>> chunks;
-        chunks.reserve(m_chunks.size());
+        
+        // Loop through every chunk:
+        // If a chunk is beyond the player's load radius, unload it
+        // If a chunk has Status::EMPTY, generate structures for it
+        // If a chunk is within the player's render distance and view frustum and does not
+        //     have Status::LOADING or higher, try loading it from the database.
+        // If a chunk is outside the player's un-render distance and has Status::FULL
+        //     or Status::TERRAIN, un-render it (delete its mesh and block data)
+        // 
+        std::vector<std::pair<std::pair<int, int>, Chunk*>> need_to_remove;
+        need_to_remove.reserve(64);
         for (const auto& [pos, chunk] : m_chunks) {
-            chunks.push_back({ pos, chunk });
-        }
-        // Remove chunks that are beyond the player's render distance
-        for (const auto& [pos, chunk] : chunks) {
-            int x = pos.first, z = pos.second;
-            int dist_sq = (px - x) * (px - x) + (pz - z) * (pz - z);
-            if (dist_sq > Player::getUnloadRadius() * Player::getUnloadRadius()) {
-                removeChunk(x, z, chunk);
+            const auto& [cx, cz] = pos;
+            if (!within_distance(px, pz, cx, cz, Player::getLoadRadius())) {
+                if (chunk->getStatus() <= Chunk::Status::STRUCTURES) {
+                    need_to_remove.push_back({ pos, chunk });
+                } else {
+                    checkIfUpdated(chunk, pos);
+                    chunk->setToDelete();
+                }
+                updateMade = true;
             }
+            else if (chunk->getStatus() == Chunk::Status::EMPTY) {
+                chunk->generateStructures(cx, cz);
+                assert(chunk->getStatus() == Chunk::Status::STRUCTURES);
+                updateMade = true;
+            }
+            else if (chunk->getStatus() < Chunk::Status::LOADING && within_distance(px, pz, cx, cz, Player::getRenderDist())) {
+                bool contains = false;
+                float diff = CHUNK_WIDTH / 2.0f;
+                sglm::vec3 sc_center = { cx * CHUNK_WIDTH + diff, 0.0f, cz * CHUNK_WIDTH + diff };
+                for (int subchunk = 0; subchunk < NUM_SUBCHUNKS; ++subchunk) {
+                    sc_center.y = subchunk * SUBCHUNK_HEIGHT + diff;
+                    if (m_player->getFrustum().contains(sc_center, SUB_CHUNK_RADIUS)) {
+                        contains = true;
+                        break;
+                    }
+                }
+                if (contains) {
+                    database::request_load(cx, cz);
+                    assert(m_chunks.find({ cx, cz }) != m_chunks.end());
+                    (*m_chunks.find({ cx, cz })).second->setLoading();
+                    updateMade = true;
+                }
+            }
+            else if (chunk->getStatus() >= Chunk::Status::TERRAIN && !within_distance(px, pz, cx, cz, Player::getUnRenderDist())) {
+                checkIfUpdated(chunk, pos);
+                chunk->setToDelete();
+                updateMade = true;
+            }
+        }
+        for (const auto& [pos, chunk] : need_to_remove) {
+            auto& [x, z] = pos;
+            removeChunk(x, z, chunk);
         }
 
         // load chunks from the database
         database::Query q = database::get_load_result();
         while (q.type != database::QUERY_NONE) {
             assert(q.type == database::QUERY_LOAD);
-            addChunk(q.x, q.z, q.data);
-            delete[] q.data;
+            assert(m_chunks.find({ q.x, q.z }) != m_chunks.end());
+            const auto& [pos, chunk] = *m_chunks.find({ q.x, q.z });
+            assert(chunk->getStatus() == Chunk::Status::LOADING);
+            if (q.data != nullptr) {
+                chunk->addBlockData(reinterpret_cast<const Block::BlockType*>(q.data));
+                delete[] q.data;
+            } else {
+                Block::BlockType* data = new Block::BlockType[BLOCKS_PER_CHUNK];
+                chunk->generateTerrain(data, 1337);
+                chunk->addBlockData(data);
+                delete[] data;
+            }
+            updateMade = true;
             q = database::get_load_result();
         }
 
-        // prevent busy waiting
-        std::this_thread::sleep_for(50ms);
-
+        if (!updateMade) {
+            std::this_thread::sleep_for(50ms);
+        }
     }
 
     // thread is closing, unload all chunks
+    for (const auto& [pos, chunk] : m_chunks) {
+        if (chunk->getStatus() >= Chunk::Status::TERRAIN) {
+            checkIfUpdated(chunk, pos);
+            chunk->deleteBlockData();
+        }
+    }
     while (!m_chunks.empty()) {
-        auto itr = m_chunks.begin();
-        int x = itr->first.first;
-        int z = itr->first.second;
-        Chunk* chunk = itr->second;
-        removeChunk(x, z, chunk);
+        const auto& [pos, chunk] = *m_chunks.begin();
+        removeChunk(pos.first, pos.second, chunk);
     }
     assert(m_chunks.empty());
 }
 
-void World::addChunk(int x, int z, const void* data) {
+void World::addChunk(int x, int z) {
     // if the chunk has already been loaded, don't do anything
-    if (m_chunks.count({ x, z }) == 1) {
-        return;
-    }
+    assert(m_chunks.find({ x, z }) == m_chunks.end());
 
     // create the new chunk and add it to m_chunks
-    // unlock while generating terrain for the chunk
-    const Block::BlockType* block_data = reinterpret_cast<const Block::BlockType*>(data);
-    Chunk* newChunk = new Chunk(x, z, block_data);
+    Chunk* newChunk = new Chunk(x, z);
     m_chunksMutex.lock();
     m_chunks.emplace(std::make_pair(x, z), newChunk);
     m_chunksMutex.unlock();
@@ -260,12 +290,11 @@ void World::addChunk(int x, int z, const void* data) {
 }
 
 void World::removeChunk(int x, int z, Chunk* chunk) {
-    assert(m_chunks.count({ x, z }) == 1);
+    assert(m_chunks.find({ x, z }) != m_chunks.end());
+    assert(chunk->getStatus() < Chunk::Status::TERRAIN);
+    assert(!chunk->wasUpdated());
     m_chunksMutex.lock();
     m_chunks.erase({ x, z });
     m_chunksMutex.unlock();
-    if (chunk->wasUpdated()) {
-        database::request_store(x, z, BLOCKS_PER_CHUNK, chunk->getBlockData());
-    }
     delete chunk; // calls destructor, removes neighbors
 }

@@ -28,7 +28,7 @@ private:
     void checkViewRayCollisions();
 
     void LoadChunks();
-    void addChunk(int x, int z, const void* data);
+    void addChunk(int x, int z);
     void removeChunk(int x, int z, Chunk* chunk);
 };
 

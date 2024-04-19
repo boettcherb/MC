@@ -15,23 +15,36 @@
 static constexpr int NO_BLOCK = (int) Block::BlockType::NO_BLOCK;
 typedef unsigned long long uint64;
 
-Chunk::BlockList::BlockList(const Block::BlockType* blocks, int size) : m_size{ size } {
-    assert(blocks != nullptr);
-    m_index.fill(NO_BLOCK);
-    for (int i = 0; i < size; ++i) {
-        add_block(blocks[i], false);
-    }
+Chunk::BlockList::BlockList() {
     m_data = nullptr;
-    m_bits_per_block = 0;
-    m_bitmask = 0;
-    build(blocks);
+    deleteAll();
 }
 
 Chunk::BlockList::~BlockList() {
     delete[] m_data;
 }
 
+void Chunk::BlockList::create(const Block::BlockType* blocks, int size) {
+    assert(blocks != nullptr);
+    deleteAll();
+    m_size = size;
+    for (int i = 0; i < size; ++i) {
+        add_block(blocks[i], false);
+    }
+    build(blocks);
+}
+
+void Chunk::BlockList::deleteAll() {
+    m_bitmask = m_size = m_data_size = m_bits_per_block = m_blocks_per_ll = 0;
+    m_index.fill(NO_BLOCK);
+    m_palette.clear();
+    delete[] m_data;
+    m_data = nullptr;
+    m_built = false;
+}
+
 Block::BlockType Chunk::BlockList::get(int x, int y, int z) const {
+    assert(m_built);
     int block_index = Chunk::subchunk_index(x, y, z);
     int data_index = block_index / m_blocks_per_ll;
     int i = block_index % m_blocks_per_ll;
@@ -39,6 +52,7 @@ Block::BlockType Chunk::BlockList::get(int x, int y, int z) const {
 }
 
 void Chunk::BlockList::put(int x, int y, int z, Block::BlockType block) {
+    assert(m_built);
     assert(Block::isReal(block));
     add_block(block, true);
     int block_index = Chunk::subchunk_index(x, y, z);
@@ -52,6 +66,7 @@ void Chunk::BlockList::put(int x, int y, int z, Block::BlockType block) {
 // Convert the block data back into a Block::BlockType array. The caller is
 // responsible for freeing the returned array.
 Block::BlockType* Chunk::BlockList::get_all() const {
+    assert(m_built);
     int block_index = 0;
     Block::BlockType* blockList = new Block::BlockType[m_size];
     for (int i = 0; i < m_data_size; ++i) {
@@ -98,6 +113,7 @@ void Chunk::BlockList::build(const Block::BlockType* blocks) {
     } else {
         fill_data(blocks, num_bits);
     }
+    m_built = true;
 }
 
 // create m_data and fill it with the given blocks

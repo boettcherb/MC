@@ -15,25 +15,34 @@ inline constexpr float DEFAULT_FOV = 60.0f;
 inline constexpr float MIN_FOV = 5.0f;
 inline constexpr float MAX_FOV = 90.0f;
 
-int Player::load_radius = 10;
+int Player::render_dist = 6;
 int Player::reach = 15;
-std::pair<int, int> Player::chunks_rendered = { 0, 0 };
 
 static inline float clamp(float value, float low, float high) {
     return value < low ? low : (value > high ? high : value);
 }
 
-int Player::getLoadRadius() {
-    return Player::load_radius;
+/*
+Load Radius:   All chunks within this radius of the player exist, but are not fully
+               generated (the chunk does not have block data or a mesh yet)
+Render Radius: Chunks within this radius are fully generated and rendered to the screen
+*/
+
+int Player::getRenderDist() {
+    return Player::render_dist;
 }
 
-int Player::getUnloadRadius() {
-    return Player::load_radius + 1;
-}
-
-void Player::setLoadRadius(int radius) {
+void Player::setRenderDist(int radius) {
     assert(radius > 0);
-    Player::load_radius = radius;
+    Player::render_dist = radius;
+}
+
+int Player::getUnRenderDist() {
+    return Player::render_dist + 1;
+}
+
+int Player::getLoadRadius() {
+    return Player::getUnRenderDist() + (100 / CHUNK_WIDTH) + 1;
 }
 
 int Player::getReach() {

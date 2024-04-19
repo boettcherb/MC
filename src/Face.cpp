@@ -7,9 +7,8 @@
 #include <cassert>
 
 // the points must be given in counter-clockwise order
-Face::Face(sglm::vec3& a, sglm::vec3& b, sglm::vec3& c,
-           sglm::vec3& d, sglm::vec3& blockPosition)
-    : A{ a }, B{ b }, C{ c }, D{ d } {
+Face::Face(sglm::vec3& a, sglm::vec3& b, sglm::vec3& c, sglm::vec3& d, sglm::vec3& blockPosition) :
+A{ a }, B{ b }, C{ c }, D{ d } {
     normal = sglm::normalize(sglm::cross(B - A, C - A));
     bx = (int) blockPosition.x;
     by = (int) blockPosition.y;

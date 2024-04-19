@@ -16,14 +16,17 @@
 
 class Chunk {
 
-    enum class Status {
-        EMPTY, // chunk object is created, but nothing has been generated/loaded yet
-        STRUCTURES, 
-        // structures originating in this chunk have been created
-        // has references to structures from all surrounding chunks (ready for terrain gen)
-
+public:
+    enum class Status : unsigned char {
+        EMPTY,          // chunk is created, but nothing has been generated/loaded yet
+        STRUCTURES,     // structures originating in this chunk have been created
+        LOADING,        // This chunk is currently getting data from the db or from generateTerrain
+        TERRAIN,        // This chunk's terrain has been generated (or loaded from db)
+        FULL,           // This chunk is fully generated (has 4 neighbors with
+                        // Status::TERRAIN and a mesh)
     };
 
+private:
     // Implementation in BlockList.cpp
     class BlockList {
         typedef unsigned long long uint64;
@@ -35,15 +38,19 @@ class Chunk {
         int m_data_size;      // the number of uint64s in m_data
         int m_bits_per_block; // number of bits used to represent each block
         int m_blocks_per_ll;  // number of blocks in each uint64 in m_data
-        const int m_size;     // number of BlockTypes stored in this BlockList
+        int m_size;           // number of BlockTypes stored in this BlockList
+        // TODO: remove
+        bool m_built = false;
 
     public:
-        BlockList(const Block::BlockType* blocks, int size);
+        BlockList();
         ~BlockList();
 
         Block::BlockType get(int x, int y, int z) const;
         void put(int x, int y, int z, Block::BlockType block);
         Block::BlockType* get_all() const;
+        void create(const Block::BlockType* blocks, int size);
+        void deleteAll();
 
     private:
         void add_block(Block::BlockType block, bool rebuild);
@@ -58,8 +65,7 @@ class Chunk {
         Mesh m_mesh;
         BlockList m_blocks;
 
-
-        Subchunk(int y, const Block::BlockType* data);
+        Subchunk(int y);
         void updateMesh(const Chunk* this_chunk);
 
     private:
@@ -67,33 +73,45 @@ class Chunk {
                                    vertex_attrib_t* data) const;
     };
 
-    const int m_posX, m_posZ;
+    const int m_X, m_Z;
     std::array<Subchunk*, NUM_SUBCHUNKS> m_subchunks;
     std::array<Chunk*, 4> m_neighbors;
-
     int m_numNeighbors;
-    bool m_updated;  // true if any block has been updated since loading from db
-    bool m_rendered; // true if meshes have been generated and this chunk is being rendered to the screen
+    bool m_updated;
+    Status m_status;
+    bool m_toDelete; // true if block data should be deleted
 
 public:
-    Chunk(int x, int z, const Block::BlockType* blockData);
+    Chunk(int x, int z);
     ~Chunk();
 
     Block::BlockType get(int x, int y, int z) const;
     void put(int x, int y, int z, Block::BlockType block);
+
     bool update();
     int render(Shader* shader, const sglm::frustum& frustum);
+
+    void addBlockData(const Block::BlockType* blockData);
+    void deleteBlockData();
+    const void* getBlockData() const;
+
     void addNeighbor(Chunk* chunk, Direction direction);
     void removeNeighbor(Direction direction);
     std::pair<std::pair<int, int>, Chunk*> getNeighbor(int index) const;
-    int getNumNeighbors() const;
+
     bool intersects(const sglm::ray& ray, Face::Intersection& isect);
-    const void* getBlockData() const;
     bool wasUpdated() const;
+    void updateHandled();
+    Status getStatus() const;
+    void setLoading();
+    void setToDelete();
+
     static void initNoise(); // in TerrainGen.cpp
+    void generateTerrain(Block::BlockType* data, int seed) const; // in TerrainGen.cpp
+
+    void generateStructures(int x, int z);
 
 private:
-    void generateTerrain(Block::BlockType* data, int seed); // in TerrainGen.cpp
     static int chunk_index(int x, int y, int z);
     static int subchunk_index(int x, int y, int z);
 };

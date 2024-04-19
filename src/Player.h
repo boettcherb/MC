@@ -8,7 +8,7 @@
 #include <sglm/sglm.h>
 
 class Player {
-    static int load_radius;
+    static int render_dist;
     static int reach;
 
     sglm::vec3 m_position;
@@ -25,10 +25,11 @@ class Player {
     Face::Intersection m_viewRayIntersection;
 
 public:
-    static std::pair<int, int> chunks_rendered;
+    std::pair<int, int> chunks_rendered = { 0, 0 };
+    static int getRenderDist();
+    static void setRenderDist(int radius);
+    static int getUnRenderDist();
     static int getLoadRadius();
-    static int getUnloadRadius();
-    static void setLoadRadius(int radius);
     static int getReach();
     static void setReach(int reach);
 
