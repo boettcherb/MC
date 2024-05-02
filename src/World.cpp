@@ -184,7 +184,7 @@ void World::LoadChunks() {
                 updateMade = true;
             }
             else if (chunk->getStatus() == Chunk::Status::EMPTY) {
-                chunk->generateStructures(cx, cz);
+                chunk->generateStructures();
                 assert(chunk->getStatus() == Chunk::Status::STRUCTURES);
                 updateMade = true;
             }
@@ -194,7 +194,7 @@ void World::LoadChunks() {
                 sglm::vec3 sc_center = { cx * CHUNK_WIDTH + diff, 0.0f, cz * CHUNK_WIDTH + diff };
                 for (int subchunk = 0; subchunk < NUM_SUBCHUNKS; ++subchunk) {
                     sc_center.y = subchunk * SUBCHUNK_HEIGHT + diff;
-                    if (m_player->getFrustum().contains(sc_center, SUB_CHUNK_RADIUS)) {
+                    if (m_player->getFrustum().contains(sc_center, SUB_CHUNK_RADIUS * 2)) {
                         contains = true;
                         break;
                     }

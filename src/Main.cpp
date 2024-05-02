@@ -20,7 +20,7 @@ void resize_HUD(int width, int height);
 void render_HUD(Shader* shader);
 void render_imgui_window(ImGuiIO& io, const Player& player);
 
-static Player player = Player({0.0f, 80.0f, 0.0f}, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
+static Player player = Player({0.0f, 100.0f, 0.0f}, (float) INITIAL_SCREEN_WIDTH / INITIAL_SCREEN_HEIGHT);
 static bool mouse_captured = false;
 static bool mine_block = false;
 static bool f3_opened = false;
@@ -119,7 +119,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // // glfwWindowHint(GLFW_SAMPLES, 1); // anti-aliasing is causing lines between blocks
+    // glfwWindowHint(GLFW_SAMPLES, 1); // anti-aliasing is causing lines between blocks
 
     // create the main window
     //auto [scr_width, scr_height] = get_screen_size();

@@ -15,7 +15,7 @@ inline constexpr float DEFAULT_FOV = 60.0f;
 inline constexpr float MIN_FOV = 5.0f;
 inline constexpr float MAX_FOV = 90.0f;
 
-int Player::render_dist = 6;
+int Player::render_dist = 15;
 int Player::reach = 15;
 
 static inline float clamp(float value, float low, float high) {

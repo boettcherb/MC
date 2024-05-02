@@ -109,7 +109,7 @@ public:
     static void initNoise(); // in TerrainGen.cpp
     void generateTerrain(Block::BlockType* data, int seed) const; // in TerrainGen.cpp
 
-    void generateStructures(int x, int z);
+    void generateStructures();
 
 private:
     static int chunk_index(int x, int y, int z);

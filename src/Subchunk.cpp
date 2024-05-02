@@ -11,7 +11,7 @@ Chunk::Subchunk::Subchunk(int y) : m_Y{ y } {
 
 void Chunk::Subchunk::updateMesh(const Chunk* this_chunk) {
     m_mesh.erase();
-    unsigned int lim = m_mesh_size == -1 ? 50000 : m_mesh_size + 1024;
+    unsigned int lim = m_mesh_size == -1 ? 120000 : m_mesh_size + 1024;
     vertex_attrib_t* data = nullptr;
     while (true) {
         try {

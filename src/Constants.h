@@ -43,7 +43,7 @@ inline constexpr int VERTEX_SIZE = sizeof(vertex_attrib_t) * ATTRIBS_PER_VERTEX;
 // chunks allows us to load only the portion of the world that is around the
 // player while un-loading anything far away from the player.
 inline constexpr int CHUNK_WIDTH = 32;   // x, z
-inline constexpr int CHUNK_HEIGHT = 256; // y
+inline constexpr int CHUNK_HEIGHT = 128; // y
 inline constexpr int BLOCKS_PER_CHUNK = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
 
 // Each chunk is divided into 16x16x16 sub-chunks. Dividing a chunk into

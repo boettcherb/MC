@@ -43,8 +43,11 @@
 namespace Block {
 
     enum class Tex {
-        GRASS_TOP, GRASS_SIDES, DIRT, STONE, GRASS_PLANT,
+        GRASS_TOP, GRASS_SIDES, DIRT, STONE, SAND, SNOW, WATER,
+        GRASS_PLANT, BLUE_FLOWER, PINK_FLOWER, RED_FLOWER,
+        CACTUS_SIDES, CACTUS_END, DEAD_BUSH,
         OAK_LOG, OAK_LOG_END, OAK_LEAVES,
+        JUNGLE_LOG, JUNGLE_LOG_END, JUNGLE_LEAVES,
         OUTLINE, NUM_TEXTURES
     };
 
@@ -71,11 +74,23 @@ namespace Block {
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Grass
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Dirt
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Stone
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Sand
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Snow
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Water
         { NO_DIR, NO_DIR, NO_DIR, NO_DIR },                    // Grass Plant
+        { NO_DIR, NO_DIR, NO_DIR, NO_DIR },                    // Blue Flower
+        { NO_DIR, NO_DIR, NO_DIR, NO_DIR },                    // Pink Plant
+        { NO_DIR, NO_DIR, NO_DIR, NO_DIR },                    // Red Plant
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Cactus
+        { NO_DIR, NO_DIR, NO_DIR, NO_DIR },                    // Dead Bush
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Log
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Log PX
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Log PZ
         { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Oak Leaves
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Jungle Log
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Jungle Log PX
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Jungle Log PZ
+        { PLUS_X, MINUS_X, PLUS_Z, MINUS_Z, PLUS_Y, MINUS_Y }, // Jungle Leaves
         { NO_DIR, NO_DIR, NO_DIR, NO_DIR, NO_DIR, NO_DIR },    // Block Outline
         // examples for future blocks:
         // 1. OAK_SLAB_BOTTOM
@@ -97,10 +112,22 @@ namespace Block {
             { 0, 15 }, // Grass Sides
             { 1, 15 }, // Dirt
             { 3, 15 }, // Stone
+            { 4, 15 }, // Sand
+            { 5, 15 }, // Snow
+            { 6, 15 }, // Water
             { 0, 13 }, // Grass Plant
+            { 1, 13 }, // Blue Flower
+            { 2, 13 }, // Pink Flower
+            { 3, 13 }, // Red Flower
+            { 4, 13 }, // Cactus Sides
+            { 5, 13 }, // Cactus End
+            { 6, 13 }, // Dead Bush
             { 0, 14 }, // Oak Log
             { 1, 14 }, // Oak Log End
             { 2, 14 }, // Oak Leaves
+            { 3, 14 }, // Jungle Log
+            { 4, 14 }, // Jungle Log End
+            { 5, 14 }, // Jungle Leaves
             { 1, 0 },  // Block Outline
         };
         
@@ -130,11 +157,59 @@ namespace Block {
              { Tex::STONE, FaceType::MINUS_Z_NORMAL },
              { Tex::STONE, FaceType::PLUS_Y_NORMAL },
              { Tex::STONE, FaceType::MINUS_Y_NORMAL }},
+            // sand
+            {{ Tex::SAND, FaceType::PLUS_X_NORMAL },
+             { Tex::SAND, FaceType::MINUS_X_NORMAL },
+             { Tex::SAND, FaceType::PLUS_Z_NORMAL },
+             { Tex::SAND, FaceType::MINUS_Z_NORMAL },
+             { Tex::SAND, FaceType::PLUS_Y_NORMAL },
+             { Tex::SAND, FaceType::MINUS_Y_NORMAL }},
+            // snow
+            {{ Tex::SNOW, FaceType::PLUS_X_NORMAL },
+             { Tex::SNOW, FaceType::MINUS_X_NORMAL },
+             { Tex::SNOW, FaceType::PLUS_Z_NORMAL },
+             { Tex::SNOW, FaceType::MINUS_Z_NORMAL },
+             { Tex::SNOW, FaceType::PLUS_Y_NORMAL },
+             { Tex::SNOW, FaceType::MINUS_Y_NORMAL }},
+            // water
+            {{ Tex::WATER, FaceType::PLUS_X_NORMAL },
+             { Tex::WATER, FaceType::MINUS_X_NORMAL },
+             { Tex::WATER, FaceType::PLUS_Z_NORMAL },
+             { Tex::WATER, FaceType::MINUS_Z_NORMAL },
+             { Tex::WATER, FaceType::PLUS_Y_NORMAL },
+             { Tex::WATER, FaceType::MINUS_Y_NORMAL }},
             // grass plant
             {{ Tex::GRASS_PLANT, FaceType::MXMZ_TO_PXPZ_PLANT },
              { Tex::GRASS_PLANT, FaceType::PXPZ_TO_MXMZ_PLANT },
              { Tex::GRASS_PLANT, FaceType::MXPZ_TO_PXMZ_PLANT },
              { Tex::GRASS_PLANT, FaceType::PXMZ_TO_MXPZ_PLANT }},
+            // blue flower
+            {{ Tex::BLUE_FLOWER, FaceType::MXMZ_TO_PXPZ_PLANT },
+             { Tex::BLUE_FLOWER, FaceType::PXPZ_TO_MXMZ_PLANT },
+             { Tex::BLUE_FLOWER, FaceType::MXPZ_TO_PXMZ_PLANT },
+             { Tex::BLUE_FLOWER, FaceType::PXMZ_TO_MXPZ_PLANT }},
+            // pink flower
+            {{ Tex::PINK_FLOWER, FaceType::MXMZ_TO_PXPZ_PLANT },
+             { Tex::PINK_FLOWER, FaceType::PXPZ_TO_MXMZ_PLANT },
+             { Tex::PINK_FLOWER, FaceType::MXPZ_TO_PXMZ_PLANT },
+             { Tex::PINK_FLOWER, FaceType::PXMZ_TO_MXPZ_PLANT }},
+            // red flower
+            {{ Tex::RED_FLOWER, FaceType::MXMZ_TO_PXPZ_PLANT },
+             { Tex::RED_FLOWER, FaceType::PXPZ_TO_MXMZ_PLANT },
+             { Tex::RED_FLOWER, FaceType::MXPZ_TO_PXMZ_PLANT },
+             { Tex::RED_FLOWER, FaceType::PXMZ_TO_MXPZ_PLANT }},
+            // Cactus
+            {{ Tex::CACTUS_SIDES, FaceType::PLUS_X_NORMAL },
+             { Tex::CACTUS_SIDES, FaceType::MINUS_X_NORMAL },
+             { Tex::CACTUS_SIDES, FaceType::PLUS_Z_NORMAL },
+             { Tex::CACTUS_SIDES, FaceType::MINUS_Z_NORMAL },
+             { Tex::CACTUS_END, FaceType::PLUS_Y_NORMAL },
+             { Tex::CACTUS_END, FaceType::MINUS_Y_NORMAL }},
+            // dead bush
+            {{ Tex::DEAD_BUSH, FaceType::MXMZ_TO_PXPZ_PLANT },
+             { Tex::DEAD_BUSH, FaceType::PXPZ_TO_MXMZ_PLANT },
+             { Tex::DEAD_BUSH, FaceType::MXPZ_TO_PXMZ_PLANT },
+             { Tex::DEAD_BUSH, FaceType::PXMZ_TO_MXPZ_PLANT }},
             // Oak Log
             {{ Tex::OAK_LOG, FaceType::PLUS_X_NORMAL },
              { Tex::OAK_LOG, FaceType::MINUS_X_NORMAL },
@@ -163,6 +238,34 @@ namespace Block {
              { Tex::OAK_LEAVES, FaceType::MINUS_Z_NORMAL },
              { Tex::OAK_LEAVES, FaceType::PLUS_Y_NORMAL },
              { Tex::OAK_LEAVES, FaceType::MINUS_Y_NORMAL }},
+            // Jungle Log
+            {{ Tex::JUNGLE_LOG, FaceType::PLUS_X_NORMAL },
+             { Tex::JUNGLE_LOG, FaceType::MINUS_X_NORMAL },
+             { Tex::JUNGLE_LOG, FaceType::PLUS_Z_NORMAL },
+             { Tex::JUNGLE_LOG, FaceType::MINUS_Z_NORMAL },
+             { Tex::JUNGLE_LOG_END, FaceType::PLUS_Y_NORMAL },
+             { Tex::JUNGLE_LOG_END, FaceType::MINUS_Y_NORMAL } },
+            // Jungle Log PX
+            {{ Tex::JUNGLE_LOG_END, FaceType::PLUS_X_NORMAL },
+             { Tex::JUNGLE_LOG_END, FaceType::MINUS_X_NORMAL },
+             { Tex::JUNGLE_LOG, FaceType::PLUS_Z_NORMAL },
+             { Tex::JUNGLE_LOG, FaceType::MINUS_Z_NORMAL },
+             { Tex::JUNGLE_LOG, FaceType::PLUS_Y_NORMAL },
+             { Tex::JUNGLE_LOG, FaceType::MINUS_Y_NORMAL } },
+            // Jungle Log PZ
+            {{ Tex::JUNGLE_LOG, FaceType::PLUS_X_NORMAL },
+             { Tex::JUNGLE_LOG, FaceType::MINUS_X_NORMAL },
+             { Tex::JUNGLE_LOG_END, FaceType::PLUS_Z_NORMAL },
+             { Tex::JUNGLE_LOG_END, FaceType::MINUS_Z_NORMAL },
+             { Tex::JUNGLE_LOG, FaceType::PLUS_Y_NORMAL },
+             { Tex::JUNGLE_LOG, FaceType::MINUS_Y_NORMAL } },
+            // Jungle Leaves
+            {{ Tex::JUNGLE_LEAVES, FaceType::PLUS_X_NORMAL },
+             { Tex::JUNGLE_LEAVES, FaceType::MINUS_X_NORMAL },
+             { Tex::JUNGLE_LEAVES, FaceType::PLUS_Z_NORMAL },
+             { Tex::JUNGLE_LEAVES, FaceType::MINUS_Z_NORMAL },
+             { Tex::JUNGLE_LEAVES, FaceType::PLUS_Y_NORMAL },
+             { Tex::JUNGLE_LEAVES, FaceType::MINUS_Y_NORMAL } },
             // outline
             {{ Tex::OUTLINE, FaceType::PLUS_X_NORMAL },
              { Tex::OUTLINE, FaceType::MINUS_X_NORMAL },
@@ -299,11 +402,23 @@ namespace Block {
             case BlockType::GRASS:
             case BlockType::DIRT:
             case BlockType::STONE:
+            case BlockType::SAND:
+            case BlockType::SNOW:
+            case BlockType::WATER:
             case BlockType::GRASS_PLANT:
+            case BlockType::BLUE_FLOWER:
+            case BlockType::PINK_FLOWER:
+            case BlockType::RED_FLOWER:
+            case BlockType::CACTUS:
+            case BlockType::DEAD_BUSH:
             case BlockType::OAK_LOG:
             case BlockType::OAK_LOG_PX:
             case BlockType::OAK_LOG_PZ:
             case BlockType::OAK_LEAVES:
+            case BlockType::JUNGLE_LOG:
+            case BlockType::JUNGLE_LOG_PX:
+            case BlockType::JUNGLE_LOG_PZ:
+            case BlockType::JUNGLE_LEAVES:
                 return true;
             case BlockType::OUTLINE:
             case BlockType::NO_BLOCK:
@@ -322,14 +437,26 @@ namespace Block {
         switch (type) {
             case BlockType::AIR:
             case BlockType::GRASS_PLANT:
+            case BlockType::BLUE_FLOWER:
+            case BlockType::PINK_FLOWER:
+            case BlockType::RED_FLOWER:
+            case BlockType::DEAD_BUSH:
                 return false;
             case BlockType::GRASS:
             case BlockType::DIRT:
             case BlockType::STONE:
+            case BlockType::SAND:
+            case BlockType::SNOW:
+            case BlockType::WATER:
+            case BlockType::CACTUS:
             case BlockType::OAK_LOG:
             case BlockType::OAK_LOG_PX:
             case BlockType::OAK_LOG_PZ:
             case BlockType::OAK_LEAVES:
+            case BlockType::JUNGLE_LOG:
+            case BlockType::JUNGLE_LOG_PX:
+            case BlockType::JUNGLE_LOG_PZ:
+            case BlockType::JUNGLE_LEAVES:
                 return true;
             default:
                 std::cout << "Error: isNormal(): blocktype not handled: " << ((int) type) << std::endl;
@@ -343,15 +470,28 @@ namespace Block {
             case BlockType::GRASS:
             case BlockType::DIRT:
             case BlockType::STONE:
+            case BlockType::SAND:
+            case BlockType::SNOW:
+            case BlockType::WATER:
+            case BlockType::CACTUS:
             case BlockType::OAK_LOG:
             case BlockType::OAK_LOG_PX:
             case BlockType::OAK_LOG_PZ:
             case BlockType::OAK_LEAVES:
+            case BlockType::JUNGLE_LOG:
+            case BlockType::JUNGLE_LOG_PX:
+            case BlockType::JUNGLE_LOG_PZ:
+            case BlockType::JUNGLE_LEAVES:
                 assert(isNormal(type));
                 return true;
             case BlockType::AIR:
             case BlockType::GRASS_PLANT:
+            case BlockType::BLUE_FLOWER:
+            case BlockType::PINK_FLOWER:
+            case BlockType::RED_FLOWER:
+            case BlockType::DEAD_BUSH:
                 assert(!isNormal(type));
+                [[fallthrough]];
             // treat NO_BLOCK as non-solid so that the top and bottom of the world are rendered
             case BlockType::NO_BLOCK:
                 return false;
